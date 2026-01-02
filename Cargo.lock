@@ -1392,6 +1392,7 @@ name = "reverie-storage"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "chrono",
  "reverie-core",
  "sqlx",
  "thiserror",

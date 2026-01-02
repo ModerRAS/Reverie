@@ -9,6 +9,10 @@ license.workspace = true
 name = "reverie"
 path = "src/main.rs"
 
+[[example]]
+name = "simple_server"
+path = "../examples/simple_server.rs"
+
 [dependencies]
 reverie-core = { path = "../reverie-core" }
 reverie-storage = { path = "../reverie-storage", features = ["filesystem", "memory"] }

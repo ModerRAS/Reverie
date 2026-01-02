@@ -21,3 +21,7 @@ default = ["filesystem", "memory"]
 filesystem = ["walkdir"]
 database = ["sqlx"]
 memory = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+chrono = "0.4"
