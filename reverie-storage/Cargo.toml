@@ -17,13 +17,16 @@ chrono = "0.4"
 # Optional dependencies for specific implementations
 sqlx = { workspace = true, optional = true }
 walkdir = { version = "2.4", optional = true }
+shellexpand = { version = "3", optional = true }
 
 [features]
 default = ["filesystem", "memory"]
-filesystem = ["walkdir"]
+filesystem = ["walkdir", "shellexpand"]
 database = ["sqlx"]
 memory = []
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 chrono = "0.4"
+tempfile = "3"
+uuid = { version = "1.6", features = ["v4"] }

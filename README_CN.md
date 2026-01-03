@@ -144,7 +144,8 @@ reverie/
 
 **可用的实现：**
 - ✅ 内存中（用于测试/开发）
-- 🚧 文件系统 + SQLite（计划中）
+- ✅ 文件系统存储（带元数据缓存）
+- 🚧 SQLite 集成（计划中）
 - 🚧 PostgreSQL（计划中）
 - 🚧 S3 兼容存储（计划中）
 
@@ -342,6 +343,11 @@ impl TrackStorage for MyCustomStorage {
 - [x] 存储抽象层（所有 Storage traits）
 - [x] SubsonicStorage trait（完整的 Subsonic API 存储接口）
 - [x] 内存存储实现（MemoryStorage）
+- [x] 文件系统存储实现（FileSystemStorage）
+  - VFS 启发的架构（Inode、DirEntry、FileHandle）
+  - 使用迭代扫描的目录遍历
+  - 基于 HashMap 的元数据缓存
+  - 支持常见音频格式（MP3、FLAC、M4A、OGG 等）
 - [x] Axum HTTP 服务器实现
 - [x] Subsonic API 基础端点（ping、license、folders、genres、scan）
 - [x] Subsonic API 浏览端点（directory、artist、album、song）
@@ -355,8 +361,8 @@ impl TrackStorage for MyCustomStorage {
 
 ### 开发中 🚧
 
-- [ ] 文件系统 + SQLite 存储
-- [ ] 音乐库扫描器
+- [ ] SQLite 元数据集成（用于文件系统存储）
+- [ ] 音乐库扫描器（音频元数据提取）
 - [ ] 音频流媒体实现
 - [ ] 转码支持（FFmpeg 集成）
 

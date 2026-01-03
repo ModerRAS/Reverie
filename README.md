@@ -130,7 +130,8 @@ The storage layer provides traits for different types of operations:
 
 **Available Implementations:**
 - ✅ In-Memory (for testing/development)
-- 🚧 Filesystem + SQLite (planned)
+- ✅ Filesystem (with metadata caching)
+- 🚧 SQLite integration (planned)
 - 🚧 PostgreSQL (planned)
 - 🚧 S3-compatible storage (planned)
 
@@ -320,6 +321,11 @@ impl TrackStorage for MyCustomStorage {
 - [x] Storage abstraction layer (all Storage traits)
 - [x] SubsonicStorage trait (complete Subsonic API storage interface)
 - [x] Memory storage implementation (MemoryStorage)
+- [x] Filesystem storage implementation (FileSystemStorage)
+  - VFS-inspired architecture (Inode, DirEntry, FileHandle)
+  - Directory traversal with iterative scanning
+  - Metadata caching with HashMap-based cache
+  - Support for common audio formats (MP3, FLAC, M4A, OGG, etc.)
 - [x] Axum HTTP server implementation
 - [x] Subsonic API basic endpoints (ping, license, folders, genres, scan)
 - [x] Subsonic API browse endpoints (directory, artist, album, song)
@@ -333,8 +339,8 @@ impl TrackStorage for MyCustomStorage {
 
 ### In Progress 🚧
 
-- [ ] Filesystem + SQLite storage
-- [ ] Library scanner
+- [ ] SQLite metadata integration for filesystem storage
+- [ ] Library scanner with audio metadata extraction
 - [ ] Audio streaming implementation
 - [ ] Transcoding support (FFmpeg integration)
 
