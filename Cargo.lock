@@ -1454,6 +1454,8 @@ dependencies = [
  "chrono",
  "rand",
  "reverie-core",
+ "serde",
+ "serde_json",
  "shellexpand",
  "sqlx",
  "tempfile",

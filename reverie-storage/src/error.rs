@@ -14,7 +14,7 @@ pub enum StorageError {
     DatabaseError(String),
 
     #[error("Serialization error: {0}")]
-    SerializationError(String),
+    SerializationError(#[from] serde_json::Error),
 
     #[error("Storage unavailable: {0}")]
     Unavailable(String),
