@@ -1,0 +1,27 @@
+[package]
+name = "reverie-network"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+reverie-core = { path = "../reverie-core" }
+reverie-storage = { path = "../reverie-storage" }
+async-trait.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid = { version = "1.6", features = ["v4"] }
+
+# HTTP server dependencies (optional)
+axum = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+tower-http = { workspace = true, optional = true }
+hyper = { workspace = true, optional = true }
+tracing.workspace = true
+
+[features]
+default = ["axum-server"]
+axum-server = ["axum", "tower", "tower-http", "hyper"]

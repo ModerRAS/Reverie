@@ -1,0 +1,30 @@
+[package]
+name = "reverie-server"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "reverie"
+path = "src/main.rs"
+
+[[example]]
+name = "simple_server"
+path = "../examples/simple_server.rs"
+
+[dependencies]
+reverie-core = { path = "../reverie-core" }
+reverie-storage = { path = "../reverie-storage", features = ["filesystem", "memory"] }
+reverie-network = { path = "../reverie-network", features = ["axum-server"] }
+
+tokio.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+config.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+uuid = { version = "1.6", features = ["v4"] }
+chrono = "0.4"

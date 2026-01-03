@@ -1,0 +1,27 @@
+[package]
+name = "reverie-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+reverie-core = { path = "../reverie-core" }
+async-trait.workspace = true
+thiserror.workspace = true
+uuid = { version = "1.6", features = ["v4"] }
+tokio.workspace = true
+
+# Optional dependencies for specific implementations
+sqlx = { workspace = true, optional = true }
+walkdir = { version = "2.4", optional = true }
+
+[features]
+default = ["filesystem", "memory"]
+filesystem = ["walkdir"]
+database = ["sqlx"]
+memory = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+chrono = "0.4"
