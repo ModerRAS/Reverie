@@ -9,6 +9,78 @@ A modern, lightweight music streaming server written in Rust, inspired by [Navid
 - **Type-Safe**: Built with Rust for memory safety and performance
 - **Async-First**: Fully asynchronous using Tokio
 - **Modular Architecture**: Clean separation between domain logic, storage, and network layers
+- **Subsonic API Compatible**: Fully compatible with Subsonic API, works with any Subsonic client
+
+## 📊 Current Development Status
+
+### Implemented Features
+
+**Core Features**
+- ✅ Core domain models (Track, Album, Artist, User, Playlist)
+- ✅ Storage abstraction layer (SubsonicStorage trait)
+- ✅ Memory storage implementation
+- ✅ Axum HTTP server
+- ✅ Subsonic API endpoints (36 endpoints, 44 tests)
+
+**Subsonic API Endpoints (Completed)**
+
+Basic Endpoints:
+- ✅ `/ping` - Health check
+- ✅ `/getLicense` - Get license information
+- ✅ `/getMusicFolders` - Get music folders
+- ✅ `/getGenres` - Get genre list
+- ✅ `/getScanStatus` - Get scan status
+- ✅ `/startScan` - Start scan
+
+Browse Endpoints:
+- ✅ `/getIndexes` - Get artist indexes
+- ✅ `/getArtists` - Get artist list
+- ✅ `/getMusicDirectory` - Get music directory
+- ✅ `/getArtist` - Get artist details
+- ✅ `/getAlbum` - Get album details
+- ✅ `/getSong` - Get song details
+- ✅ `/getAlbumInfo` - Get album info
+- ✅ `/getArtistInfo` - Get artist info
+
+Search Endpoints:
+- ✅ `/search2` - Search (returns Artist/Album/Child)
+- ✅ `/search3` - Search (returns ID3 version)
+
+Playlist Endpoints:
+- ✅ `/getPlaylists` - Get playlists
+- ✅ `/getPlaylist` - Get playlist details
+- ✅ `/createPlaylist` - Create playlist
+- ✅ `/updatePlaylist` - Update playlist
+- ✅ `/deletePlaylist` - Delete playlist
+
+User Endpoints:
+- ✅ `/getUser` - Get user info
+- ✅ `/getUsers` - Get all users
+
+Streaming Endpoints:
+- ✅ `/stream` - Stream media
+- ✅ `/download` - Download
+- ✅ `/getCoverArt` - Get cover art
+- ✅ `/getAvatar` - Get user avatar
+
+Star & Rating:
+- ✅ `/getStarred` - Get starred content
+- ✅ `/getStarred2` - Get starred content (ID3 version)
+- ✅ `/star` - Star
+- ✅ `/unstar` - Unstar
+- ✅ `/setRating` - Set rating
+
+Scrobble:
+- ✅ `/scrobble` - Scrobble
+- ✅ `/getNowPlaying` - Get now playing
+- ✅ `/getRandomSongs` - Get random songs
+- ✅ `/getLyrics` - Get lyrics
+
+### Test Coverage
+
+- ✅ 36 Subsonic API tests
+- ✅ 8 Memory storage tests
+- ✅ Total: 44 tests passing
 
 ## 🏗️ Architecture
 
@@ -106,17 +178,63 @@ The server will start on `http://127.0.0.1:4533` by default.
 
 ### API Endpoints
 
-- `GET /health` - Health check
-- `GET /api/tracks` - List tracks (with pagination)
-- `GET /api/tracks/:id` - Get track by ID
-- `GET /api/tracks/search?q=query` - Search tracks
-- `GET /api/albums` - List albums
-- `GET /api/albums/:id` - Get album by ID
-- `GET /api/albums/:id/tracks` - Get tracks in album
-- `GET /api/artists` - List artists
-- `GET /api/artists/:id` - Get artist by ID
-- `GET /api/artists/:id/albums` - Get albums by artist
-- `GET /api/playlists/:id` - Get playlist by ID
+Reverie implements a comprehensive Subsonic API compatible interface (version 1.16.1).
+
+**Base URL:** `/rest`
+
+**Authentication:** Subsonic clients authenticate using the standard Subsonic authentication protocol.
+
+**Basic Endpoints:**
+- `GET /rest/ping` - Health check
+- `GET /rest/getLicense` - Get license information
+- `GET /rest/getMusicFolders` - Get music folders list
+- `GET /rest/getGenres` - Get genre list
+- `GET /rest/getScanStatus` - Get scan status
+- `GET /rest/startScan` - Start scan
+
+**Browse Endpoints:**
+- `GET /rest/getIndexes` - Get artist indexes
+- `GET /rest/getArtists` - Get complete artist list
+- `GET /rest/getMusicDirectory` - Get music directory
+- `GET /rest/getArtist` - Get artist details
+- `GET /rest/getAlbum` - Get album details
+- `GET /rest/getSong` - Get song details
+- `GET /rest/getAlbumInfo` - Get album info
+- `GET /rest/getArtistInfo` - Get artist info
+
+**Search Endpoints:**
+- `GET /rest/search2` - Search (returns Artist/Album/Child)
+- `GET /rest/search3` - Search (returns ID3 version)
+
+**Playlist Endpoints:**
+- `GET /rest/getPlaylists` - Get all playlists
+- `GET /rest/getPlaylist` - Get playlist details
+- `GET /rest/createPlaylist` - Create playlist
+- `GET /rest/updatePlaylist` - Update playlist
+- `GET /rest/deletePlaylist` - Delete playlist
+
+**User Endpoints:**
+- `GET /rest/getUser` - Get user info
+- `GET /rest/getUsers` - Get all users
+
+**Streaming Endpoints:**
+- `GET /rest/stream` - Stream media
+- `GET /rest/download` - Download audio file
+- `GET /rest/getCoverArt` - Get cover art
+- `GET /rest/getAvatar` - Get user avatar
+
+**Star & Rating:**
+- `GET /rest/getStarred` - Get starred content
+- `GET /rest/getStarred2` - Get starred content (ID3 version)
+- `GET /rest/star` - Star
+- `GET /rest/unstar` - Unstar
+- `GET /rest/setRating` - Set rating
+
+**Scrobble:**
+- `GET /rest/scrobble` - Scrobble
+- `GET /rest/getNowPlaying` - Get now playing
+- `GET /rest/getRandomSongs` - Get random songs
+- `GET /rest/getLyrics` - Get lyrics
 
 ## 🔧 Development
 
@@ -195,21 +313,39 @@ impl TrackStorage for MyCustomStorage {
 
 ## 🛣️ Roadmap
 
-- [x] Core domain models
-- [x] Storage abstraction layer
-- [x] Network abstraction layer
-- [x] In-memory storage implementation
+### Completed ✅
+
+- [x] Core domain models (Track, Album, Artist, User, Playlist)
+- [x] Subsonic-compatible data structures (MediaFile, SubsonicAlbum, SubsonicArtist, etc.)
+- [x] Storage abstraction layer (all Storage traits)
+- [x] SubsonicStorage trait (complete Subsonic API storage interface)
+- [x] Memory storage implementation (MemoryStorage)
 - [x] Axum HTTP server implementation
+- [x] Subsonic API basic endpoints (ping, license, folders, genres, scan)
+- [x] Subsonic API browse endpoints (directory, artist, album, song)
+- [x] Subsonic API search endpoints (search2, search3)
+- [x] Subsonic API playlist endpoints (CRUD)
+- [x] Subsonic API user endpoints
+- [x] Subsonic API streaming endpoints (stream, download, coverArt)
+- [x] Subsonic API star & rating endpoints
+- [x] Subsonic API scrobble endpoints
+- [x] Complete test coverage (44 tests)
+
+### In Progress 🚧
+
 - [ ] Filesystem + SQLite storage
 - [ ] Library scanner
-- [ ] Audio streaming
-- [ ] Transcoding support
-- [ ] User authentication
-- [ ] Subsonic API compatibility
+- [ ] Audio streaming implementation
+- [ ] Transcoding support (FFmpeg integration)
+
+### Planned 📋
+
+- [ ] User authentication system
 - [ ] Database migrations
 - [ ] Configuration file support
 - [ ] Docker support
 - [ ] Federation/cloud sync
+- [ ] Additional storage backends (PostgreSQL, S3)
 
 ## 📄 License
 

@@ -156,3 +156,77 @@ pub trait Storage: TrackStorage + AlbumStorage + ArtistStorage + UserStorage + P
     /// Check if the storage is healthy
     async fn health_check(&self) -> Result<bool>;
 }
+
+use reverie_core::{
+    SubsonicAlbum, SubsonicArtist, SubsonicArtistIndexes, SubsonicGenre,
+    SubsonicMusicFolder, SubsonicScanStatus, SubsonicLyrics, SubsonicPlayQueue,
+    SubsonicDirectory, MediaFile,
+};
+
+#[async_trait]
+pub trait SubsonicStorage: Send + Sync {
+    async fn get_music_folders(&self) -> Result<Vec<SubsonicMusicFolder>>;
+    async fn get_artist_indexes(&self, music_folder_id: Option<i32>) -> Result<SubsonicArtistIndexes>;
+    async fn get_genres(&self) -> Result<Vec<SubsonicGenre>>;
+    async fn get_scan_status(&self) -> Result<SubsonicScanStatus>;
+    async fn start_scan(&self) -> Result<SubsonicScanStatus>;
+    async fn get_directory(&self, id: &str) -> Result<Option<SubsonicDirectory>>;
+    async fn get_album(&self, id: &str) -> Result<Option<SubsonicAlbum>>;
+    async fn get_artist(&self, id: &str) -> Result<Option<SubsonicArtist>>;
+    async fn get_song(&self, id: &str) -> Result<Option<MediaFile>>;
+    async fn get_albums(&self, limit: usize, offset: usize) -> Result<Vec<SubsonicAlbum>>;
+    async fn get_artists(&self, limit: usize, offset: usize) -> Result<Vec<SubsonicArtist>>;
+    async fn get_albums_by_artist(&self, artist_id: &str) -> Result<Vec<SubsonicAlbum>>;
+    async fn get_songs_by_album(&self, album_id: &str) -> Result<Vec<MediaFile>>;
+    async fn get_random_songs(&self, count: usize) -> Result<Vec<MediaFile>>;
+    async fn search(&self, query: &str, artist_count: usize, album_count: usize, song_count: usize) -> Result<SearchResult>;
+    async fn get_lyrics(&self, artist: &str, title: &str) -> Result<Option<SubsonicLyrics>>;
+    async fn get_play_queue(&self, username: &str) -> Result<SubsonicPlayQueue>;
+    async fn save_play_queue(&self, entries: &[&str], current: Option<&str>, position: i64, username: &str, changed_by: &str) -> Result<()>;
+    async fn scrobble(&self, id: &str, time: i64, submission: bool) -> Result<()>;
+    async fn get_starred(&self) -> Result<Starred>;
+    async fn get_album_list(&self, r#type: &str, size: usize, offset: usize) -> Result<AlbumList>;
+    async fn get_playlists(&self) -> Result<Vec<SubsonicPlaylist>>;
+    async fn get_playlist(&self, id: &str) -> Result<Option<SubsonicPlaylistWithSongs>>;
+    async fn create_playlist(&self, name: &str, username: &str) -> Result<String>;
+    async fn delete_playlist(&self, id: &str) -> Result<()>;
+}
+
+pub struct SearchResult {
+    pub artists: Vec<SubsonicArtist>,
+    pub albums: Vec<MediaFile>,
+    pub songs: Vec<MediaFile>,
+}
+
+pub struct Starred {
+    pub artists: Vec<SubsonicArtist>,
+    pub albums: Vec<MediaFile>,
+    pub songs: Vec<MediaFile>,
+}
+
+pub struct AlbumList {
+    pub albums: Vec<MediaFile>,
+}
+
+pub struct SubsonicPlaylist {
+    pub id: String,
+    pub name: String,
+    pub owner: String,
+    pub song_count: i32,
+    pub duration: i32,
+    pub public: bool,
+    pub created: chrono::DateTime<chrono::Utc>,
+    pub changed: chrono::DateTime<chrono::Utc>,
+}
+
+pub struct SubsonicPlaylistWithSongs {
+    pub id: String,
+    pub name: String,
+    pub owner: String,
+    pub song_count: i32,
+    pub duration: i32,
+    pub public: bool,
+    pub created: chrono::DateTime<chrono::Utc>,
+    pub changed: chrono::DateTime<chrono::Utc>,
+    pub entries: Vec<MediaFile>,
+}

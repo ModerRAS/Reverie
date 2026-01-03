@@ -7,6 +7,7 @@
 pub mod traits;
 pub mod error;
 pub mod dto;
+pub mod subsonic;
 
 #[cfg(feature = "axum-server")]
 pub mod axum_server;
@@ -14,3 +15,4 @@ pub mod axum_server;
 pub use traits::*;
 pub use error::*;
 pub use dto::*;
+pub use subsonic::*;

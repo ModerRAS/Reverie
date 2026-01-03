@@ -11,6 +11,8 @@ async-trait.workspace = true
 thiserror.workspace = true
 uuid = { version = "1.6", features = ["v4"] }
 tokio.workspace = true
+rand = "0.8"
+chrono = "0.4"
 
 # Optional dependencies for specific implementations
 sqlx = { workspace = true, optional = true }
