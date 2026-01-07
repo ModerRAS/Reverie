@@ -16,11 +16,12 @@ Reverie 是一个用 Rust 编写的现代音乐流媒体服务器，灵感来自
 
 #### 1. 工作区结构
 
-创建了包含 4 个 crate 的模块化 Cargo 工作区：
+创建了包含 5 个 crate 的模块化 Cargo 工作区：
 - `reverie-core`：域模型（Track、Album、Artist、User、Playlist）
 - `reverie-storage`：存储抽象层
 - `reverie-network`：网络抽象层
 - `reverie-server`：主应用程序
+- `reverie-ui`：可选 Web UI（Dioxus）
 
 #### 2. 存储抽象
 
@@ -85,8 +86,8 @@ GET  /api/playlists/:id         - 获取播放列表
 
 #### 6. 质量
 
-- ✅ 零编译警告
-- ✅ 零 clippy 警告
+- ✅ 后端核心 crate 保持干净构建
+- ⚠️ 可选 UI crate 在演进中可能存在 warning
 - ✅ 所有测试通过
 - ✅ 干净的代码结构
 - ✅ 完全类型安全
