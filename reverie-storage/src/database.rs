@@ -2511,7 +2511,7 @@ impl SubsonicStorage for DatabaseStorage {
 
     async fn create_share(
         &self,
-        song_ids: &[String],
+        song_ids: &[&str],
         description: Option<&str>,
         expires: Option<i64>,
     ) -> Result<SubsonicShare> {
@@ -2539,7 +2539,7 @@ impl SubsonicStorage for DatabaseStorage {
         for song_id in song_ids {
             sqlx::query("INSERT INTO share_entries (share_id, track_id) VALUES (?, ?)")
                 .bind(&id)
-                .bind(song_id)
+                .bind(*song_id)
                 .execute(&self.pool)
                 .await
                 .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
@@ -2562,11 +2562,11 @@ impl SubsonicStorage for DatabaseStorage {
             id,
             url,
             description: description.map(|s| s.to_string()),
-            username: None,
-            created: Some(now),
+            username: String::new(),
+            created: now,
             expires: expires.and_then(DateTime::from_timestamp_millis),
             last_visited: None,
-            visit_count: Some(0),
+            visit_count: 0,
             entries: entries.iter().map(|tr| self.row_to_media_file(tr)).collect(),
         })
     }
