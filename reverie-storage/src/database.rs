@@ -2754,21 +2754,46 @@ impl SubsonicStorage for DatabaseStorage {
         username: &str,
         password: &str,
         email: Option<&str>,
-        admin_role: Option<bool>,
+        admin_role: bool,
+        settings_role: bool,
+        stream_role: bool,
+        jukebox_role: bool,
+        download_role: bool,
+        upload_role: bool,
+        playlist_role: bool,
+        cover_art_role: bool,
+        comment_role: bool,
+        podcast_role: bool,
+        share_role: bool,
+        video_conversion_role: bool,
+        _music_folder_ids: &[i32],
     ) -> Result<()> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
         let password_hash = format!("{:x}", md5::compute(password)); // Simple hash, should use bcrypt in production
 
         sqlx::query(
-            r#"INSERT INTO users (id, username, password_hash, email, admin_role, created_at)
-               VALUES (?, ?, ?, ?, ?, ?)"#,
+            r#"INSERT INTO users (id, username, password_hash, email, admin_role, settings_role,
+                stream_role, jukebox_role, download_role, upload_role, playlist_role, cover_art_role,
+                comment_role, podcast_role, share_role, video_conversion_role, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(&id)
         .bind(username)
         .bind(&password_hash)
         .bind(email)
-        .bind(if admin_role.unwrap_or(false) { 1 } else { 0 })
+        .bind(if admin_role { 1 } else { 0 })
+        .bind(if settings_role { 1 } else { 0 })
+        .bind(if stream_role { 1 } else { 0 })
+        .bind(if jukebox_role { 1 } else { 0 })
+        .bind(if download_role { 1 } else { 0 })
+        .bind(if upload_role { 1 } else { 0 })
+        .bind(if playlist_role { 1 } else { 0 })
+        .bind(if cover_art_role { 1 } else { 0 })
+        .bind(if comment_role { 1 } else { 0 })
+        .bind(if podcast_role { 1 } else { 0 })
+        .bind(if share_role { 1 } else { 0 })
+        .bind(if video_conversion_role { 1 } else { 0 })
         .bind(&now)
         .execute(&self.pool)
         .await
@@ -2780,9 +2805,33 @@ impl SubsonicStorage for DatabaseStorage {
     async fn update_user(
         &self,
         username: &str,
+        password: Option<&str>,
         email: Option<&str>,
         admin_role: Option<bool>,
+        settings_role: Option<bool>,
+        stream_role: Option<bool>,
+        jukebox_role: Option<bool>,
+        download_role: Option<bool>,
+        upload_role: Option<bool>,
+        playlist_role: Option<bool>,
+        cover_art_role: Option<bool>,
+        comment_role: Option<bool>,
+        podcast_role: Option<bool>,
+        share_role: Option<bool>,
+        video_conversion_role: Option<bool>,
+        _music_folder_ids: Option<&[i32]>,
+        _max_bit_rate: Option<i32>,
     ) -> Result<()> {
+        if let Some(pwd) = password {
+            let password_hash = format!("{:x}", md5::compute(pwd));
+            sqlx::query("UPDATE users SET password_hash = ? WHERE username = ?")
+                .bind(&password_hash)
+                .bind(username)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+
         if let Some(e) = email {
             sqlx::query("UPDATE users SET email = ? WHERE username = ?")
                 .bind(e)
@@ -2792,14 +2841,31 @@ impl SubsonicStorage for DatabaseStorage {
                 .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         }
 
-        if let Some(admin) = admin_role {
-            sqlx::query("UPDATE users SET admin_role = ? WHERE username = ?")
-                .bind(if admin { 1 } else { 0 })
-                .bind(username)
-                .execute(&self.pool)
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        macro_rules! update_role {
+            ($field:literal, $val:expr) => {
+                if let Some(v) = $val {
+                    sqlx::query(concat!("UPDATE users SET ", $field, " = ? WHERE username = ?"))
+                        .bind(if v { 1 } else { 0 })
+                        .bind(username)
+                        .execute(&self.pool)
+                        .await
+                        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+                }
+            };
         }
+
+        update_role!("admin_role", admin_role);
+        update_role!("settings_role", settings_role);
+        update_role!("stream_role", stream_role);
+        update_role!("jukebox_role", jukebox_role);
+        update_role!("download_role", download_role);
+        update_role!("upload_role", upload_role);
+        update_role!("playlist_role", playlist_role);
+        update_role!("cover_art_role", cover_art_role);
+        update_role!("comment_role", comment_role);
+        update_role!("podcast_role", podcast_role);
+        update_role!("share_role", share_role);
+        update_role!("video_conversion_role", video_conversion_role);
 
         Ok(())
     }
@@ -2839,19 +2905,25 @@ impl SubsonicStorage for DatabaseStorage {
         if let Some(r) = row {
             Ok(SubsonicScanStatus {
                 scanning: r.get::<Option<i32>, _>("scanning").map(|v| v == 1).unwrap_or(false),
-                count: r.get::<Option<i64>, _>("count"),
-                folder_count: r.get::<Option<i64>, _>("folder_count"),
+                count: r.get::<Option<i64>, _>("count").unwrap_or(0),
+                folder_count: r.get::<Option<i64>, _>("folder_count").unwrap_or(0),
                 last_scan: r
                     .get::<Option<String>, _>("last_scan")
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
                     .map(|d| d.with_timezone(&Utc)),
+                error: r.get("error"),
+                scan_type: r.get("scan_type"),
+                elapsed_time: r.get::<Option<i64>, _>("elapsed_time"),
             })
         } else {
             Ok(SubsonicScanStatus {
                 scanning: false,
-                count: Some(0),
-                folder_count: Some(0),
+                count: 0,
+                folder_count: 0,
                 last_scan: None,
+                error: None,
+                scan_type: None,
+                elapsed_time: None,
             })
         }
     }
@@ -2876,9 +2948,12 @@ impl SubsonicStorage for DatabaseStorage {
 
         Ok(SubsonicScanStatus {
             scanning: true,
-            count: Some(0),
-            folder_count: Some(0),
+            count: 0,
+            folder_count: 0,
             last_scan: None,
+            error: None,
+            scan_type: Some("fullScan".to_string()),
+            elapsed_time: Some(0),
         })
     }
 
