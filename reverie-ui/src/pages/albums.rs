@@ -2,6 +2,8 @@
 //!
 //! Displays albums with various sorting options like newest, recently played, etc.
 
+#![allow(unused)]
+
 use crate::api::Album;
 use crate::components::{AlbumCard, EmptyState, LoadingSpinner, PageHeader, TabBar};
 use dioxus::prelude::*;

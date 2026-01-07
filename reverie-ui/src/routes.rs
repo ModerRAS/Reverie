@@ -4,7 +4,7 @@
 
 use crate::components::MainLayout;
 use crate::pages::*;
-use crate::state::{AppContext, AuthState, PlayerState, UiState, ViewType};
+use crate::state::{AuthState, PlayerState, UiState};
 use dioxus::prelude::*;
 
 /// Route definitions

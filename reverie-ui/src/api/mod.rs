@@ -2,6 +2,8 @@
 //!
 //! Implements the Subsonic API client for fetching music data.
 
+#![allow(unused)]
+
 use serde::{Deserialize, Serialize};
 
 /// Base URL for the Subsonic API

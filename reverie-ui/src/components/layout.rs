@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 /// Main application layout with sidebar, header, and content area
 #[component]
 pub fn MainLayout(children: Element) -> Element {
-    let mut ui_state = use_context::<Signal<UiState>>();
+    let ui_state = use_context::<Signal<UiState>>();
     let sidebar_open = ui_state.read().sidebar_open;
 
     rsx! {

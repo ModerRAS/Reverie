@@ -2,7 +2,6 @@
 //!
 //! These components provide the music playback interface.
 
-use crate::api::Song;
 use crate::state::{apply_player_action, PlayerAction, PlayerState, RepeatMode};
 use dioxus::prelude::*;
 
