@@ -15,10 +15,10 @@ use reverie_core::{
     Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicAlbumInfo,
     SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo,
     SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation,
-    SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist,
-    SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3,
-    SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
-    Track, User,
+    SubsonicLyricLine, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
+    SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
+    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
+    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, Track, User,
 };
 
 /// Database storage configuration
@@ -2140,7 +2140,7 @@ impl SubsonicStorage for DatabaseStorage {
                     offset: None,
                     lines: lyrics_text
                         .lines()
-                        .map(|line| SubsonicLyricsLine {
+                        .map(|line| SubsonicLyricLine {
                             start: None,
                             value: line.to_string(),
                         })
@@ -2685,7 +2685,7 @@ impl SubsonicStorage for DatabaseStorage {
     }
 
     // === User Management ===
-    async fn get_user(&self, username: &str) -> Result<SubsonicUser> {
+    async fn get_user(&self, username: &str) -> Result<Option<SubsonicUser>> {
         let row = sqlx::query("SELECT * FROM users WHERE username = ?")
             .bind(username)
             .fetch_optional(&self.pool)
@@ -2984,21 +2984,21 @@ impl DatabaseStorage {
             title: r.get("title"),
             album: r.get("album_name"),
             artist: r.get("artist_name"),
-            track: r.get::<Option<i32>, _>("track_number"),
+            album_artist: r.get("artist_name"),
+            track_number: r.get::<Option<i32>, _>("track_number"),
             year: r.get::<Option<i32>, _>("year"),
             genre: r.get("genre"),
             cover_art: r.get::<Option<String>, _>("album_id"),
-            size: r.get::<Option<i64>, _>("file_size"),
-            content_type: r.get("content_type"),
-            suffix: r.get("format"),
-            transcoded_content_type: None,
-            transcoded_suffix: None,
-            duration: r.get::<Option<f32>, _>("duration"),
-            bit_rate: r.get::<Option<i32>, _>("bit_rate"),
-            path: r.get("file_path"),
-            is_video: Some(false),
+            size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
+            content_type: r.get::<Option<String>, _>("content_type").unwrap_or_default(),
+            suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
+            duration: r.get::<Option<f32>, _>("duration").unwrap_or(0.0),
+            bit_rate: r.get::<Option<i32>, _>("bit_rate").unwrap_or(0),
+            sample_rate: r.get::<Option<i32>, _>("sample_rate").unwrap_or(0),
+            bit_depth: r.get::<Option<i32>, _>("bit_depth"),
+            channels: r.get::<Option<i32>, _>("channels"),
+            path: r.get::<Option<String>, _>("file_path").unwrap_or_default(),
             user_rating: r.get::<Option<i32>, _>("rating"),
-            average_rating: None,
             play_count: r.get::<Option<i64>, _>("play_count"),
             disc_number: r.get::<Option<i32>, _>("disc_number"),
             created: r
@@ -3011,21 +3011,9 @@ impl DatabaseStorage {
                 .map(|d| d.with_timezone(&Utc)),
             album_id: r.get("album_id"),
             artist_id: r.get("artist_id"),
-            media_type: Some("music".to_string()),
-            bookmark_position: None,
-            original_width: None,
-            original_height: None,
-            played: r
-                .get::<Option<String>, _>("last_played_at")
-                .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
-                .map(|d| d.with_timezone(&Utc)),
-            bpm: r.get::<Option<i32>, _>("bpm"),
-            comment: r.get("comment"),
-            sort_name: None,
-            music_brainz_id: r.get("musicbrainz_id"),
-            channels: r.get::<Option<i32>, _>("channels"),
-            sampling_rate: r.get::<Option<i32>, _>("sample_rate"),
-            bit_depth: r.get::<Option<i32>, _>("bit_depth"),
+            r#type: "music".to_string(),
+            library_id: 1,
+            missing: false,
         }
     }
 
