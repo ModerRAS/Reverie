@@ -25,7 +25,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
         // Demo data
         let demo_album = Album {
             id: id.clone(),
-            name: format!("Album {}", id.split('-').last().unwrap_or("1")),
+            name: format!("Album {}", id.split('-').next_back().unwrap_or("1")),
             artist: Some("Demo Artist".to_string()),
             artist_id: Some("artist-1".to_string()),
             cover_art: None,
@@ -46,17 +46,17 @@ pub fn AlbumDetailPage(id: String) -> Element {
                 album_id: Some(id.clone()),
                 artist: demo_album.artist.clone(),
                 artist_id: demo_album.artist_id.clone(),
-                track: Some(i as i32),
+                track: Some(i),
                 year: demo_album.year,
                 genre: demo_album.genre.clone(),
                 cover_art: None,
-                duration: Some(200 + (i * 10) as i32),
+                duration: Some(200 + i * 10),
                 bit_rate: Some(320),
                 suffix: Some("mp3".to_string()),
                 content_type: None,
                 path: None,
                 starred: None,
-                play_count: i as i32 * 10,
+                play_count: i * 10,
             })
             .collect();
 
