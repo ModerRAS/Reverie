@@ -9,7 +9,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_VERSION: "1.79"
+  # 使用stable版本以获得最佳的依赖兼容性
+  RUST_VERSION: "stable"
 
 jobs:
   check:
