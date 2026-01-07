@@ -1,0 +1,15 @@
+# Clippy configuration
+# 允许不必要的类型转换（i32 -> i32）
+allow-clippy::unnecessary_cast
+
+# 允许Iterator::last的使用
+allow-clippy::double_ended_iterator_last
+
+# 允许过多的函数参数（这是API设计决策）
+allow-clippy::too_many_arguments
+
+# 允许无用的format!（在SQL查询构建中有时会用到）
+allow-clippy::useless_format
+
+# 允许未使用的导入（在测试文件中）
+allow-clippy::unused_imports
