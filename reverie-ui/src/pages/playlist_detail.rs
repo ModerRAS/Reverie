@@ -1,0 +1,195 @@
+//! Playlist detail page
+
+use dioxus::prelude::*;
+use crate::api::{Playlist, Song};
+use crate::state::{PlayerState, PlayerAction, apply_player_action};
+use crate::components::{TrackList, LoadingSpinner, format_duration_long};
+
+/// Playlist detail page component
+#[component]
+pub fn PlaylistDetailPage(id: String) -> Element {
+    let mut player_state = use_context::<Signal<PlayerState>>();
+    let mut playlist = use_signal(|| None::<Playlist>);
+    let mut loading = use_signal(|| true);
+
+    // Load playlist details
+    use_effect(move || {
+        loading.set(true);
+        
+        // Demo data
+        let demo_songs: Vec<Song> = (1..=15).map(|i| Song {
+            id: format!("{}-song-{}", id, i),
+            title: format!("Playlist Song {}", i),
+            album: Some(format!("Album {}", (i % 5) + 1)),
+            album_id: Some(format!("album-{}", (i % 5) + 1)),
+            artist: Some(format!("Artist {}", (i % 3) + 1)),
+            artist_id: Some(format!("artist-{}", (i % 3) + 1)),
+            track: Some(i as i32),
+            year: Some(2023),
+            genre: Some("Mixed".to_string()),
+            cover_art: None,
+            duration: Some(180 + (i * 15) as i32),
+            bit_rate: Some(320),
+            suffix: Some("mp3".to_string()),
+            content_type: None,
+            path: None,
+            starred: None,
+            play_count: i as i32 * 5,
+        }).collect();
+        
+        let total_duration: i32 = demo_songs.iter().filter_map(|s| s.duration).sum();
+        
+        let demo_playlist = Playlist {
+            id: id.clone(),
+            name: format!("Playlist {}", id.split('-').last().unwrap_or("1")),
+            song_count: demo_songs.len() as i32,
+            duration: total_duration,
+            owner: Some("admin".to_string()),
+            public: Some(true),
+            created: Some("2024-01-01T00:00:00Z".to_string()),
+            changed: Some("2024-01-15T00:00:00Z".to_string()),
+            cover_art: None,
+            entry: demo_songs,
+        };
+        
+        playlist.set(Some(demo_playlist));
+        loading.set(false);
+    });
+
+    if loading() {
+        return rsx! {
+            LoadingSpinner { message: "Loading playlist..." }
+        };
+    }
+
+    let Some(playlist_data) = playlist.read().clone() else {
+        return rsx! {
+            div { class: "text-center py-12 text-gray-400", "Playlist not found" }
+        };
+    };
+
+    let total_duration = format_duration_long(playlist_data.duration);
+    let songs = playlist_data.entry.clone();
+    let songs_for_play = songs.clone();
+
+    rsx! {
+        div {
+            class: "space-y-6",
+            
+            // Playlist header
+            div {
+                class: "flex flex-col md:flex-row gap-6",
+                
+                // Cover art
+                div {
+                    class: "w-48 h-48 md:w-64 md:h-64 flex-shrink-0 rounded-lg overflow-hidden shadow-xl bg-gradient-to-br from-purple-600 to-blue-600",
+                    if let Some(ref cover_id) = playlist_data.cover_art {
+                        img {
+                            class: "w-full h-full object-cover",
+                            src: "/rest/getCoverArt.view?id={cover_id}&size=500",
+                            alt: "{playlist_data.name}"
+                        }
+                    } else {
+                        div {
+                            class: "w-full h-full flex items-center justify-center text-white/60",
+                            svg {
+                                class: "w-24 h-24",
+                                fill: "currentColor",
+                                view_box: "0 0 24 24",
+                                path {
+                                    d: "M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Playlist info
+                div {
+                    class: "flex flex-col justify-end",
+                    p { class: "text-sm text-gray-400 uppercase tracking-wider", "Playlist" }
+                    h1 { class: "text-4xl md:text-5xl font-bold mt-2", "{playlist_data.name}" }
+                    
+                    div {
+                        class: "flex items-center gap-2 mt-4 text-gray-300",
+                        if let Some(ref owner) = playlist_data.owner {
+                            span { class: "font-medium", "{owner}" }
+                            span { class: "text-gray-500", "•" }
+                        }
+                        span { "{playlist_data.song_count} songs, {total_duration}" }
+                    }
+                    
+                    // Action buttons
+                    div {
+                        class: "flex items-center gap-4 mt-6",
+                        button {
+                            class: "w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-400 transition-colors shadow-lg",
+                            onclick: move |_| {
+                                apply_player_action(&mut player_state.write(), PlayerAction::PlayPlaylist(songs_for_play.clone()));
+                            },
+                            svg {
+                                class: "w-7 h-7 ml-1",
+                                fill: "currentColor",
+                                view_box: "0 0 24 24",
+                                path {
+                                    d: "M8 5v14l11-7z"
+                                }
+                            }
+                        }
+                        
+                        button {
+                            class: "btn-icon text-gray-400 hover:text-white",
+                            title: "Shuffle",
+                            svg {
+                                class: "w-6 h-6",
+                                fill: "currentColor",
+                                view_box: "0 0 24 24",
+                                path {
+                                    d: "M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"
+                                }
+                            }
+                        }
+                        
+                        button {
+                            class: "btn-icon text-gray-400 hover:text-white",
+                            title: "Edit playlist",
+                            svg {
+                                class: "w-6 h-6",
+                                fill: "none",
+                                stroke: "currentColor",
+                                view_box: "0 0 24 24",
+                                path {
+                                    stroke_linecap: "round",
+                                    stroke_linejoin: "round",
+                                    stroke_width: "2",
+                                    d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                }
+                            }
+                        }
+                        
+                        button {
+                            class: "btn-icon text-gray-400 hover:text-white",
+                            title: "More options",
+                            svg {
+                                class: "w-6 h-6",
+                                fill: "currentColor",
+                                view_box: "0 0 24 24",
+                                path {
+                                    d: "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Track list
+            TrackList {
+                tracks: songs,
+                show_number: true,
+                show_album: true,
+                show_artist: true
+            }
+        }
+    }
+}

@@ -304,9 +304,9 @@ pub trait SubsonicStorage: Send + Sync {
         album: Option<&str>,
         title: Option<&str>,
         any: Option<&str>,
-        count: Option<i32>,
-        offset: Option<i32>,
-        newer_than: Option<i64>,
+        _count: Option<i32>,
+        _offset: Option<i32>,
+        _newer_than: Option<i64>,
     ) -> Result<SubsonicSearchResult2> {
         // Default implementation using search2
         let query = any.or(title).or(album).or(artist).unwrap_or("");

@@ -11,6 +11,8 @@ use uuid::Uuid;
 use crate::error::{Result, StorageError};
 use crate::traits::*;
 use crate::vfs::{create_vfs, SharedVfs, VfsConfig};
+// Allow unused imports as these types are used in trait implementations across different features
+#[allow(unused_imports)]
 use reverie_core::{
     Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicAlbumInfo,
     SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo,

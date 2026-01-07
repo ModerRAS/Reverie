@@ -382,11 +382,12 @@ impl Vfs for OpendalVfs {
     }
 
     async fn write(&self, path: &str, data: Bytes) -> Result<()> {
-        self.operator
+        let _ = self
+            .operator
             .write(path, data)
             .await
-            .map(|_| ())
-            .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))
+            .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))?;
+        Ok(())
     }
 
     async fn append(&self, path: &str, data: Bytes) -> Result<()> {

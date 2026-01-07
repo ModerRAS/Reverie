@@ -4,6 +4,7 @@ members = [
     "reverie-storage",
     "reverie-network",
     "reverie-server",
+    "reverie-ui",
 ]
 resolver = "2"
 
