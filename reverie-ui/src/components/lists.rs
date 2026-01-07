@@ -99,7 +99,7 @@ fn TrackRow(
     rsx! {
         div {
             class: "{row_class}",
-            ondblclick: move |_| {
+            ondoubleclick: move |_| {
                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(track_clone.clone()));
             },
 
@@ -250,7 +250,7 @@ pub fn CompactSongList(songs: Vec<Song>) -> Element {
                         div {
                             key: "{song.id}",
                             class: "flex items-center gap-3 p-2 rounded hover:bg-gray-800 cursor-pointer group",
-                            ondblclick: move |_| {
+                            ondoubleclick: move |_| {
                                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(song_clone.clone()));
                             },
 
