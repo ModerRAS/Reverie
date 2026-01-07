@@ -8,7 +8,7 @@ license = "MIT"
 
 [dependencies]
 # Dioxus core with fullstack support
-dioxus = { version = "0.6", features = ["fullstack", "router"] }
+dioxus = { version = "0.7", features = ["fullstack", "router"] }
 
 # Core dependencies
 reverie-core = { path = "../reverie-core" }
