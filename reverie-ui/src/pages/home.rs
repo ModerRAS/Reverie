@@ -30,7 +30,7 @@ pub fn HomePage() -> Element {
                 genre: None,
                 created: None,
                 starred: None,
-                play_count: 100 - i as i32 * 10,
+                play_count: 100 - i * 10,
             })
             .collect();
 
@@ -52,7 +52,7 @@ pub fn HomePage() -> Element {
                 content_type: None,
                 path: None,
                 starred: None,
-                play_count: 50 - i as i32 * 5,
+                play_count: 50 - i * 5,
             })
             .collect();
 

@@ -35,17 +35,17 @@ pub fn FavoritesPage() -> Element {
                 album_id: Some(format!("album-{}", i)),
                 artist: Some(format!("Artist {}", i)),
                 artist_id: Some(format!("artist-{}", i)),
-                track: Some(i as i32),
+                track: Some(i),
                 year: Some(2023),
                 genre: None,
                 cover_art: None,
-                duration: Some(200 + i as i32 * 10),
+                duration: Some(200 + i * 10),
                 bit_rate: Some(320),
                 suffix: Some("mp3".to_string()),
                 content_type: None,
                 path: None,
                 starred: Some("2024-01-01T00:00:00Z".to_string()),
-                play_count: i as i32 * 20,
+                play_count: i * 20,
             })
             .collect();
 

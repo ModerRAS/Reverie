@@ -20,7 +20,7 @@ pub fn ArtistsPage() -> Element {
             .map(|i| Artist {
                 id: format!("artist-{}", i),
                 name: format!("Artist {}", i),
-                album_count: 3 + (i % 5) as i32,
+                album_count: 3 + (i % 5),
                 cover_art: None,
                 artist_image_url: None,
                 starred: None,
