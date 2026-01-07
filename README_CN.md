@@ -10,6 +10,7 @@
 - **异步优先**：完全异步，使用 Tokio
 - **模块化架构**：域逻辑、存储和网络层之间清晰分离
 - **Subsonic API 兼容**：完全兼容 Subsonic API，可与任何 Subsonic 客户端配合使用
+- **Web UI（可选）**：`reverie-ui` 提供类 Navidrome 的 Web 界面（Dioxus 构建）
 
 ## 当前开发状态
 
@@ -94,6 +95,7 @@ reverie/
 ├── reverie-storage/    # 存储抽象层
 ├── reverie-network/    # 网络抽象层
 └── reverie-server/     # 主应用程序服务器
+└── reverie-ui/         # 可选 Web UI（Dioxus）
 ```
 
 ### 架构图
@@ -202,6 +204,29 @@ cargo run --release -p reverie-server
 ```
 
 服务器默认在 `http://127.0.0.1:4533` 启动。
+
+### 运行 Web UI（可选）
+
+Web UI 是独立 crate（`reverie-ui`），通过 Subsonic API（`/rest`）与后端通信。
+
+前置条件：
+
+```bash
+cargo install dioxus-cli
+```
+
+启动：
+
+```bash
+cd reverie-ui
+dx serve
+```
+
+然后打开 `http://localhost:8080`。开发模式下，UI 会将 `/rest` 代理到 `http://127.0.0.1:4533/rest`。
+
+### 更多文档
+
+更详细的架构/总结等文档在 `Docs/` 目录下。
 
 ### Subsonic API 端点
 

@@ -97,7 +97,18 @@ async fn main() -> Result<()> {
                     │  - Playlist          │
                     │  - Error types       │
                     └──────────────────────┘
+
+Client (optional):
+
+┌─────────────────────────────────────────────────────────┐
+│                     reverie-ui                          │
+│            (Dioxus Web UI / Client App)                 │
+│  - Talks to the server via Subsonic API under `/rest`    │
+│  - Can be developed & deployed separately                │
+└─────────────────────────────────────────────────────────┘
 ```
+
+Note: `reverie-ui` is intentionally not part of the server dependency graph. It consumes the HTTP API like any other client.
 
 ### reverie-core
 

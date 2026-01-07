@@ -15,11 +15,12 @@ Reverie is a modern music streaming server written in Rust, inspired by [Navidro
 ### ✅ Completed Features
 
 #### 1. **Workspace Structure**
-Created a modular Cargo workspace with 4 crates:
+Created a modular Cargo workspace with 5 crates:
 - `reverie-core`: Domain models (Track, Album, Artist, User, Playlist)
 - `reverie-storage`: Storage abstraction layer
 - `reverie-network`: Network abstraction layer
 - `reverie-server`: Main application
+- `reverie-ui`: Optional Web UI (Dioxus)
 
 #### 2. **Storage Abstraction** 🎯
 Implemented a comprehensive trait-based storage system with:
@@ -79,8 +80,8 @@ GET  /api/playlists/:id         - Get playlist
 - **Working example**: `simple_server.rs` demonstrating usage
 
 #### 6. **Quality** 🏆
-- ✅ Zero compiler warnings
-- ✅ Zero clippy warnings
+- ✅ Clean build for core server crates
+- ⚠️ Optional UI crate may have warnings while still evolving
 - ✅ All tests passing
 - ✅ Clean code structure
 - ✅ Type-safe throughout

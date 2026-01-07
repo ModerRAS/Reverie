@@ -10,6 +10,7 @@ A modern, lightweight music streaming server written in Rust, inspired by [Navid
 - **Async-First**: Fully asynchronous using Tokio
 - **Modular Architecture**: Clean separation between domain logic, storage, and network layers
 - **Subsonic API Compatible**: Fully compatible with Subsonic API, works with any Subsonic client
+- **Web UI (Optional)**: `reverie-ui` provides a Navidrome-like web interface built with Dioxus
 
 ## 📊 Current Development Status
 
@@ -94,6 +95,7 @@ reverie/
 ├── reverie-storage/    # Storage abstraction layer
 ├── reverie-network/    # Network abstraction layer
 └── reverie-server/     # Main application server
+└── reverie-ui/         # Optional Web UI (Dioxus)
 ```
 
 ### Architecture Diagram
@@ -176,6 +178,29 @@ cargo run --release -p reverie-server
 ```
 
 The server will start on `http://127.0.0.1:4533` by default.
+
+### Running the Web UI (optional)
+
+The Web UI is a separate crate (`reverie-ui`) and talks to the server via the Subsonic API under `/rest`.
+
+Prerequisites:
+
+```bash
+cargo install dioxus-cli
+```
+
+Run:
+
+```bash
+cd reverie-ui
+dx serve
+```
+
+Then open `http://localhost:8080`. In dev, the UI proxies `/rest` to `http://127.0.0.1:4533/rest`.
+
+### More Docs
+
+See the detailed docs under `Docs/` (architecture, summary, etc.).
 
 ### API Endpoints
 
