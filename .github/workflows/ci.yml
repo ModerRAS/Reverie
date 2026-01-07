@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_GIT_FETCH_WITH_CLI: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          cache-targets: false
+
+      - name: Build
+        run: cargo build --release --bin reverie
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverie-${{ matrix.os }}
+          path: target/release/reverie
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          cache-targets: false
+
+      - name: Run tests
+        run: cargo test --workspace --lib --bins
+
+      - name: Run doc tests
+        run: cargo test --workspace --doc
