@@ -2658,36 +2658,18 @@ impl SubsonicStorage for DatabaseStorage {
     async fn update_internet_radio_station(
         &self,
         id: &str,
-        stream_url: Option<&str>,
-        name: Option<&str>,
+        stream_url: &str,
+        name: &str,
         homepage_url: Option<&str>,
     ) -> Result<()> {
-        if let Some(url) = stream_url {
-            sqlx::query("UPDATE internet_radio_stations SET stream_url = ? WHERE id = ?")
-                .bind(url)
-                .bind(id)
-                .execute(&self.pool)
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
-        }
-
-        if let Some(n) = name {
-            sqlx::query("UPDATE internet_radio_stations SET name = ? WHERE id = ?")
-                .bind(n)
-                .bind(id)
-                .execute(&self.pool)
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
-        }
-
-        if let Some(url) = homepage_url {
-            sqlx::query("UPDATE internet_radio_stations SET homepage_url = ? WHERE id = ?")
-                .bind(url)
-                .bind(id)
-                .execute(&self.pool)
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
-        }
+        sqlx::query("UPDATE internet_radio_stations SET stream_url = ?, name = ?, homepage_url = ? WHERE id = ?")
+            .bind(stream_url)
+            .bind(name)
+            .bind(homepage_url)
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         Ok(())
     }
@@ -2708,10 +2690,13 @@ impl SubsonicStorage for DatabaseStorage {
             .bind(username)
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| StorageError::DatabaseError(e.to_string()))?
-            .ok_or_else(|| StorageError::NotFound(format!("User {} not found", username)))?;
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
-        Ok(SubsonicUser {
+        let Some(row) = row else {
+            return Ok(None);
+        };
+
+        Ok(Some(SubsonicUser {
             username: row.get("username"),
             email: row.get("email"),
             scrobbling_enabled: row.get::<Option<i32>, _>("scrobbling_enabled").map(|v| v == 1).unwrap_or(true),
@@ -2730,7 +2715,7 @@ impl SubsonicStorage for DatabaseStorage {
             video_conversion_role: row.get::<Option<i32>, _>("video_conversion_role").map(|v| v == 1).unwrap_or(false),
             avatar_last_changed: None,
             folders: vec![],
-        })
+        }))
     }
 
     async fn get_users(&self) -> Result<Vec<SubsonicUser>> {
