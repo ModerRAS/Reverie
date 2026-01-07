@@ -6,16 +6,19 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Row, Sqlite};
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::error::{Result, StorageError};
 use crate::traits::*;
 use crate::vfs::{create_vfs, SharedVfs, VfsConfig};
 use reverie_core::{
-    Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicArtist,
-    SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicDirectory, SubsonicGenre, SubsonicLyrics,
-    SubsonicMusicFolder, SubsonicPlayQueue, SubsonicScanStatus, Track, User,
+    Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicAlbumInfo,
+    SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo,
+    SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation,
+    SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist,
+    SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3,
+    SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
+    Track, User,
 };
 
 /// Database storage configuration
