@@ -13,19 +13,35 @@ uuid = { version = "1.6", features = ["v4"] }
 tokio.workspace = true
 rand = "0.8"
 chrono = "0.4"
+bytes = "1.5"
+
+# OpenDAL for VFS abstraction
+opendal = { version = "0.50", default-features = false, features = ["services-fs", "services-memory"] }
 
 # Optional dependencies for specific implementations
-sqlx = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true, features = ["runtime-tokio", "sqlite"] }
 walkdir = { version = "2.4", optional = true }
 shellexpand = { version = "3", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = true }
-serde_json = { version = "1.0", optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
 
 [features]
-default = ["filesystem", "memory"]
-filesystem = ["walkdir", "shellexpand", "serde", "serde_json"]
+default = ["filesystem", "memory", "database"]
+filesystem = ["walkdir", "shellexpand"]
 database = ["sqlx"]
 memory = []
+
+# VFS backend features
+vfs-s3 = ["opendal/services-s3"]
+vfs-azblob = ["opendal/services-azblob"]
+vfs-gcs = ["opendal/services-gcs"]
+vfs-webdav = ["opendal/services-webdav"]
+vfs-sftp = ["opendal/services-sftp"]
+vfs-ftp = ["opendal/services-ftp"]
+vfs-http = ["opendal/services-http"]
+
+# Enable all cloud storage backends
+vfs-cloud = ["vfs-s3", "vfs-azblob", "vfs-gcs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
