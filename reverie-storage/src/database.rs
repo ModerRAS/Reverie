@@ -2487,11 +2487,12 @@ impl SubsonicStorage for DatabaseStorage {
                 id: r.get("id"),
                 url: r.get("url"),
                 description: r.get("description"),
-                username: r.get("username"),
+                username: r.get::<Option<String>, _>("username").unwrap_or_default(),
                 created: r
                     .get::<Option<String>, _>("created_at")
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
-                    .map(|d| d.with_timezone(&Utc)),
+                    .map(|d| d.with_timezone(&Utc))
+                    .unwrap_or_else(Utc::now),
                 expires: r
                     .get::<Option<String>, _>("expires_at")
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
@@ -2500,7 +2501,7 @@ impl SubsonicStorage for DatabaseStorage {
                     .get::<Option<String>, _>("last_visited_at")
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
                     .map(|d| d.with_timezone(&Utc)),
-                visit_count: r.get::<Option<i32>, _>("visit_count"),
+                visit_count: r.get::<Option<i32>, _>("visit_count").unwrap_or(0) as i64,
                 entries: entries.iter().map(|tr| self.row_to_media_file(tr)).collect(),
             });
         }
