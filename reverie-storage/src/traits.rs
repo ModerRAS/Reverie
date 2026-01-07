@@ -170,6 +170,7 @@ use reverie_core::{
 
 /// Complete Subsonic API storage trait
 /// Implements all methods needed for navidrome-compatible Subsonic API
+#[allow(clippy::too_many_arguments)]
 #[async_trait]
 pub trait SubsonicStorage: Send + Sync {
     // === System ===

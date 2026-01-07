@@ -69,6 +69,7 @@ impl DatabaseConfig {
 pub struct DatabaseStorage {
     pool: Pool<Sqlite>,
     vfs: SharedVfs,
+    #[allow(dead_code)]
     config: DatabaseConfig,
 }
 
@@ -1494,14 +1495,13 @@ impl SubsonicStorage for DatabaseStorage {
             _ => "a.name ASC",
         };
 
-        let mut query = format!(
-            r#"SELECT a.id, a.name, a.artist_id, a.year, a.genre, a.cover_art_path,
+        let mut query = r#"SELECT a.id, a.name, a.artist_id, a.year, a.genre, a.cover_art_path,
                       a.song_count, a.duration, a.play_count, a.starred_at, a.created_at,
                       ar.name as artist_name
                FROM albums a
                LEFT JOIN artists ar ON a.artist_id = ar.id
                WHERE 1=1"#
-        );
+            .to_string();
 
         if let Some(fy) = from_year {
             query.push_str(&format!(" AND a.year >= {}", fy));
@@ -3211,8 +3211,12 @@ impl DatabaseStorage {
             .collect())
     }
 }
+
+#[cfg(test)]
 mod tests {
-    use super::*;
+    use super::DatabaseConfig;
+    use super::DatabaseStorage;
+    use crate::traits::Storage;
 
     #[tokio::test]
     async fn test_database_storage_init() {
