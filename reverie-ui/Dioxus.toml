@@ -1,0 +1,21 @@
+[application]
+name = "reverie-ui"
+default_platform = "web"
+
+[web.app]
+title = "Reverie Music Server"
+
+[web.watcher]
+reload_html = true
+watch_path = ["src", "assets"]
+
+[web.resource]
+dev_server_port = 8080
+style = ["assets/main.css"]
+
+[[web.resource.tailwind_css]]
+input = "assets/tailwind.css"
+output = "assets/main.css"
+
+[web.proxy]
+"/rest" = "http://localhost:4533"
