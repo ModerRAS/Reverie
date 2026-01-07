@@ -1,9 +1,9 @@
 //! Playlist detail page
 
-use dioxus::prelude::*;
 use crate::api::{Playlist, Song};
-use crate::state::{PlayerState, PlayerAction, apply_player_action};
-use crate::components::{TrackList, LoadingSpinner, format_duration_long};
+use crate::components::{format_duration_long, LoadingSpinner, TrackList};
+use crate::state::{apply_player_action, PlayerAction, PlayerState};
+use dioxus::prelude::*;
 
 /// Playlist detail page component
 #[component]
@@ -15,30 +15,32 @@ pub fn PlaylistDetailPage(id: String) -> Element {
     // Load playlist details
     use_effect(move || {
         loading.set(true);
-        
+
         // Demo data
-        let demo_songs: Vec<Song> = (1..=15).map(|i| Song {
-            id: format!("{}-song-{}", id, i),
-            title: format!("Playlist Song {}", i),
-            album: Some(format!("Album {}", (i % 5) + 1)),
-            album_id: Some(format!("album-{}", (i % 5) + 1)),
-            artist: Some(format!("Artist {}", (i % 3) + 1)),
-            artist_id: Some(format!("artist-{}", (i % 3) + 1)),
-            track: Some(i as i32),
-            year: Some(2023),
-            genre: Some("Mixed".to_string()),
-            cover_art: None,
-            duration: Some(180 + (i * 15) as i32),
-            bit_rate: Some(320),
-            suffix: Some("mp3".to_string()),
-            content_type: None,
-            path: None,
-            starred: None,
-            play_count: i as i32 * 5,
-        }).collect();
-        
+        let demo_songs: Vec<Song> = (1..=15)
+            .map(|i| Song {
+                id: format!("{}-song-{}", id, i),
+                title: format!("Playlist Song {}", i),
+                album: Some(format!("Album {}", (i % 5) + 1)),
+                album_id: Some(format!("album-{}", (i % 5) + 1)),
+                artist: Some(format!("Artist {}", (i % 3) + 1)),
+                artist_id: Some(format!("artist-{}", (i % 3) + 1)),
+                track: Some(i as i32),
+                year: Some(2023),
+                genre: Some("Mixed".to_string()),
+                cover_art: None,
+                duration: Some(180 + (i * 15) as i32),
+                bit_rate: Some(320),
+                suffix: Some("mp3".to_string()),
+                content_type: None,
+                path: None,
+                starred: None,
+                play_count: i as i32 * 5,
+            })
+            .collect();
+
         let total_duration: i32 = demo_songs.iter().filter_map(|s| s.duration).sum();
-        
+
         let demo_playlist = Playlist {
             id: id.clone(),
             name: format!("Playlist {}", id.split('-').last().unwrap_or("1")),
@@ -51,7 +53,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
             cover_art: None,
             entry: demo_songs,
         };
-        
+
         playlist.set(Some(demo_playlist));
         loading.set(false);
     });
@@ -75,11 +77,11 @@ pub fn PlaylistDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-6",
-            
+
             // Playlist header
             div {
                 class: "flex flex-col md:flex-row gap-6",
-                
+
                 // Cover art
                 div {
                     class: "w-48 h-48 md:w-64 md:h-64 flex-shrink-0 rounded-lg overflow-hidden shadow-xl bg-gradient-to-br from-purple-600 to-blue-600",
@@ -103,13 +105,13 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                         }
                     }
                 }
-                
+
                 // Playlist info
                 div {
                     class: "flex flex-col justify-end",
                     p { class: "text-sm text-gray-400 uppercase tracking-wider", "Playlist" }
                     h1 { class: "text-4xl md:text-5xl font-bold mt-2", "{playlist_data.name}" }
-                    
+
                     div {
                         class: "flex items-center gap-2 mt-4 text-gray-300",
                         if let Some(ref owner) = playlist_data.owner {
@@ -118,7 +120,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                         }
                         span { "{playlist_data.song_count} songs, {total_duration}" }
                     }
-                    
+
                     // Action buttons
                     div {
                         class: "flex items-center gap-4 mt-6",
@@ -136,7 +138,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
                             title: "Shuffle",
@@ -149,7 +151,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
                             title: "Edit playlist",
@@ -166,7 +168,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
                             title: "More options",
@@ -182,7 +184,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                     }
                 }
             }
-            
+
             // Track list
             TrackList {
                 tracks: songs,

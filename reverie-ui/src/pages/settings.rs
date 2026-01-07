@@ -1,7 +1,7 @@
 //! Settings page
 
-use dioxus::prelude::*;
 use crate::components::PageHeader;
+use dioxus::prelude::*;
 
 /// Settings page component
 #[component]
@@ -9,16 +9,16 @@ pub fn SettingsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6 max-w-2xl",
-            
+
             PageHeader {
                 title: "Settings".to_string()
             }
-            
+
             // General settings
             section {
                 class: "card p-6 space-y-4",
                 h2 { class: "text-lg font-bold mb-4", "General" }
-                
+
                 // Theme
                 div {
                     class: "flex items-center justify-between",
@@ -33,7 +33,7 @@ pub fn SettingsPage() -> Element {
                         option { value: "system", "System" }
                     }
                 }
-                
+
                 // Language
                 div {
                     class: "flex items-center justify-between",
@@ -49,12 +49,12 @@ pub fn SettingsPage() -> Element {
                     }
                 }
             }
-            
+
             // Playback settings
             section {
                 class: "card p-6 space-y-4",
                 h2 { class: "text-lg font-bold mb-4", "Playback" }
-                
+
                 // Crossfade
                 div {
                     class: "flex items-center justify-between",
@@ -67,7 +67,7 @@ pub fn SettingsPage() -> Element {
                         class: "w-5 h-5 accent-blue-500"
                     }
                 }
-                
+
                 // Gapless playback
                 div {
                     class: "flex items-center justify-between",
@@ -81,7 +81,7 @@ pub fn SettingsPage() -> Element {
                         checked: true
                     }
                 }
-                
+
                 // Replay Gain
                 div {
                     class: "flex items-center justify-between",
@@ -97,18 +97,18 @@ pub fn SettingsPage() -> Element {
                     }
                 }
             }
-            
+
             // About section
             section {
                 class: "card p-6",
                 h2 { class: "text-lg font-bold mb-4", "About" }
-                
+
                 div {
                     class: "space-y-2 text-gray-400",
                     p { "Reverie Music Server" }
                     p { "Version: 0.1.0" }
                     p { "Built with Dioxus & Rust" }
-                    
+
                     div {
                         class: "mt-4 pt-4 border-t border-gray-700",
                         a {

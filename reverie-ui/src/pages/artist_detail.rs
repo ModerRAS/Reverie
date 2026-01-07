@@ -1,8 +1,8 @@
 //! Artist detail page
 
-use dioxus::prelude::*;
-use crate::api::{Artist, Album, Song};
+use crate::api::{Album, Artist, Song};
 use crate::components::{AlbumCard, CompactSongList, LoadingSpinner};
+use dioxus::prelude::*;
 
 /// Artist detail page component
 #[component]
@@ -16,7 +16,7 @@ pub fn ArtistDetailPage(id: String) -> Element {
     // Load artist details
     use_effect(move || {
         loading.set(true);
-        
+
         // Demo data
         let demo_artist = Artist {
             id: id.clone(),
@@ -26,42 +26,46 @@ pub fn ArtistDetailPage(id: String) -> Element {
             artist_image_url: None,
             starred: None,
         };
-        
-        let demo_albums: Vec<Album> = (1..=5).map(|i| Album {
-            id: format!("{}-album-{}", id, i),
-            name: format!("Album {}", i),
-            artist: Some(demo_artist.name.clone()),
-            artist_id: Some(id.clone()),
-            cover_art: None,
-            song_count: Some(10),
-            duration: Some(2400),
-            year: Some(2020 + i as i32),
-            genre: Some("Rock".to_string()),
-            created: None,
-            starred: None,
-            play_count: i as i32 * 50,
-        }).collect();
-        
-        let demo_songs: Vec<Song> = (1..=5).map(|i| Song {
-            id: format!("{}-topsong-{}", id, i),
-            title: format!("Top Song {}", i),
-            album: Some(format!("Album {}", i)),
-            album_id: Some(format!("{}-album-{}", id, i)),
-            artist: Some(demo_artist.name.clone()),
-            artist_id: Some(id.clone()),
-            track: Some(1),
-            year: Some(2023),
-            genre: None,
-            cover_art: None,
-            duration: Some(220),
-            bit_rate: Some(320),
-            suffix: Some("mp3".to_string()),
-            content_type: None,
-            path: None,
-            starred: None,
-            play_count: (6 - i) as i32 * 100,
-        }).collect();
-        
+
+        let demo_albums: Vec<Album> = (1..=5)
+            .map(|i| Album {
+                id: format!("{}-album-{}", id, i),
+                name: format!("Album {}", i),
+                artist: Some(demo_artist.name.clone()),
+                artist_id: Some(id.clone()),
+                cover_art: None,
+                song_count: Some(10),
+                duration: Some(2400),
+                year: Some(2020 + i as i32),
+                genre: Some("Rock".to_string()),
+                created: None,
+                starred: None,
+                play_count: i as i32 * 50,
+            })
+            .collect();
+
+        let demo_songs: Vec<Song> = (1..=5)
+            .map(|i| Song {
+                id: format!("{}-topsong-{}", id, i),
+                title: format!("Top Song {}", i),
+                album: Some(format!("Album {}", i)),
+                album_id: Some(format!("{}-album-{}", id, i)),
+                artist: Some(demo_artist.name.clone()),
+                artist_id: Some(id.clone()),
+                track: Some(1),
+                year: Some(2023),
+                genre: None,
+                cover_art: None,
+                duration: Some(220),
+                bit_rate: Some(320),
+                suffix: Some("mp3".to_string()),
+                content_type: None,
+                path: None,
+                starred: None,
+                play_count: (6 - i) as i32 * 100,
+            })
+            .collect();
+
         artist.set(Some(demo_artist));
         albums.set(demo_albums);
         top_songs.set(demo_songs);
@@ -87,19 +91,19 @@ pub fn ArtistDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-8",
-            
+
             // Artist header
             div {
                 class: "relative",
-                
+
                 // Background gradient
                 div {
                     class: "absolute inset-0 h-80 bg-gradient-to-b from-blue-900/50 to-transparent -z-10"
                 }
-                
+
                 div {
                     class: "flex flex-col md:flex-row items-center md:items-end gap-6 pt-12",
-                    
+
                     // Artist image
                     div {
                         class: "w-48 h-48 rounded-full overflow-hidden bg-gray-800 shadow-2xl",
@@ -123,14 +127,14 @@ pub fn ArtistDetailPage(id: String) -> Element {
                             }
                         }
                     }
-                    
+
                     // Artist info
                     div {
                         class: "text-center md:text-left",
                         p { class: "text-sm text-gray-400 uppercase tracking-wider", "Artist" }
                         h1 { class: "text-5xl md:text-6xl font-bold mt-2", "{artist_data.name}" }
                         p { class: "text-gray-400 mt-2", "{artist_data.album_count} albums" }
-                        
+
                         // Action buttons
                         div {
                             class: "flex items-center justify-center md:justify-start gap-4 mt-6",
@@ -178,14 +182,14 @@ pub fn ArtistDetailPage(id: String) -> Element {
                     }
                 }
             }
-            
+
             // Top songs
             section {
                 class: "space-y-4",
                 h2 { class: "text-2xl font-bold", "Top Songs" }
                 CompactSongList { songs: top_songs.read().clone() }
             }
-            
+
             // Albums
             section {
                 class: "space-y-4",

@@ -1,8 +1,8 @@
 //! Playlists page - Grid view of all playlists
 
-use dioxus::prelude::*;
 use crate::api::Playlist;
-use crate::components::{PlaylistCard, PageHeader, LoadingSpinner, EmptyState};
+use crate::components::{EmptyState, LoadingSpinner, PageHeader, PlaylistCard};
+use dioxus::prelude::*;
 
 /// Playlists page component
 #[component]
@@ -14,21 +14,23 @@ pub fn PlaylistsPage() -> Element {
     // Load playlists
     use_effect(move || {
         loading.set(true);
-        
+
         // Demo data
-        let demo_playlists: Vec<Playlist> = (1..=8).map(|i| Playlist {
-            id: format!("playlist-{}", i),
-            name: format!("My Playlist {}", i),
-            song_count: 10 + (i * 5) as i32,
-            duration: 2400 + (i * 600) as i32,
-            owner: Some("admin".to_string()),
-            public: Some(i % 2 == 0),
-            created: None,
-            changed: None,
-            cover_art: None,
-            entry: vec![],
-        }).collect();
-        
+        let demo_playlists: Vec<Playlist> = (1..=8)
+            .map(|i| Playlist {
+                id: format!("playlist-{}", i),
+                name: format!("My Playlist {}", i),
+                song_count: 10 + (i * 5) as i32,
+                duration: 2400 + (i * 600) as i32,
+                owner: Some("admin".to_string()),
+                public: Some(i % 2 == 0),
+                created: None,
+                changed: None,
+                cover_art: None,
+                entry: vec![],
+            })
+            .collect();
+
         playlists.set(demo_playlists);
         loading.set(false);
     });
@@ -40,11 +42,11 @@ pub fn PlaylistsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
-            
+
             PageHeader {
                 title: "Playlists".to_string(),
                 subtitle: Some(format!("{} playlists", playlists.read().len())),
-                
+
                 // Create playlist button
                 button {
                     class: "btn-primary flex items-center gap-2",
@@ -63,7 +65,7 @@ pub fn PlaylistsPage() -> Element {
                     "New Playlist"
                 }
             }
-            
+
             if loading() {
                 LoadingSpinner { message: "Loading playlists..." }
             } else if playlists.read().is_empty() {

@@ -2,11 +2,11 @@
 //!
 //! Table and list views for music content.
 
-use dioxus::prelude::*;
-use crate::api::Song;
-use crate::state::{PlayerState, PlayerAction, apply_player_action};
 use super::common::format_duration;
 use super::player::NowPlayingBars;
+use crate::api::Song;
+use crate::state::{apply_player_action, PlayerAction, PlayerState};
+use dioxus::prelude::*;
 
 /// Track list table for album/playlist views
 #[component]
@@ -17,13 +17,17 @@ pub fn TrackList(
     #[props(default = false)] show_artist: bool,
 ) -> Element {
     let player_state = use_context::<Signal<PlayerState>>();
-    let current_song_id = player_state.read().current_song.as_ref().map(|s| s.id.clone());
+    let current_song_id = player_state
+        .read()
+        .current_song
+        .as_ref()
+        .map(|s| s.id.clone());
     let is_playing = player_state.read().is_playing;
 
     rsx! {
         div {
             class: "track-list rounded-lg overflow-hidden",
-            
+
             // Header row
             div {
                 class: "flex items-center gap-4 px-4 py-2 text-xs text-gray-400 uppercase tracking-wider border-b border-gray-700",
@@ -40,7 +44,7 @@ pub fn TrackList(
                 div { class: "w-12 text-right", "Duration" }
                 div { class: "w-20", "" } // Actions column
             }
-            
+
             // Track rows
             for (idx, track) in tracks.iter().enumerate() {
                 {
@@ -51,7 +55,7 @@ pub fn TrackList(
                     } else {
                         "track-item"
                     };
-                    
+
                     rsx! {
                         TrackRow {
                             key: "{track.id}",
@@ -87,7 +91,9 @@ fn TrackRow(
     let track_clone = track.clone();
     let track_for_queue = track.clone();
     let duration = track.duration.map(format_duration).unwrap_or_default();
-    let cover_url = track.cover_art.as_ref()
+    let cover_url = track
+        .cover_art
+        .as_ref()
         .map(|id| format!("/rest/getCoverArt.view?id={}&size=50", id));
 
     rsx! {
@@ -96,7 +102,7 @@ fn TrackRow(
             ondblclick: move |_| {
                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(track_clone.clone()));
             },
-            
+
             // Track number or playing indicator
             if show_number {
                 div {
@@ -117,11 +123,11 @@ fn TrackRow(
                     }
                 }
             }
-            
+
             // Title with cover art
             div {
                 class: "flex-1 flex items-center gap-3 min-w-0",
-                
+
                 // Cover art (small)
                 if let Some(ref url) = cover_url {
                     img {
@@ -142,7 +148,7 @@ fn TrackRow(
                         }
                     }
                 }
-                
+
                 // Title text
                 div {
                     class: "min-w-0",
@@ -159,7 +165,7 @@ fn TrackRow(
                     }
                 }
             }
-            
+
             // Artist column
             if show_artist {
                 div {
@@ -167,7 +173,7 @@ fn TrackRow(
                     "{track.artist.as_deref().unwrap_or(\"Unknown Artist\")}"
                 }
             }
-            
+
             // Album column
             if show_album {
                 div {
@@ -175,17 +181,17 @@ fn TrackRow(
                     "{track.album.as_deref().unwrap_or(\"\")}"
                 }
             }
-            
+
             // Duration
             div {
                 class: "w-12 text-gray-400 text-right text-sm",
                 "{duration}"
             }
-            
+
             // Action buttons
             div {
                 class: "w-20 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-                
+
                 // Add to queue
                 button {
                     class: "btn-icon text-gray-400 hover:text-white",
@@ -207,7 +213,7 @@ fn TrackRow(
                         }
                     }
                 }
-                
+
                 // More options
                 button {
                     class: "btn-icon text-gray-400 hover:text-white",
@@ -239,7 +245,7 @@ pub fn CompactSongList(songs: Vec<Song>) -> Element {
                     let cover_url = song.cover_art.as_ref()
                         .map(|id| format!("/rest/getCoverArt.view?id={}&size=50", id));
                     let duration = song.duration.map(format_duration).unwrap_or_default();
-                    
+
                     rsx! {
                         div {
                             key: "{song.id}",
@@ -247,7 +253,7 @@ pub fn CompactSongList(songs: Vec<Song>) -> Element {
                             ondblclick: move |_| {
                                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(song_clone.clone()));
                             },
-                            
+
                             // Cover
                             if let Some(url) = cover_url {
                                 img {
@@ -268,14 +274,14 @@ pub fn CompactSongList(songs: Vec<Song>) -> Element {
                                     }
                                 }
                             }
-                            
+
                             // Info
                             div {
                                 class: "flex-1 min-w-0",
                                 p { class: "text-sm text-white truncate", "{song.title}" }
                                 p { class: "text-xs text-gray-400 truncate", "{song.artist.as_deref().unwrap_or(\"Unknown\")}" }
                             }
-                            
+
                             // Duration
                             span { class: "text-sm text-gray-500", "{duration}" }
                         }

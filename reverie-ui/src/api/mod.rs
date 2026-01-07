@@ -50,7 +50,7 @@ pub struct ArtistIndex {
 }
 
 /// Artist
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Artist {
     pub id: String,
@@ -64,7 +64,7 @@ pub struct Artist {
 }
 
 /// Album
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Album {
     pub id: String,
@@ -84,7 +84,7 @@ pub struct Album {
 }
 
 /// Song/Track
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Song {
     pub id: String,
@@ -109,7 +109,7 @@ pub struct Song {
 }
 
 /// Playlist
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Playlist {
     pub id: String,

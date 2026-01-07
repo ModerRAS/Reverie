@@ -2,19 +2,19 @@
 //!
 //! These components provide the music playback interface.
 
-use dioxus::prelude::*;
-use crate::state::{PlayerState, RepeatMode, PlayerAction, apply_player_action};
 use crate::api::Song;
+use crate::state::{apply_player_action, PlayerAction, PlayerState, RepeatMode};
+use dioxus::prelude::*;
 
 /// Bottom player bar with playback controls
 #[component]
 pub fn PlayerBar() -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
     let player = player_state.read();
-    
+
     let has_song = player.current_song.is_some();
     let is_playing = player.is_playing;
-    
+
     // Don't show player bar if no song in queue
     if !has_song && player.queue.is_empty() {
         return rsx! {};
@@ -30,7 +30,7 @@ pub fn PlayerBar() -> Element {
     rsx! {
         div {
             class: "player-bar",
-            
+
             // Song info (left section)
             div {
                 class: "flex items-center gap-3 w-64",
@@ -88,18 +88,18 @@ pub fn PlayerBar() -> Element {
                     }
                 }
             }
-            
+
             // Playback controls (center section)
             div {
                 class: "flex-1 flex flex-col items-center max-w-2xl mx-4",
-                
+
                 // Control buttons
                 div {
                     class: "flex items-center gap-4 mb-2",
-                    
+
                     // Shuffle button
                     ShuffleButton {}
-                    
+
                     // Previous button
                     button {
                         class: "btn-icon text-gray-300 hover:text-white",
@@ -115,7 +115,7 @@ pub fn PlayerBar() -> Element {
                             }
                         }
                     }
-                    
+
                     // Play/Pause button
                     button {
                         class: "w-10 h-10 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-105 transition-transform",
@@ -146,7 +146,7 @@ pub fn PlayerBar() -> Element {
                             }
                         }
                     }
-                    
+
                     // Next button
                     button {
                         class: "btn-icon text-gray-300 hover:text-white",
@@ -162,11 +162,11 @@ pub fn PlayerBar() -> Element {
                             }
                         }
                     }
-                    
+
                     // Repeat button
                     RepeatButton {}
                 }
-                
+
                 // Progress bar
                 ProgressBar {
                     progress: progress_percent,
@@ -174,11 +174,11 @@ pub fn PlayerBar() -> Element {
                     total_time: player.duration
                 }
             }
-            
+
             // Volume and other controls (right section)
             div {
                 class: "flex items-center gap-4 w-64 justify-end",
-                
+
                 // Queue button
                 button {
                     class: "btn-icon text-gray-400 hover:text-white",
@@ -195,7 +195,7 @@ pub fn PlayerBar() -> Element {
                         }
                     }
                 }
-                
+
                 // Volume control
                 VolumeControl {}
             }
@@ -208,7 +208,7 @@ pub fn PlayerBar() -> Element {
 fn ShuffleButton() -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
     let shuffle = player_state.read().shuffle;
-    
+
     let class = if shuffle {
         "btn-icon text-blue-500"
     } else {
@@ -238,7 +238,7 @@ fn ShuffleButton() -> Element {
 fn RepeatButton() -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
     let repeat = player_state.read().repeat;
-    
+
     let (class, icon) = match repeat {
         RepeatMode::Off => ("btn-icon text-gray-400 hover:text-white", false),
         RepeatMode::All => ("btn-icon text-blue-500", false),
@@ -306,7 +306,7 @@ fn VolumeControl() -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
     let volume = player_state.read().volume;
     let volume_percent = (volume * 100.0) as i32;
-    
+
     let volume_icon = if volume == 0.0 {
         "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
     } else if volume < 0.5 {

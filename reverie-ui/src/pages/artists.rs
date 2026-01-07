@@ -1,8 +1,8 @@
 //! Artists page - Grid view of all artists
 
-use dioxus::prelude::*;
 use crate::api::Artist;
-use crate::components::{ArtistCard, PageHeader, LoadingSpinner, EmptyState};
+use crate::components::{ArtistCard, EmptyState, LoadingSpinner, PageHeader};
+use dioxus::prelude::*;
 
 /// Artists page component
 #[component]
@@ -14,17 +14,19 @@ pub fn ArtistsPage() -> Element {
     // Load artists
     use_effect(move || {
         loading.set(true);
-        
+
         // Demo data
-        let demo_artists: Vec<Artist> = (1..=20).map(|i| Artist {
-            id: format!("artist-{}", i),
-            name: format!("Artist {}", i),
-            album_count: 3 + (i % 5) as i32,
-            cover_art: None,
-            artist_image_url: None,
-            starred: None,
-        }).collect();
-        
+        let demo_artists: Vec<Artist> = (1..=20)
+            .map(|i| Artist {
+                id: format!("artist-{}", i),
+                name: format!("Artist {}", i),
+                album_count: 3 + (i % 5) as i32,
+                cover_art: None,
+                artist_image_url: None,
+                starred: None,
+            })
+            .collect();
+
         artists.set(demo_artists);
         loading.set(false);
     });
@@ -36,12 +38,12 @@ pub fn ArtistsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
-            
+
             PageHeader {
                 title: "Artists".to_string(),
                 subtitle: Some(format!("{} artists", artists.read().len()))
             }
-            
+
             if loading() {
                 LoadingSpinner { message: "Loading artists..." }
             } else if artists.read().is_empty() {

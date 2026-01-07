@@ -1,9 +1,9 @@
 //! Album detail page
 
-use dioxus::prelude::*;
 use crate::api::{Album, Song};
-use crate::state::{PlayerState, PlayerAction, apply_player_action};
-use crate::components::{TrackList, LoadingSpinner, format_duration_long};
+use crate::components::{format_duration_long, LoadingSpinner, TrackList};
+use crate::state::{apply_player_action, PlayerAction, PlayerState};
+use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct AlbumDetailProps {
@@ -21,7 +21,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
     // Load album details
     use_effect(move || {
         loading.set(true);
-        
+
         // Demo data
         let demo_album = Album {
             id: id.clone(),
@@ -37,27 +37,29 @@ pub fn AlbumDetailPage(id: String) -> Element {
             starred: None,
             play_count: 100,
         };
-        
-        let demo_tracks: Vec<Song> = (1..=12).map(|i| Song {
-            id: format!("{}-track-{}", id, i),
-            title: format!("Track {}", i),
-            album: Some(demo_album.name.clone()),
-            album_id: Some(id.clone()),
-            artist: demo_album.artist.clone(),
-            artist_id: demo_album.artist_id.clone(),
-            track: Some(i as i32),
-            year: demo_album.year,
-            genre: demo_album.genre.clone(),
-            cover_art: None,
-            duration: Some(200 + (i * 10) as i32),
-            bit_rate: Some(320),
-            suffix: Some("mp3".to_string()),
-            content_type: None,
-            path: None,
-            starred: None,
-            play_count: i as i32 * 10,
-        }).collect();
-        
+
+        let demo_tracks: Vec<Song> = (1..=12)
+            .map(|i| Song {
+                id: format!("{}-track-{}", id, i),
+                title: format!("Track {}", i),
+                album: Some(demo_album.name.clone()),
+                album_id: Some(id.clone()),
+                artist: demo_album.artist.clone(),
+                artist_id: demo_album.artist_id.clone(),
+                track: Some(i as i32),
+                year: demo_album.year,
+                genre: demo_album.genre.clone(),
+                cover_art: None,
+                duration: Some(200 + (i * 10) as i32),
+                bit_rate: Some(320),
+                suffix: Some("mp3".to_string()),
+                content_type: None,
+                path: None,
+                starred: None,
+                play_count: i as i32 * 10,
+            })
+            .collect();
+
         album.set(Some(demo_album));
         tracks.set(demo_tracks);
         loading.set(false);
@@ -82,11 +84,11 @@ pub fn AlbumDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-6",
-            
+
             // Album header
             div {
                 class: "flex flex-col md:flex-row gap-6",
-                
+
                 // Cover art
                 div {
                     class: "w-48 h-48 md:w-64 md:h-64 flex-shrink-0 rounded-lg overflow-hidden bg-gray-800 shadow-xl",
@@ -110,13 +112,13 @@ pub fn AlbumDetailPage(id: String) -> Element {
                         }
                     }
                 }
-                
+
                 // Album info
                 div {
                     class: "flex flex-col justify-end",
                     p { class: "text-sm text-gray-400 uppercase tracking-wider", "Album" }
                     h1 { class: "text-4xl md:text-5xl font-bold mt-2", "{album_data.name}" }
-                    
+
                     div {
                         class: "flex items-center gap-2 mt-4 text-gray-300",
                         span { class: "font-medium", "{album_data.artist.as_deref().unwrap_or(\"Unknown Artist\")}" }
@@ -127,7 +129,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                         }
                         span { "{album_data.song_count.unwrap_or(0)} songs, {total_duration}" }
                     }
-                    
+
                     // Action buttons
                     div {
                         class: "flex items-center gap-4 mt-6",
@@ -145,7 +147,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
                             title: "Shuffle",
@@ -158,7 +160,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-red-500",
                             title: "Add to favorites",
@@ -175,7 +177,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                                 }
                             }
                         }
-                        
+
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
                             title: "More options",
@@ -191,7 +193,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                     }
                 }
             }
-            
+
             // Track list
             TrackList {
                 tracks: track_list,

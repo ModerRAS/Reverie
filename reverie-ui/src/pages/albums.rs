@@ -2,9 +2,9 @@
 //!
 //! Displays albums with various sorting options like newest, recently played, etc.
 
-use dioxus::prelude::*;
 use crate::api::Album;
-use crate::components::{AlbumCard, PageHeader, LoadingSpinner, EmptyState, TabBar};
+use crate::components::{AlbumCard, EmptyState, LoadingSpinner, PageHeader, TabBar};
+use dioxus::prelude::*;
 
 /// Album list type (matching Navidrome's album views)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,23 +64,27 @@ pub fn AlbumsPage() -> Element {
     // Simulated album data for demo
     use_effect(move || {
         loading.set(true);
-        
+
         // In production, this would call the API
-        let demo_albums: Vec<Album> = (1..=24).map(|i| Album {
-            id: format!("album-{}", i),
-            name: format!("Album {}", i),
-            artist: Some(format!("Artist {}", (i % 5) + 1)),
-            artist_id: Some(format!("artist-{}", (i % 5) + 1)),
-            cover_art: None,
-            song_count: Some(10 + (i % 5)),
-            duration: Some(2400 + i * 60),
-            year: Some(2020 + (i % 5) as i32),
-            genre: Some(["Rock", "Pop", "Jazz", "Electronic", "Classical"][i % 5].to_string()),
-            created: None,
-            starred: None,
-            play_count: i as i32 * 10,
-        }).collect();
-        
+        let demo_albums: Vec<Album> = (1..=24)
+            .map(|i| Album {
+                id: format!("album-{}", i),
+                name: format!("Album {}", i),
+                artist: Some(format!("Artist {}", (i % 5) + 1)),
+                artist_id: Some(format!("artist-{}", (i % 5) + 1)),
+                cover_art: None,
+                song_count: Some(10 + (i % 5) as i32),
+                duration: Some(2400 + (i * 60) as i32),
+                year: Some(2020 + (i % 5) as i32),
+                genre: Some(
+                    ["Rock", "Pop", "Jazz", "Electronic", "Classical"][i as usize % 5].to_string(),
+                ),
+                created: None,
+                starred: None,
+                play_count: i as i32 * 10,
+            })
+            .collect();
+
         albums.set(demo_albums);
         loading.set(false);
     });
@@ -103,18 +107,18 @@ pub fn AlbumsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
-            
+
             PageHeader {
                 title: "Albums".to_string(),
                 subtitle: Some(format!("{} albums", albums.read().len()))
             }
-            
+
             TabBar {
                 tabs: tabs,
                 active_index: active_tab,
                 on_change: on_tab_change
             }
-            
+
             if loading() {
                 LoadingSpinner { message: "Loading albums..." }
             } else if let Some(err) = error() {

@@ -14,7 +14,7 @@ pub use routes::App;
 fn main() {
     // Initialize logging
     dioxus::logger::init(dioxus::logger::tracing::Level::INFO).expect("failed to init logger");
-    
+
     // Launch the Dioxus app
     dioxus::launch(App);
 }

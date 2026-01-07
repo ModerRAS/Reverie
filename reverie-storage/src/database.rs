@@ -1208,7 +1208,12 @@ impl SubsonicStorage for DatabaseStorage {
 
         for row in rows {
             let name: String = row.get("name");
-            let first_char = name.chars().next().unwrap_or('#').to_uppercase().to_string();
+            let first_char = name
+                .chars()
+                .next()
+                .unwrap_or('#')
+                .to_uppercase()
+                .to_string();
             let index_name = if first_char.chars().next().unwrap_or('#').is_alphabetic() {
                 first_char
             } else {
@@ -1263,25 +1268,28 @@ impl SubsonicStorage for DatabaseStorage {
             let songs = self.get_songs_by_album_internal(id).await?;
             return Ok(Some(SubsonicDirectory::from_album(&album, songs)));
         }
-        
+
         // Try as artist
         if let Some(artist) = SubsonicStorage::get_artist(self, id).await? {
             let albums = self.get_albums_by_artist_internal(id).await?;
-            let children: Vec<MediaFile> = albums.into_iter().map(|a| MediaFile {
-                id: a.id.clone(),
-                parent: Some(artist.id.clone()),
-                is_dir: true,
-                title: a.name.clone(),
-                album: Some(a.name),
-                artist: a.artist,
-                album_artist: a.album_artist,
-                year: a.year,
-                genre: a.genre,
-                cover_art: a.cover_art,
-                duration: a.duration,
-                ..Default::default()
-            }).collect();
-            
+            let children: Vec<MediaFile> = albums
+                .into_iter()
+                .map(|a| MediaFile {
+                    id: a.id.clone(),
+                    parent: Some(artist.id.clone()),
+                    is_dir: true,
+                    title: a.name.clone(),
+                    album: Some(a.name),
+                    artist: a.artist,
+                    album_artist: a.album_artist,
+                    year: a.year,
+                    genre: a.genre,
+                    cover_art: a.cover_art,
+                    duration: a.duration,
+                    ..Default::default()
+                })
+                .collect();
+
             return Ok(Some(SubsonicDirectory {
                 id: artist.id.clone(),
                 parent: None,
@@ -1428,7 +1436,8 @@ impl SubsonicStorage for DatabaseStorage {
 
     async fn get_similar_songs(&self, _id: &str, count: Option<i32>) -> Result<Vec<MediaFile>> {
         let limit = count.unwrap_or(50);
-        self.get_random_songs(Some(limit), None, None, None, None).await
+        self.get_random_songs(Some(limit), None, None, None, None)
+            .await
     }
 
     async fn get_similar_songs2(&self, id: &str, count: Option<i32>) -> Result<Vec<MediaFile>> {
@@ -1504,7 +1513,10 @@ impl SubsonicStorage for DatabaseStorage {
             query.push_str(&format!(" AND a.genre = '{}'", g.replace('\'', "''")));
         }
 
-        query.push_str(&format!(" ORDER BY {} LIMIT {} OFFSET {}", order_clause, limit, off));
+        query.push_str(&format!(
+            " ORDER BY {} LIMIT {} OFFSET {}",
+            order_clause, limit, off
+        ));
 
         let rows = sqlx::query(&query)
             .fetch_all(&self.pool)
@@ -1549,8 +1561,16 @@ impl SubsonicStorage for DatabaseStorage {
         genre: Option<&str>,
         music_folder_id: Option<i32>,
     ) -> Result<Vec<SubsonicAlbum>> {
-        self.get_album_list(list_type, size, offset, from_year, to_year, genre, music_folder_id)
-            .await
+        self.get_album_list(
+            list_type,
+            size,
+            offset,
+            from_year,
+            to_year,
+            genre,
+            music_folder_id,
+        )
+        .await
     }
 
     async fn get_random_songs(
@@ -1694,7 +1714,10 @@ impl SubsonicStorage for DatabaseStorage {
                     user_rating: None,
                 })
                 .collect(),
-            songs: song_rows.iter().map(|r| self.row_to_media_file(r)).collect(),
+            songs: song_rows
+                .iter()
+                .map(|r| self.row_to_media_file(r))
+                .collect(),
         })
     }
 
@@ -1806,7 +1829,15 @@ impl SubsonicStorage for DatabaseStorage {
         song_offset: Option<i32>,
     ) -> Result<SubsonicSearchResult3> {
         let result = self
-            .search2(query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset)
+            .search2(
+                query,
+                artist_count,
+                artist_offset,
+                album_count,
+                album_offset,
+                song_count,
+                song_offset,
+            )
             .await?;
         Ok(SubsonicSearchResult3 {
             artists: result.artists,
@@ -1848,7 +1879,10 @@ impl SubsonicStorage for DatabaseStorage {
                 name: r.get("name"),
                 comment: r.get("comment"),
                 owner: r.get::<Option<String>, _>("owner_name").unwrap_or_default(),
-                public: r.get::<Option<i32>, _>("public").map(|v| v == 1).unwrap_or(false),
+                public: r
+                    .get::<Option<i32>, _>("public")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
                 song_count: r.get::<i32, _>("entry_count"),
                 duration: r.get::<Option<f32>, _>("total_duration").unwrap_or(0.0) as i32,
                 created: r
@@ -1899,8 +1933,13 @@ impl SubsonicStorage for DatabaseStorage {
             id: row.get("id"),
             name: row.get("name"),
             comment: row.get("comment"),
-            owner: row.get::<Option<String>, _>("owner_name").unwrap_or_default(),
-            public: row.get::<Option<i32>, _>("public").map(|v| v == 1).unwrap_or(false),
+            owner: row
+                .get::<Option<String>, _>("owner_name")
+                .unwrap_or_default(),
+            public: row
+                .get::<Option<i32>, _>("public")
+                .map(|v| v == 1)
+                .unwrap_or(false),
             song_count: row.get::<i32, _>("entry_count"),
             duration: row.get::<Option<f32>, _>("total_duration").unwrap_or(0.0) as i32,
             created: row
@@ -2049,12 +2088,11 @@ impl SubsonicStorage for DatabaseStorage {
 
     // === Media Retrieval ===
     async fn get_stream_path(&self, id: &str) -> Result<Option<String>> {
-        let path: Option<String> =
-            sqlx::query_scalar("SELECT file_path FROM tracks WHERE id = ?")
-                .bind(id)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        let path: Option<String> = sqlx::query_scalar("SELECT file_path FROM tracks WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         Ok(path)
     }
@@ -2096,7 +2134,11 @@ impl SubsonicStorage for DatabaseStorage {
         Ok(track_album_art)
     }
 
-    async fn get_lyrics(&self, artist: Option<&str>, title: Option<&str>) -> Result<Option<SubsonicLyrics>> {
+    async fn get_lyrics(
+        &self,
+        artist: Option<&str>,
+        title: Option<&str>,
+    ) -> Result<Option<SubsonicLyrics>> {
         let row = sqlx::query(
             r#"SELECT t.lyrics, t.title, ar.name as artist_name
                FROM tracks t LEFT JOIN artists ar ON t.artist_id = ar.id
@@ -2397,7 +2439,10 @@ impl SubsonicStorage for DatabaseStorage {
             };
 
             Ok(Some(SubsonicPlayQueue {
-                entries: entries.iter().map(|tr| self.row_to_media_file(tr)).collect(),
+                entries: entries
+                    .iter()
+                    .map(|tr| self.row_to_media_file(tr))
+                    .collect(),
                 current: current_id,
                 position: r.get::<Option<i64>, _>("position").unwrap_or(0),
                 username: r.get::<Option<String>, _>("username").unwrap_or_default(),
@@ -2432,7 +2477,8 @@ impl SubsonicStorage for DatabaseStorage {
             .await
             .ok();
 
-        let current_index = current.and_then(|c| song_ids.iter().position(|s| *s == c).map(|i| i as i32));
+        let current_index =
+            current.and_then(|c| song_ids.iter().position(|s| *s == c).map(|i| i as i32));
 
         sqlx::query(
             "INSERT INTO play_queues (id, current_index, position, changed_at) VALUES (?, ?, ?, ?)",
@@ -2504,7 +2550,10 @@ impl SubsonicStorage for DatabaseStorage {
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
                     .map(|d| d.with_timezone(&Utc)),
                 visit_count: r.get::<Option<i32>, _>("visit_count").unwrap_or(0) as i64,
-                entries: entries.iter().map(|tr| self.row_to_media_file(tr)).collect(),
+                entries: entries
+                    .iter()
+                    .map(|tr| self.row_to_media_file(tr))
+                    .collect(),
             });
         }
 
@@ -2569,7 +2618,10 @@ impl SubsonicStorage for DatabaseStorage {
             expires: expires.and_then(DateTime::from_timestamp_millis),
             last_visited: None,
             visit_count: 0,
-            entries: entries.iter().map(|tr| self.row_to_media_file(tr)).collect(),
+            entries: entries
+                .iter()
+                .map(|tr| self.row_to_media_file(tr))
+                .collect(),
         })
     }
 
@@ -2701,20 +2753,59 @@ impl SubsonicStorage for DatabaseStorage {
         Ok(Some(SubsonicUser {
             username: row.get("username"),
             email: row.get("email"),
-            scrobbling_enabled: row.get::<Option<i32>, _>("scrobbling_enabled").map(|v| v == 1).unwrap_or(true),
+            scrobbling_enabled: row
+                .get::<Option<i32>, _>("scrobbling_enabled")
+                .map(|v| v == 1)
+                .unwrap_or(true),
             max_bit_rate: row.get::<Option<i32>, _>("max_bit_rate"),
-            admin_role: row.get::<Option<i32>, _>("admin_role").map(|v| v == 1).unwrap_or(false),
-            settings_role: row.get::<Option<i32>, _>("settings_role").map(|v| v == 1).unwrap_or(false),
-            download_role: row.get::<Option<i32>, _>("download_role").map(|v| v == 1).unwrap_or(true),
-            upload_role: row.get::<Option<i32>, _>("upload_role").map(|v| v == 1).unwrap_or(false),
-            playlist_role: row.get::<Option<i32>, _>("playlist_role").map(|v| v == 1).unwrap_or(true),
-            cover_art_role: row.get::<Option<i32>, _>("cover_art_role").map(|v| v == 1).unwrap_or(true),
-            comment_role: row.get::<Option<i32>, _>("comment_role").map(|v| v == 1).unwrap_or(false),
-            podcast_role: row.get::<Option<i32>, _>("podcast_role").map(|v| v == 1).unwrap_or(false),
-            stream_role: row.get::<Option<i32>, _>("stream_role").map(|v| v == 1).unwrap_or(true),
-            jukebox_role: row.get::<Option<i32>, _>("jukebox_role").map(|v| v == 1).unwrap_or(false),
-            share_role: row.get::<Option<i32>, _>("share_role").map(|v| v == 1).unwrap_or(false),
-            video_conversion_role: row.get::<Option<i32>, _>("video_conversion_role").map(|v| v == 1).unwrap_or(false),
+            admin_role: row
+                .get::<Option<i32>, _>("admin_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            settings_role: row
+                .get::<Option<i32>, _>("settings_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            download_role: row
+                .get::<Option<i32>, _>("download_role")
+                .map(|v| v == 1)
+                .unwrap_or(true),
+            upload_role: row
+                .get::<Option<i32>, _>("upload_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            playlist_role: row
+                .get::<Option<i32>, _>("playlist_role")
+                .map(|v| v == 1)
+                .unwrap_or(true),
+            cover_art_role: row
+                .get::<Option<i32>, _>("cover_art_role")
+                .map(|v| v == 1)
+                .unwrap_or(true),
+            comment_role: row
+                .get::<Option<i32>, _>("comment_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            podcast_role: row
+                .get::<Option<i32>, _>("podcast_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            stream_role: row
+                .get::<Option<i32>, _>("stream_role")
+                .map(|v| v == 1)
+                .unwrap_or(true),
+            jukebox_role: row
+                .get::<Option<i32>, _>("jukebox_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            share_role: row
+                .get::<Option<i32>, _>("share_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
+            video_conversion_role: row
+                .get::<Option<i32>, _>("video_conversion_role")
+                .map(|v| v == 1)
+                .unwrap_or(false),
             avatar_last_changed: None,
             folders: vec![],
         }))
@@ -2731,20 +2822,59 @@ impl SubsonicStorage for DatabaseStorage {
             .map(|row| SubsonicUser {
                 username: row.get("username"),
                 email: row.get("email"),
-                scrobbling_enabled: row.get::<Option<i32>, _>("scrobbling_enabled").map(|v| v == 1).unwrap_or(true),
+                scrobbling_enabled: row
+                    .get::<Option<i32>, _>("scrobbling_enabled")
+                    .map(|v| v == 1)
+                    .unwrap_or(true),
                 max_bit_rate: row.get::<Option<i32>, _>("max_bit_rate"),
-                admin_role: row.get::<Option<i32>, _>("admin_role").map(|v| v == 1).unwrap_or(false),
-                settings_role: row.get::<Option<i32>, _>("settings_role").map(|v| v == 1).unwrap_or(false),
-                download_role: row.get::<Option<i32>, _>("download_role").map(|v| v == 1).unwrap_or(true),
-                upload_role: row.get::<Option<i32>, _>("upload_role").map(|v| v == 1).unwrap_or(false),
-                playlist_role: row.get::<Option<i32>, _>("playlist_role").map(|v| v == 1).unwrap_or(true),
-                cover_art_role: row.get::<Option<i32>, _>("cover_art_role").map(|v| v == 1).unwrap_or(true),
-                comment_role: row.get::<Option<i32>, _>("comment_role").map(|v| v == 1).unwrap_or(false),
-                podcast_role: row.get::<Option<i32>, _>("podcast_role").map(|v| v == 1).unwrap_or(false),
-                stream_role: row.get::<Option<i32>, _>("stream_role").map(|v| v == 1).unwrap_or(true),
-                jukebox_role: row.get::<Option<i32>, _>("jukebox_role").map(|v| v == 1).unwrap_or(false),
-                share_role: row.get::<Option<i32>, _>("share_role").map(|v| v == 1).unwrap_or(false),
-                video_conversion_role: row.get::<Option<i32>, _>("video_conversion_role").map(|v| v == 1).unwrap_or(false),
+                admin_role: row
+                    .get::<Option<i32>, _>("admin_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                settings_role: row
+                    .get::<Option<i32>, _>("settings_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                download_role: row
+                    .get::<Option<i32>, _>("download_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(true),
+                upload_role: row
+                    .get::<Option<i32>, _>("upload_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                playlist_role: row
+                    .get::<Option<i32>, _>("playlist_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(true),
+                cover_art_role: row
+                    .get::<Option<i32>, _>("cover_art_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(true),
+                comment_role: row
+                    .get::<Option<i32>, _>("comment_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                podcast_role: row
+                    .get::<Option<i32>, _>("podcast_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                stream_role: row
+                    .get::<Option<i32>, _>("stream_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(true),
+                jukebox_role: row
+                    .get::<Option<i32>, _>("jukebox_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                share_role: row
+                    .get::<Option<i32>, _>("share_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
+                video_conversion_role: row
+                    .get::<Option<i32>, _>("video_conversion_role")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
                 avatar_last_changed: None,
                 folders: vec![],
             })
@@ -2846,12 +2976,16 @@ impl SubsonicStorage for DatabaseStorage {
         macro_rules! update_role {
             ($field:literal, $val:expr) => {
                 if let Some(v) = $val {
-                    sqlx::query(concat!("UPDATE users SET ", $field, " = ? WHERE username = ?"))
-                        .bind(if v { 1 } else { 0 })
-                        .bind(username)
-                        .execute(&self.pool)
-                        .await
-                        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+                    sqlx::query(concat!(
+                        "UPDATE users SET ",
+                        $field,
+                        " = ? WHERE username = ?"
+                    ))
+                    .bind(if v { 1 } else { 0 })
+                    .bind(username)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
                 }
             };
         }
@@ -2897,16 +3031,17 @@ impl SubsonicStorage for DatabaseStorage {
 
     // === Scanning ===
     async fn get_scan_status(&self) -> Result<SubsonicScanStatus> {
-        let row = sqlx::query(
-            "SELECT * FROM scan_status ORDER BY started_at DESC LIMIT 1",
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        let row = sqlx::query("SELECT * FROM scan_status ORDER BY started_at DESC LIMIT 1")
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         if let Some(r) = row {
             Ok(SubsonicScanStatus {
-                scanning: r.get::<Option<i32>, _>("scanning").map(|v| v == 1).unwrap_or(false),
+                scanning: r
+                    .get::<Option<i32>, _>("scanning")
+                    .map(|v| v == 1)
+                    .unwrap_or(false),
                 count: r.get::<Option<i64>, _>("count").unwrap_or(0),
                 folder_count: r.get::<Option<i64>, _>("folder_count").unwrap_or(0),
                 last_scan: r
@@ -2992,7 +3127,9 @@ impl DatabaseStorage {
             genre: r.get("genre"),
             cover_art: r.get::<Option<String>, _>("album_id"),
             size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
-            content_type: r.get::<Option<String>, _>("content_type").unwrap_or_default(),
+            content_type: r
+                .get::<Option<String>, _>("content_type")
+                .unwrap_or_default(),
             suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
             duration: r.get::<Option<f32>, _>("duration").unwrap_or(0.0),
             bit_rate: r.get::<Option<i32>, _>("bit_rate").unwrap_or(0),

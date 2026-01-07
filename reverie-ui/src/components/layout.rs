@@ -2,8 +2,8 @@
 //!
 //! These components provide the main structure of the application.
 
-use dioxus::prelude::*;
 use crate::state::{UiState, ViewType};
+use dioxus::prelude::*;
 
 /// Main application layout with sidebar, header, and content area
 #[component]
@@ -14,24 +14,24 @@ pub fn MainLayout(children: Element) -> Element {
     rsx! {
         div {
             class: "h-screen flex flex-col bg-gray-900 text-white overflow-hidden",
-            
+
             // Top bar
             AppBar {}
-            
+
             // Main content area
             div {
                 class: "flex-1 flex overflow-hidden",
-                
+
                 // Sidebar
                 Sidebar { open: sidebar_open }
-                
+
                 // Content
                 main {
                     class: "flex-1 overflow-y-auto p-6",
                     {children}
                 }
             }
-            
+
             // Player bar at bottom
             super::player::PlayerBar {}
         }
@@ -45,7 +45,8 @@ pub fn AppBar() -> Element {
     let mut search_query = use_signal(String::new);
 
     let toggle_sidebar = move |_| {
-        ui_state.write().sidebar_open = !ui_state.read().sidebar_open;
+        let current = ui_state.read().sidebar_open;
+        ui_state.write().sidebar_open = !current;
     };
 
     let on_search = move |evt: Event<FormData>| {
@@ -60,7 +61,7 @@ pub fn AppBar() -> Element {
     rsx! {
         header {
             class: "h-16 bg-gray-800 border-b border-gray-700 flex items-center px-4 gap-4",
-            
+
             // Menu toggle button
             button {
                 class: "btn-icon text-gray-400 hover:text-white",
@@ -78,7 +79,7 @@ pub fn AppBar() -> Element {
                     }
                 }
             }
-            
+
             // Logo
             div {
                 class: "flex items-center gap-2",
@@ -95,7 +96,7 @@ pub fn AppBar() -> Element {
                     "Reverie"
                 }
             }
-            
+
             // Search bar
             div {
                 class: "flex-1 max-w-xl mx-4",
@@ -107,7 +108,7 @@ pub fn AppBar() -> Element {
                     oninput: on_search
                 }
             }
-            
+
             // User menu
             div {
                 class: "flex items-center gap-2",
@@ -175,10 +176,10 @@ pub fn Sidebar(open: bool) -> Element {
     rsx! {
         aside {
             class: "{sidebar_class}",
-            
+
             nav {
                 class: "flex-1 py-4",
-                
+
                 for (view_type, label, icon_path) in nav_items {
                     {
                         let is_active = current_view == view_type;
@@ -188,7 +189,7 @@ pub fn Sidebar(open: bool) -> Element {
                         } else {
                             "sidebar-item"
                         };
-                        
+
                         rsx! {
                             button {
                                 key: "{label}",
@@ -216,7 +217,7 @@ pub fn Sidebar(open: bool) -> Element {
                     }
                 }
             }
-            
+
             // Now playing mini info (when sidebar is open)
             if open {
                 div {
@@ -224,7 +225,8 @@ pub fn Sidebar(open: bool) -> Element {
                     button {
                         class: "sidebar-item w-full",
                         onclick: move |_| {
-                            ui_state.write().now_playing_panel_open = !ui_state.read().now_playing_panel_open;
+                            let current = ui_state.read().now_playing_panel_open;
+                            ui_state.write().now_playing_panel_open = !current;
                         },
                         svg {
                             class: "w-5 h-5",

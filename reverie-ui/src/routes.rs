@@ -2,10 +2,10 @@
 //!
 //! Defines all routes and the main App component.
 
-use dioxus::prelude::*;
-use crate::state::{AppContext, AuthState, PlayerState, UiState, ViewType};
 use crate::components::MainLayout;
 use crate::pages::*;
+use crate::state::{AppContext, AuthState, PlayerState, UiState, ViewType};
+use dioxus::prelude::*;
 
 /// Route definitions
 #[derive(Routable, Clone, PartialEq)]
@@ -58,14 +58,18 @@ pub enum Route {
 pub fn App() -> Element {
     // Initialize global state
     use_context_provider(|| Signal::new(AuthState::default()));
-    use_context_provider(|| Signal::new(PlayerState {
-        volume: 0.8,
-        ..Default::default()
-    }));
-    use_context_provider(|| Signal::new(UiState {
-        sidebar_open: true,
-        ..Default::default()
-    }));
+    use_context_provider(|| {
+        Signal::new(PlayerState {
+            volume: 0.8,
+            ..Default::default()
+        })
+    });
+    use_context_provider(|| {
+        Signal::new(UiState {
+            sidebar_open: true,
+            ..Default::default()
+        })
+    });
 
     rsx! {
         Router::<Route> {}

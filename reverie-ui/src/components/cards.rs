@@ -2,9 +2,9 @@
 //!
 //! Grid-based display cards for music content.
 
-use dioxus::prelude::*;
 use crate::api::{Album, Artist, Playlist, Song};
-use crate::state::{PlayerState, PlayerAction, apply_player_action};
+use crate::state::{apply_player_action, PlayerAction, PlayerState};
+use dioxus::prelude::*;
 
 /// Album card for grid display
 #[component]
@@ -13,7 +13,9 @@ pub fn AlbumCard(
     #[props(default)] on_click: Option<EventHandler<String>>,
 ) -> Element {
     let album_id = album.id.clone();
-    let cover_url = album.cover_art.as_ref()
+    let cover_url = album
+        .cover_art
+        .as_ref()
         .map(|id| format!("/rest/getCoverArt.view?id={}&size=300", id))
         .unwrap_or_default();
 
@@ -25,7 +27,7 @@ pub fn AlbumCard(
                     handler.call(album_id.clone());
                 }
             },
-            
+
             // Cover art
             div {
                 class: "relative aspect-square bg-gray-700",
@@ -49,7 +51,7 @@ pub fn AlbumCard(
                         }
                     }
                 }
-                
+
                 // Play button overlay
                 div {
                     class: "absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all",
@@ -66,7 +68,7 @@ pub fn AlbumCard(
                     }
                 }
             }
-            
+
             // Album info
             div {
                 class: "p-3",
@@ -96,7 +98,9 @@ pub fn ArtistCard(
     #[props(default)] on_click: Option<EventHandler<String>>,
 ) -> Element {
     let artist_id = artist.id.clone();
-    let cover_url = artist.cover_art.as_ref()
+    let cover_url = artist
+        .cover_art
+        .as_ref()
         .map(|id| format!("/rest/getCoverArt.view?id={}&size=300", id))
         .unwrap_or_default();
 
@@ -108,7 +112,7 @@ pub fn ArtistCard(
                     handler.call(artist_id.clone());
                 }
             },
-            
+
             // Artist image (circular)
             div {
                 class: "p-4",
@@ -134,7 +138,7 @@ pub fn ArtistCard(
                             }
                         }
                     }
-                    
+
                     // Play button overlay
                     div {
                         class: "absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all rounded-full",
@@ -152,7 +156,7 @@ pub fn ArtistCard(
                     }
                 }
             }
-            
+
             // Artist info
             div {
                 class: "px-4 pb-4 text-center",
@@ -176,7 +180,9 @@ pub fn PlaylistCard(
     #[props(default)] on_click: Option<EventHandler<String>>,
 ) -> Element {
     let playlist_id = playlist.id.clone();
-    let cover_url = playlist.cover_art.as_ref()
+    let cover_url = playlist
+        .cover_art
+        .as_ref()
         .map(|id| format!("/rest/getCoverArt.view?id={}&size=300", id))
         .unwrap_or_default();
     let duration = super::common::format_duration_long(playlist.duration);
@@ -189,7 +195,7 @@ pub fn PlaylistCard(
                     handler.call(playlist_id.clone());
                 }
             },
-            
+
             // Cover art
             div {
                 class: "relative aspect-square bg-gray-700",
@@ -213,7 +219,7 @@ pub fn PlaylistCard(
                         }
                     }
                 }
-                
+
                 // Play button overlay
                 div {
                     class: "absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all",
@@ -230,7 +236,7 @@ pub fn PlaylistCard(
                     }
                 }
             }
-            
+
             // Playlist info
             div {
                 class: "p-3",
@@ -249,12 +255,11 @@ pub fn PlaylistCard(
 
 /// Song card for horizontal display (like recently played)
 #[component]
-pub fn SongCard(
-    song: Song,
-    #[props(default)] show_album: bool,
-) -> Element {
+pub fn SongCard(song: Song, #[props(default)] show_album: bool) -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
-    let cover_url = song.cover_art.as_ref()
+    let cover_url = song
+        .cover_art
+        .as_ref()
         .map(|id| format!("/rest/getCoverArt.view?id={}&size=100", id))
         .unwrap_or_default();
     let song_clone = song.clone();
@@ -265,7 +270,7 @@ pub fn SongCard(
             onclick: move |_| {
                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(song_clone.clone()));
             },
-            
+
             // Cover art
             div {
                 class: "relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-gray-700",
@@ -276,7 +281,7 @@ pub fn SongCard(
                         alt: "{song.title}"
                     }
                 }
-                
+
                 // Play overlay
                 div {
                     class: "absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center transition-all",
@@ -290,7 +295,7 @@ pub fn SongCard(
                     }
                 }
             }
-            
+
             // Song info
             div {
                 class: "min-w-0 flex-1",

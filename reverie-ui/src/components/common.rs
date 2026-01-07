@@ -92,10 +92,7 @@ pub fn ErrorDisplay(message: String) -> Element {
 
 /// Badge component
 #[component]
-pub fn Badge(
-    text: String,
-    #[props(default = "gray")] color: &'static str,
-) -> Element {
+pub fn Badge(text: String, #[props(default = "gray")] color: &'static str) -> Element {
     let class = match color {
         "blue" => "px-2 py-0.5 text-xs rounded-full bg-blue-600 text-white",
         "green" => "px-2 py-0.5 text-xs rounded-full bg-green-600 text-white",
@@ -123,10 +120,12 @@ pub fn IconButton(
         "btn-icon text-gray-400 hover:text-white"
     };
 
+    let tooltip_text = tooltip.clone().unwrap_or_default();
+
     rsx! {
         button {
             class: "{class}",
-            title: "{tooltip.unwrap_or_default()}",
+            title: "{tooltip_text}",
             onclick: move |e| onclick.call(e),
             svg {
                 class: "w-5 h-5",
@@ -169,11 +168,7 @@ pub fn DropdownMenu(
 
 /// Tab bar
 #[component]
-pub fn TabBar(
-    tabs: Vec<String>,
-    active_index: usize,
-    on_change: EventHandler<usize>,
-) -> Element {
+pub fn TabBar(tabs: Vec<String>, active_index: usize, on_change: EventHandler<usize>) -> Element {
     rsx! {
         div {
             class: "flex border-b border-gray-700 mb-4",
@@ -207,7 +202,7 @@ pub fn Pagination(
     rsx! {
         div {
             class: "flex items-center justify-center gap-2 mt-6",
-            
+
             // Previous button
             button {
                 class: "btn-secondary",
@@ -219,13 +214,13 @@ pub fn Pagination(
                 },
                 "Previous"
             }
-            
+
             // Page numbers
             span {
                 class: "text-gray-400 px-4",
                 "Page {current_page} of {total_pages}"
             }
-            
+
             // Next button
             button {
                 class: "btn-secondary",
@@ -243,12 +238,7 @@ pub fn Pagination(
 
 /// Modal dialog
 #[component]
-pub fn Modal(
-    title: String,
-    open: bool,
-    on_close: EventHandler<()>,
-    children: Element,
-) -> Element {
+pub fn Modal(title: String, open: bool, on_close: EventHandler<()>, children: Element) -> Element {
     if !open {
         return rsx! {};
     }
@@ -260,7 +250,7 @@ pub fn Modal(
             div {
                 class: "modal-content",
                 onclick: |e| e.stop_propagation(),
-                
+
                 // Header
                 div {
                     class: "flex items-center justify-between mb-4",
@@ -282,7 +272,7 @@ pub fn Modal(
                         }
                     }
                 }
-                
+
                 // Content
                 {children}
             }
@@ -301,7 +291,7 @@ pub fn format_duration(seconds: i32) -> String {
 pub fn format_duration_long(seconds: i32) -> String {
     let hours = seconds / 3600;
     let mins = (seconds % 3600) / 60;
-    
+
     if hours > 0 {
         format!("{} hr {} min", hours, mins)
     } else {

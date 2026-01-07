@@ -2,8 +2,8 @@
 //!
 //! Uses Dioxus signals for reactive state management.
 
+use crate::api::{Album, Artist, Playlist, Song};
 use dioxus::prelude::*;
-use crate::api::{Song, Album, Artist, Playlist};
 
 /// Authentication state
 #[derive(Debug, Clone, Default, PartialEq)]

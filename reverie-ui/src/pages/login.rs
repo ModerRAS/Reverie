@@ -1,7 +1,7 @@
 //! Login page
 
-use dioxus::prelude::*;
 use crate::state::AuthState;
+use dioxus::prelude::*;
 
 /// Login page component
 #[component]
@@ -16,23 +16,23 @@ pub fn LoginPage() -> Element {
 
     let on_submit = move |evt: Event<FormData>| {
         evt.prevent_default();
-        
+
         loading.set(true);
         error.set(None);
-        
+
         // Validate inputs
         if username.read().is_empty() || password.read().is_empty() {
             error.set(Some("Please enter username and password".to_string()));
             loading.set(false);
             return;
         }
-        
+
         // In production, this would make an API call to authenticate
         // For demo, accept any credentials
         auth_state.write().is_authenticated = true;
         auth_state.write().username = username.read().clone();
         auth_state.write().server_url = server_url.read().clone();
-        
+
         loading.set(false);
         navigator.push("/");
     };
@@ -40,10 +40,10 @@ pub fn LoginPage() -> Element {
     rsx! {
         div {
             class: "min-h-screen flex items-center justify-center bg-gray-900 px-4",
-            
+
             div {
                 class: "w-full max-w-md",
-                
+
                 // Logo
                 div {
                     class: "text-center mb-8",
@@ -61,12 +61,12 @@ pub fn LoginPage() -> Element {
                     }
                     p { class: "text-gray-400", "Music Server" }
                 }
-                
+
                 // Login form
                 form {
                     class: "card p-8 space-y-6",
                     onsubmit: on_submit,
-                    
+
                     // Error message
                     if let Some(err) = error() {
                         div {
@@ -74,7 +74,7 @@ pub fn LoginPage() -> Element {
                             "{err}"
                         }
                     }
-                    
+
                     // Server URL
                     div {
                         label {
@@ -89,7 +89,7 @@ pub fn LoginPage() -> Element {
                             oninput: move |e| server_url.set(e.value())
                         }
                     }
-                    
+
                     // Username
                     div {
                         label {
@@ -104,7 +104,7 @@ pub fn LoginPage() -> Element {
                             oninput: move |e| username.set(e.value())
                         }
                     }
-                    
+
                     // Password
                     div {
                         label {
@@ -119,7 +119,7 @@ pub fn LoginPage() -> Element {
                             oninput: move |e| password.set(e.value())
                         }
                     }
-                    
+
                     // Submit button
                     button {
                         class: "w-full btn-primary py-3 text-lg font-medium",
@@ -132,7 +132,7 @@ pub fn LoginPage() -> Element {
                         }
                     }
                 }
-                
+
                 // Footer
                 p {
                     class: "text-center text-gray-500 text-sm mt-6",
