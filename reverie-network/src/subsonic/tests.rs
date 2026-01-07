@@ -1,6 +1,13 @@
 //! Subsonic API tests
 
+#[cfg(test)]
 use super::create_router;
+#[cfg(test)]
+use axum::body::Body;
+#[cfg(test)]
+use http::Request;
+#[cfg(test)]
+use tower::ServiceExt;
 
 #[tokio::test]
 async fn test_ping_returns_ok() {
