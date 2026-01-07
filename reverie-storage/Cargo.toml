@@ -16,7 +16,7 @@ chrono = "0.4"
 bytes = "1.5"
 
 # OpenDAL for VFS abstraction
-opendal = { version = "0.51", default-features = false, features = ["services-fs", "services-memory"] }
+opendal = { version = "0.55", default-features = false, features = ["services-fs", "services-memory"] }
 
 # Optional dependencies for specific implementations
 sqlx = { workspace = true, optional = true, features = ["runtime-tokio", "sqlite"] }
