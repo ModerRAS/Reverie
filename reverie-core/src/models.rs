@@ -281,3 +281,185 @@ impl SubsonicDirectory {
         }
     }
 }
+
+/// Bookmark for resuming playback
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicBookmark {
+    pub position: i64,
+    pub username: String,
+    pub comment: Option<String>,
+    pub created: DateTime<Utc>,
+    pub changed: DateTime<Utc>,
+    pub entry: MediaFile,
+}
+
+/// Internet radio station
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicInternetRadioStation {
+    pub id: String,
+    pub name: String,
+    pub stream_url: String,
+    pub homepage_url: Option<String>,
+}
+
+/// Share for sharing media with others
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicShare {
+    pub id: String,
+    pub url: String,
+    pub description: Option<String>,
+    pub username: String,
+    pub created: DateTime<Utc>,
+    pub expires: Option<DateTime<Utc>>,
+    pub last_visited: Option<DateTime<Utc>>,
+    pub visit_count: i64,
+    pub entries: Vec<MediaFile>,
+}
+
+/// Now playing entry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicNowPlaying {
+    pub entry: MediaFile,
+    pub username: String,
+    pub minutes_ago: i32,
+    pub player_id: Option<String>,
+    pub player_name: Option<String>,
+}
+
+/// Similar song
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicSimilarSong {
+    pub song: MediaFile,
+}
+
+/// Artist info with biography and similar artists
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicArtistInfo {
+    pub biography: Option<String>,
+    pub music_brainz_id: Option<String>,
+    pub last_fm_url: Option<String>,
+    pub small_image_url: Option<String>,
+    pub medium_image_url: Option<String>,
+    pub large_image_url: Option<String>,
+    pub similar_artists: Vec<SubsonicArtist>,
+}
+
+/// Album info with notes and similar albums
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicAlbumInfo {
+    pub notes: Option<String>,
+    pub music_brainz_id: Option<String>,
+    pub last_fm_url: Option<String>,
+    pub small_image_url: Option<String>,
+    pub medium_image_url: Option<String>,
+    pub large_image_url: Option<String>,
+}
+
+/// Top songs result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicTopSongs {
+    pub songs: Vec<MediaFile>,
+}
+
+/// Structured lyrics (OpenSubsonic)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicStructuredLyrics {
+    pub display_artist: Option<String>,
+    pub display_title: Option<String>,
+    pub lang: String,
+    pub offset: Option<i64>,
+    pub synced: bool,
+    pub lines: Vec<SubsonicLyricLine>,
+}
+
+/// Lyric line for synced lyrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicLyricLine {
+    pub start: Option<i64>,
+    pub value: String,
+}
+
+/// OpenSubsonic extension
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicOpenSubsonicExtension {
+    pub name: String,
+    pub versions: Vec<i32>,
+}
+
+/// Playlist with songs
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicPlaylist {
+    pub id: String,
+    pub name: String,
+    pub comment: Option<String>,
+    pub owner: String,
+    pub public: bool,
+    pub song_count: i32,
+    pub duration: i32,
+    pub created: DateTime<Utc>,
+    pub changed: DateTime<Utc>,
+    pub cover_art: Option<String>,
+}
+
+/// Playlist with songs included
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicPlaylistWithSongs {
+    pub id: String,
+    pub name: String,
+    pub comment: Option<String>,
+    pub owner: String,
+    pub public: bool,
+    pub song_count: i32,
+    pub duration: i32,
+    pub created: DateTime<Utc>,
+    pub changed: DateTime<Utc>,
+    pub cover_art: Option<String>,
+    pub entries: Vec<MediaFile>,
+}
+
+/// User information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicUser {
+    pub username: String,
+    pub email: Option<String>,
+    pub scrobbling_enabled: bool,
+    pub max_bit_rate: Option<i32>,
+    pub admin_role: bool,
+    pub settings_role: bool,
+    pub download_role: bool,
+    pub upload_role: bool,
+    pub playlist_role: bool,
+    pub cover_art_role: bool,
+    pub comment_role: bool,
+    pub podcast_role: bool,
+    pub stream_role: bool,
+    pub jukebox_role: bool,
+    pub share_role: bool,
+    pub video_conversion_role: bool,
+    pub avatar_last_changed: Option<DateTime<Utc>>,
+    pub folders: Vec<i32>,
+}
+
+/// Starred content
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicStarred {
+    pub artists: Vec<SubsonicArtist>,
+    pub albums: Vec<SubsonicAlbum>,
+    pub songs: Vec<MediaFile>,
+}
+
+/// Search result (search2)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicSearchResult2 {
+    pub artists: Vec<SubsonicArtist>,
+    pub albums: Vec<SubsonicAlbum>,
+    pub songs: Vec<MediaFile>,
+}
+
+/// Search result (search3)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubsonicSearchResult3 {
+    pub artists: Vec<SubsonicArtist>,
+    pub albums: Vec<SubsonicAlbum>,
+    pub songs: Vec<MediaFile>,
+}

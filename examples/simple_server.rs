@@ -14,17 +14,16 @@ use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
 
-use reverie_core::{Track, Album, Artist};
-use reverie_storage::{memory::MemoryStorage, TrackStorage, AlbumStorage, ArtistStorage, Storage};
-use reverie_network::{axum_server::AxumServer, NetworkConfig, HttpServer};
+use reverie_core::{Album, Artist, Track};
+use reverie_network::{axum_server::AxumServer, HttpServer, NetworkConfig};
+use reverie_storage::{memory::MemoryStorage, AlbumStorage, ArtistStorage, Storage, TrackStorage};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();

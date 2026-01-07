@@ -56,11 +56,7 @@ impl TrackStorage for MemoryStorage {
 
     async fn list_tracks(&self, limit: usize, offset: usize) -> Result<Vec<Track>> {
         let tracks = self.tracks.read().await;
-        Ok(tracks.values()
-            .skip(offset)
-            .take(limit)
-            .cloned()
-            .collect())
+        Ok(tracks.values().skip(offset).take(limit).cloned().collect())
     }
 
     async fn save_track(&self, track: &Track) -> Result<()> {
@@ -78,7 +74,8 @@ impl TrackStorage for MemoryStorage {
     async fn search_tracks(&self, query: &str) -> Result<Vec<Track>> {
         let tracks = self.tracks.read().await;
         let query_lower = query.to_lowercase();
-        Ok(tracks.values()
+        Ok(tracks
+            .values()
             .filter(|t| t.title.to_lowercase().contains(&query_lower))
             .cloned()
             .collect())
@@ -86,7 +83,8 @@ impl TrackStorage for MemoryStorage {
 
     async fn get_tracks_by_album(&self, album_id: Uuid) -> Result<Vec<Track>> {
         let tracks = self.tracks.read().await;
-        Ok(tracks.values()
+        Ok(tracks
+            .values()
             .filter(|t| t.album_id == Some(album_id))
             .cloned()
             .collect())
@@ -94,7 +92,8 @@ impl TrackStorage for MemoryStorage {
 
     async fn get_tracks_by_artist(&self, artist_id: Uuid) -> Result<Vec<Track>> {
         let tracks = self.tracks.read().await;
-        Ok(tracks.values()
+        Ok(tracks
+            .values()
             .filter(|t| t.artist_id == Some(artist_id))
             .cloned()
             .collect())
@@ -110,11 +109,7 @@ impl AlbumStorage for MemoryStorage {
 
     async fn list_albums(&self, limit: usize, offset: usize) -> Result<Vec<Album>> {
         let albums = self.albums.read().await;
-        Ok(albums.values()
-            .skip(offset)
-            .take(limit)
-            .cloned()
-            .collect())
+        Ok(albums.values().skip(offset).take(limit).cloned().collect())
     }
 
     async fn save_album(&self, album: &Album) -> Result<()> {
@@ -131,7 +126,8 @@ impl AlbumStorage for MemoryStorage {
 
     async fn get_albums_by_artist(&self, artist_id: Uuid) -> Result<Vec<Album>> {
         let albums = self.albums.read().await;
-        Ok(albums.values()
+        Ok(albums
+            .values()
             .filter(|a| a.artist_id == Some(artist_id))
             .cloned()
             .collect())
@@ -147,11 +143,7 @@ impl ArtistStorage for MemoryStorage {
 
     async fn list_artists(&self, limit: usize, offset: usize) -> Result<Vec<Artist>> {
         let artists = self.artists.read().await;
-        Ok(artists.values()
-            .skip(offset)
-            .take(limit)
-            .cloned()
-            .collect())
+        Ok(artists.values().skip(offset).take(limit).cloned().collect())
     }
 
     async fn save_artist(&self, artist: &Artist) -> Result<()> {
@@ -176,18 +168,12 @@ impl UserStorage for MemoryStorage {
 
     async fn get_user_by_username(&self, username: &str) -> Result<Option<User>> {
         let users = self.users.read().await;
-        Ok(users.values()
-            .find(|u| u.username == username)
-            .cloned())
+        Ok(users.values().find(|u| u.username == username).cloned())
     }
 
     async fn list_users(&self, limit: usize, offset: usize) -> Result<Vec<User>> {
         let users = self.users.read().await;
-        Ok(users.values()
-            .skip(offset)
-            .take(limit)
-            .cloned()
-            .collect())
+        Ok(users.values().skip(offset).take(limit).cloned().collect())
     }
 
     async fn save_user(&self, user: &User) -> Result<()> {
@@ -212,7 +198,8 @@ impl PlaylistStorage for MemoryStorage {
 
     async fn get_playlists_by_user(&self, user_id: Uuid) -> Result<Vec<Playlist>> {
         let playlists = self.playlists.read().await;
-        Ok(playlists.values()
+        Ok(playlists
+            .values()
             .filter(|p| p.user_id == user_id)
             .cloned()
             .collect())
@@ -232,7 +219,8 @@ impl PlaylistStorage for MemoryStorage {
 
     async fn add_track_to_playlist(&self, playlist_track: &PlaylistTrack) -> Result<()> {
         let mut playlist_tracks = self.playlist_tracks.write().await;
-        playlist_tracks.entry(playlist_track.playlist_id)
+        playlist_tracks
+            .entry(playlist_track.playlist_id)
             .or_insert_with(Vec::new)
             .push(playlist_track.clone());
         Ok(())
@@ -248,7 +236,10 @@ impl PlaylistStorage for MemoryStorage {
 
     async fn get_playlist_tracks(&self, playlist_id: Uuid) -> Result<Vec<PlaylistTrack>> {
         let playlist_tracks = self.playlist_tracks.read().await;
-        Ok(playlist_tracks.get(&playlist_id).cloned().unwrap_or_default())
+        Ok(playlist_tracks
+            .get(&playlist_id)
+            .cloned()
+            .unwrap_or_default())
     }
 }
 
@@ -256,7 +247,8 @@ impl PlaylistStorage for MemoryStorage {
 impl FileStorage for MemoryStorage {
     async fn read_file(&self, path: &str) -> Result<Vec<u8>> {
         let files = self.files.read().await;
-        files.get(path)
+        files
+            .get(path)
             .cloned()
             .ok_or_else(|| StorageError::NotFound(path.to_string()))
     }
@@ -280,7 +272,8 @@ impl FileStorage for MemoryStorage {
 
     async fn list_files(&self, path: &str) -> Result<Vec<String>> {
         let files = self.files.read().await;
-        Ok(files.keys()
+        Ok(files
+            .keys()
             .filter(|k| k.starts_with(path))
             .cloned()
             .collect())
@@ -288,7 +281,8 @@ impl FileStorage for MemoryStorage {
 
     async fn get_file_metadata(&self, path: &str) -> Result<FileMetadata> {
         let files = self.files.read().await;
-        files.get(path)
+        files
+            .get(path)
             .ok_or_else(|| StorageError::NotFound(path.to_string()))
             .map(|data| FileMetadata {
                 size: data.len() as u64,

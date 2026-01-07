@@ -5,7 +5,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Json},
-    routing::{get},
+    routing::get,
     Router,
 };
 use serde::Deserialize;
@@ -21,7 +21,7 @@ use crate::{
     error::{NetworkError, Result},
     traits::{HttpServer, NetworkConfig},
 };
-use reverie_storage::{TrackStorage, AlbumStorage, ArtistStorage, PlaylistStorage};
+use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, TrackStorage};
 
 /// Axum-based HTTP server
 pub struct AxumServer<S> {
@@ -63,7 +63,10 @@ where
             // Artist routes
             .route("/api/artists", get(list_artists_handler::<S>))
             .route("/api/artists/:id", get(get_artist_handler::<S>))
-            .route("/api/artists/:id/albums", get(get_artist_albums_handler::<S>))
+            .route(
+                "/api/artists/:id/albums",
+                get(get_artist_albums_handler::<S>),
+            )
             // Playlist routes
             .route("/api/playlists/:id", get(get_playlist_handler::<S>))
             .with_state(app_state)
@@ -83,7 +86,7 @@ where
 {
     async fn start(&self, addr: SocketAddr) -> Result<()> {
         let router = self.create_router();
-        
+
         *self.is_running.write().await = true;
         *self.addr.write().await = Some(addr);
 
@@ -159,34 +162,47 @@ async fn list_tracks_handler<S>(
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
 {
-    match state.storage.list_tracks(pagination.limit, pagination.offset).await {
+    match state
+        .storage
+        .list_tracks(pagination.limit, pagination.offset)
+        .await
+    {
         Ok(tracks) => {
-            let responses: Vec<TrackResponse> = tracks.into_iter().map(|t| TrackResponse {
-                id: t.id,
-                title: t.title,
-                album_id: t.album_id,
-                artist_id: t.artist_id,
-                duration: t.duration,
-                track_number: t.track_number,
-                disc_number: t.disc_number,
-                year: t.year,
-                genre: t.genre,
-            }).collect();
-            
+            let responses: Vec<TrackResponse> = tracks
+                .into_iter()
+                .map(|t| TrackResponse {
+                    id: t.id,
+                    title: t.title,
+                    album_id: t.album_id,
+                    artist_id: t.artist_id,
+                    duration: t.duration,
+                    track_number: t.track_number,
+                    disc_number: t.disc_number,
+                    year: t.year,
+                    genre: t.genre,
+                })
+                .collect();
+
             let total = responses.len();
-            (StatusCode::OK, Json(ListResponse {
-                items: responses,
-                total,
-                limit: pagination.limit,
-                offset: pagination.offset,
-            })).into_response()
+            (
+                StatusCode::OK,
+                Json(ListResponse {
+                    items: responses,
+                    total,
+                    limit: pagination.limit,
+                    offset: pagination.offset,
+                }),
+            )
+                .into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -198,8 +214,9 @@ where
     S: TrackStorage + Clone + Send + Sync + 'static,
 {
     match state.storage.get_track(id).await {
-        Ok(Some(track)) => {
-            (StatusCode::OK, Json(TrackResponse {
+        Ok(Some(track)) => (
+            StatusCode::OK,
+            Json(TrackResponse {
                 id: track.id,
                 title: track.title,
                 album_id: track.album_id,
@@ -209,20 +226,25 @@ where
                 disc_number: track.disc_number,
                 year: track.year,
                 genre: track.genre,
-            })).into_response()
-        }
-        Ok(None) => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
                 error: "not_found".to_string(),
                 message: format!("Track {} not found", id),
-            })).into_response()
-        }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -235,26 +257,31 @@ where
 {
     match state.storage.search_tracks(&search.q).await {
         Ok(tracks) => {
-            let responses: Vec<TrackResponse> = tracks.into_iter().map(|t| TrackResponse {
-                id: t.id,
-                title: t.title,
-                album_id: t.album_id,
-                artist_id: t.artist_id,
-                duration: t.duration,
-                track_number: t.track_number,
-                disc_number: t.disc_number,
-                year: t.year,
-                genre: t.genre,
-            }).collect();
-            
+            let responses: Vec<TrackResponse> = tracks
+                .into_iter()
+                .map(|t| TrackResponse {
+                    id: t.id,
+                    title: t.title,
+                    album_id: t.album_id,
+                    artist_id: t.artist_id,
+                    duration: t.duration,
+                    track_number: t.track_number,
+                    disc_number: t.disc_number,
+                    year: t.year,
+                    genre: t.genre,
+                })
+                .collect();
+
             (StatusCode::OK, Json(responses)).into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -266,30 +293,43 @@ async fn list_albums_handler<S>(
 where
     S: AlbumStorage + Clone + Send + Sync + 'static,
 {
-    match state.storage.list_albums(pagination.limit, pagination.offset).await {
+    match state
+        .storage
+        .list_albums(pagination.limit, pagination.offset)
+        .await
+    {
         Ok(albums) => {
-            let responses: Vec<AlbumResponse> = albums.into_iter().map(|a| AlbumResponse {
-                id: a.id,
-                name: a.name,
-                artist_id: a.artist_id,
-                year: a.year,
-                genre: a.genre,
-            }).collect();
-            
+            let responses: Vec<AlbumResponse> = albums
+                .into_iter()
+                .map(|a| AlbumResponse {
+                    id: a.id,
+                    name: a.name,
+                    artist_id: a.artist_id,
+                    year: a.year,
+                    genre: a.genre,
+                })
+                .collect();
+
             let total = responses.len();
-            (StatusCode::OK, Json(ListResponse {
-                items: responses,
-                total,
-                limit: pagination.limit,
-                offset: pagination.offset,
-            })).into_response()
+            (
+                StatusCode::OK,
+                Json(ListResponse {
+                    items: responses,
+                    total,
+                    limit: pagination.limit,
+                    offset: pagination.offset,
+                }),
+            )
+                .into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -301,27 +341,33 @@ where
     S: AlbumStorage + Clone + Send + Sync + 'static,
 {
     match state.storage.get_album(id).await {
-        Ok(Some(album)) => {
-            (StatusCode::OK, Json(AlbumResponse {
+        Ok(Some(album)) => (
+            StatusCode::OK,
+            Json(AlbumResponse {
                 id: album.id,
                 name: album.name,
                 artist_id: album.artist_id,
                 year: album.year,
                 genre: album.genre,
-            })).into_response()
-        }
-        Ok(None) => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
                 error: "not_found".to_string(),
                 message: format!("Album {} not found", id),
-            })).into_response()
-        }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -334,26 +380,31 @@ where
 {
     match state.storage.get_tracks_by_album(id).await {
         Ok(tracks) => {
-            let responses: Vec<TrackResponse> = tracks.into_iter().map(|t| TrackResponse {
-                id: t.id,
-                title: t.title,
-                album_id: t.album_id,
-                artist_id: t.artist_id,
-                duration: t.duration,
-                track_number: t.track_number,
-                disc_number: t.disc_number,
-                year: t.year,
-                genre: t.genre,
-            }).collect();
-            
+            let responses: Vec<TrackResponse> = tracks
+                .into_iter()
+                .map(|t| TrackResponse {
+                    id: t.id,
+                    title: t.title,
+                    album_id: t.album_id,
+                    artist_id: t.artist_id,
+                    duration: t.duration,
+                    track_number: t.track_number,
+                    disc_number: t.disc_number,
+                    year: t.year,
+                    genre: t.genre,
+                })
+                .collect();
+
             (StatusCode::OK, Json(responses)).into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -365,28 +416,41 @@ async fn list_artists_handler<S>(
 where
     S: ArtistStorage + Clone + Send + Sync + 'static,
 {
-    match state.storage.list_artists(pagination.limit, pagination.offset).await {
+    match state
+        .storage
+        .list_artists(pagination.limit, pagination.offset)
+        .await
+    {
         Ok(artists) => {
-            let responses: Vec<ArtistResponse> = artists.into_iter().map(|a| ArtistResponse {
-                id: a.id,
-                name: a.name,
-                bio: a.bio,
-            }).collect();
-            
+            let responses: Vec<ArtistResponse> = artists
+                .into_iter()
+                .map(|a| ArtistResponse {
+                    id: a.id,
+                    name: a.name,
+                    bio: a.bio,
+                })
+                .collect();
+
             let total = responses.len();
-            (StatusCode::OK, Json(ListResponse {
-                items: responses,
-                total,
-                limit: pagination.limit,
-                offset: pagination.offset,
-            })).into_response()
+            (
+                StatusCode::OK,
+                Json(ListResponse {
+                    items: responses,
+                    total,
+                    limit: pagination.limit,
+                    offset: pagination.offset,
+                }),
+            )
+                .into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -398,25 +462,31 @@ where
     S: ArtistStorage + Clone + Send + Sync + 'static,
 {
     match state.storage.get_artist(id).await {
-        Ok(Some(artist)) => {
-            (StatusCode::OK, Json(ArtistResponse {
+        Ok(Some(artist)) => (
+            StatusCode::OK,
+            Json(ArtistResponse {
                 id: artist.id,
                 name: artist.name,
                 bio: artist.bio,
-            })).into_response()
-        }
-        Ok(None) => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
                 error: "not_found".to_string(),
                 message: format!("Artist {} not found", id),
-            })).into_response()
-        }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -429,22 +499,27 @@ where
 {
     match state.storage.get_albums_by_artist(id).await {
         Ok(albums) => {
-            let responses: Vec<AlbumResponse> = albums.into_iter().map(|a| AlbumResponse {
-                id: a.id,
-                name: a.name,
-                artist_id: a.artist_id,
-                year: a.year,
-                genre: a.genre,
-            }).collect();
-            
+            let responses: Vec<AlbumResponse> = albums
+                .into_iter()
+                .map(|a| AlbumResponse {
+                    id: a.id,
+                    name: a.name,
+                    artist_id: a.artist_id,
+                    year: a.year,
+                    genre: a.genre,
+                })
+                .collect();
+
             (StatusCode::OK, Json(responses)).into_response()
         }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -457,26 +532,32 @@ where
     S: PlaylistStorage + Clone + Send + Sync + 'static,
 {
     match state.storage.get_playlist(id).await {
-        Ok(Some(playlist)) => {
-            (StatusCode::OK, Json(PlaylistResponse {
+        Ok(Some(playlist)) => (
+            StatusCode::OK,
+            Json(PlaylistResponse {
                 id: playlist.id,
                 name: playlist.name,
                 description: playlist.description,
                 user_id: playlist.user_id,
                 is_public: playlist.is_public,
-            })).into_response()
-        }
-        Ok(None) => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
                 error: "not_found".to_string(),
                 message: format!("Playlist {} not found", id),
-            })).into_response()
-        }
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+            }),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
                 error: "storage_error".to_string(),
                 message: e.to_string(),
-            })).into_response()
-        }
+            }),
+        )
+            .into_response(),
     }
 }

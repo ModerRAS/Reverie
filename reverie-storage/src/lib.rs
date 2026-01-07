@@ -37,8 +37,8 @@
 //! );
 //! ```
 
-pub mod traits;
 pub mod error;
+pub mod traits;
 pub mod vfs;
 
 #[cfg(feature = "filesystem")]
@@ -50,9 +50,9 @@ pub mod memory;
 #[cfg(feature = "database")]
 pub mod database;
 
-pub use traits::*;
 pub use error::*;
-pub use vfs::{Vfs, VfsConfig, VfsMetadata, VfsEntry, OpendalVfs, SharedVfs, create_vfs};
+pub use traits::*;
+pub use vfs::{create_vfs, OpendalVfs, SharedVfs, Vfs, VfsConfig, VfsEntry, VfsMetadata};
 
 #[cfg(feature = "database")]
-pub use database::{DatabaseStorage, DatabaseConfig};
+pub use database::{DatabaseConfig, DatabaseStorage};

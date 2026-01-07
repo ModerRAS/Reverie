@@ -4,10 +4,10 @@
 //! allowing different implementations to be swapped without
 //! changing the core application logic.
 
-use async_trait::async_trait;
-use reverie_core::{Track, Album, Artist, User, Playlist, PlaylistTrack};
-use uuid::Uuid;
 use crate::error::Result;
+use async_trait::async_trait;
+use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
+use uuid::Uuid;
 
 /// Trait for managing music tracks storage
 #[async_trait]
@@ -146,7 +146,9 @@ pub struct FileMetadata {
 
 /// Combined storage trait that includes all storage operations
 #[async_trait]
-pub trait Storage: TrackStorage + AlbumStorage + ArtistStorage + UserStorage + PlaylistStorage + FileStorage {
+pub trait Storage:
+    TrackStorage + AlbumStorage + ArtistStorage + UserStorage + PlaylistStorage + FileStorage
+{
     /// Initialize the storage backend
     async fn initialize(&self) -> Result<()>;
 
@@ -158,75 +160,393 @@ pub trait Storage: TrackStorage + AlbumStorage + ArtistStorage + UserStorage + P
 }
 
 use reverie_core::{
-    SubsonicAlbum, SubsonicArtist, SubsonicArtistIndexes, SubsonicGenre,
-    SubsonicMusicFolder, SubsonicScanStatus, SubsonicLyrics, SubsonicPlayQueue,
-    SubsonicDirectory, MediaFile,
+    MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
+    SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
+    SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
+    SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
+    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
+    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
 };
 
+/// Complete Subsonic API storage trait
+/// Implements all methods needed for navidrome-compatible Subsonic API
 #[async_trait]
 pub trait SubsonicStorage: Send + Sync {
+    // === System ===
+    /// Get server license info (always valid for self-hosted)
+    async fn get_license(&self) -> Result<bool> {
+        Ok(true)
+    }
+
+    // === Browsing ===
+    /// Get all configured music folders
     async fn get_music_folders(&self) -> Result<Vec<SubsonicMusicFolder>>;
-    async fn get_artist_indexes(&self, music_folder_id: Option<i32>) -> Result<SubsonicArtistIndexes>;
+
+    /// Get artist indexes (A-Z grouped artists)
+    async fn get_indexes(
+        &self,
+        music_folder_id: Option<i32>,
+        if_modified_since: Option<i64>,
+    ) -> Result<SubsonicArtistIndexes>;
+
+    /// Get all genres with song/album counts
     async fn get_genres(&self) -> Result<Vec<SubsonicGenre>>;
-    async fn get_scan_status(&self) -> Result<SubsonicScanStatus>;
-    async fn start_scan(&self) -> Result<SubsonicScanStatus>;
-    async fn get_directory(&self, id: &str) -> Result<Option<SubsonicDirectory>>;
-    async fn get_album(&self, id: &str) -> Result<Option<SubsonicAlbum>>;
+
+    /// Get directory contents (for folder-based browsing)
+    async fn get_music_directory(&self, id: &str) -> Result<Option<SubsonicDirectory>>;
+
+    /// Get artists (ID3 tag based)
+    async fn get_artists(&self, music_folder_id: Option<i32>) -> Result<SubsonicArtistIndexes>;
+
+    /// Get single artist by ID
     async fn get_artist(&self, id: &str) -> Result<Option<SubsonicArtist>>;
+
+    /// Get single album by ID
+    async fn get_album(&self, id: &str) -> Result<Option<SubsonicAlbum>>;
+
+    /// Get single song by ID
     async fn get_song(&self, id: &str) -> Result<Option<MediaFile>>;
-    async fn get_albums(&self, limit: usize, offset: usize) -> Result<Vec<SubsonicAlbum>>;
-    async fn get_artists(&self, limit: usize, offset: usize) -> Result<Vec<SubsonicArtist>>;
-    async fn get_albums_by_artist(&self, artist_id: &str) -> Result<Vec<SubsonicAlbum>>;
-    async fn get_songs_by_album(&self, album_id: &str) -> Result<Vec<MediaFile>>;
-    async fn get_random_songs(&self, count: usize) -> Result<Vec<MediaFile>>;
-    async fn search(&self, query: &str, artist_count: usize, album_count: usize, song_count: usize) -> Result<SearchResult>;
-    async fn get_lyrics(&self, artist: &str, title: &str) -> Result<Option<SubsonicLyrics>>;
-    async fn get_play_queue(&self, username: &str) -> Result<SubsonicPlayQueue>;
-    async fn save_play_queue(&self, entries: &[&str], current: Option<&str>, position: i64, username: &str, changed_by: &str) -> Result<()>;
-    async fn scrobble(&self, id: &str, time: i64, submission: bool) -> Result<()>;
-    async fn get_starred(&self) -> Result<Starred>;
-    async fn get_album_list(&self, r#type: &str, size: usize, offset: usize) -> Result<AlbumList>;
-    async fn get_playlists(&self) -> Result<Vec<SubsonicPlaylist>>;
+
+    /// Get videos (not implemented, returns empty)
+    async fn get_videos(&self) -> Result<Vec<MediaFile>> {
+        Ok(vec![])
+    }
+
+    /// Get artist info (biography, images, similar artists)
+    async fn get_artist_info(
+        &self,
+        id: &str,
+        count: Option<i32>,
+        include_not_present: Option<bool>,
+    ) -> Result<SubsonicArtistInfo>;
+
+    /// Get artist info (ID3 version)
+    async fn get_artist_info2(
+        &self,
+        id: &str,
+        count: Option<i32>,
+        include_not_present: Option<bool>,
+    ) -> Result<SubsonicArtistInfo>;
+
+    /// Get album info (notes, images)
+    async fn get_album_info(&self, id: &str) -> Result<SubsonicAlbumInfo>;
+
+    /// Get album info (ID3 version)
+    async fn get_album_info2(&self, id: &str) -> Result<SubsonicAlbumInfo>;
+
+    /// Get similar songs
+    async fn get_similar_songs(&self, id: &str, count: Option<i32>) -> Result<Vec<MediaFile>>;
+
+    /// Get similar songs (ID3 version)
+    async fn get_similar_songs2(&self, id: &str, count: Option<i32>) -> Result<Vec<MediaFile>>;
+
+    /// Get top songs for an artist
+    async fn get_top_songs(&self, artist: &str, count: Option<i32>) -> Result<SubsonicTopSongs>;
+
+    // === Album/Song Lists ===
+    /// Get album list (various sort types)
+    async fn get_album_list(
+        &self,
+        list_type: &str,
+        size: Option<i32>,
+        offset: Option<i32>,
+        from_year: Option<i32>,
+        to_year: Option<i32>,
+        genre: Option<&str>,
+        music_folder_id: Option<i32>,
+    ) -> Result<Vec<SubsonicAlbum>>;
+
+    /// Get album list (ID3 version)
+    async fn get_album_list2(
+        &self,
+        list_type: &str,
+        size: Option<i32>,
+        offset: Option<i32>,
+        from_year: Option<i32>,
+        to_year: Option<i32>,
+        genre: Option<&str>,
+        music_folder_id: Option<i32>,
+    ) -> Result<Vec<SubsonicAlbum>>;
+
+    /// Get random songs
+    async fn get_random_songs(
+        &self,
+        size: Option<i32>,
+        genre: Option<&str>,
+        from_year: Option<i32>,
+        to_year: Option<i32>,
+        music_folder_id: Option<i32>,
+    ) -> Result<Vec<MediaFile>>;
+
+    /// Get songs by genre
+    async fn get_songs_by_genre(
+        &self,
+        genre: &str,
+        count: Option<i32>,
+        offset: Option<i32>,
+        music_folder_id: Option<i32>,
+    ) -> Result<Vec<MediaFile>>;
+
+    /// Get now playing entries
+    async fn get_now_playing(&self) -> Result<Vec<SubsonicNowPlaying>>;
+
+    /// Get starred items
+    async fn get_starred(&self, music_folder_id: Option<i32>) -> Result<SubsonicStarred>;
+
+    /// Get starred items (ID3 version)
+    async fn get_starred2(&self, music_folder_id: Option<i32>) -> Result<SubsonicStarred>;
+
+    // === Searching ===
+    /// Search (deprecated, use search2/search3)
+    async fn search(
+        &self,
+        artist: Option<&str>,
+        album: Option<&str>,
+        title: Option<&str>,
+        any: Option<&str>,
+        count: Option<i32>,
+        offset: Option<i32>,
+        newer_than: Option<i64>,
+    ) -> Result<SubsonicSearchResult2> {
+        // Default implementation using search2
+        let query = any.or(title).or(album).or(artist).unwrap_or("");
+        self.search2(query, None, None, None, None, None, None)
+            .await
+    }
+
+    /// Search2 (folder-based)
+    async fn search2(
+        &self,
+        query: &str,
+        artist_count: Option<i32>,
+        artist_offset: Option<i32>,
+        album_count: Option<i32>,
+        album_offset: Option<i32>,
+        song_count: Option<i32>,
+        song_offset: Option<i32>,
+    ) -> Result<SubsonicSearchResult2>;
+
+    /// Search3 (ID3-based)
+    async fn search3(
+        &self,
+        query: &str,
+        artist_count: Option<i32>,
+        artist_offset: Option<i32>,
+        album_count: Option<i32>,
+        album_offset: Option<i32>,
+        song_count: Option<i32>,
+        song_offset: Option<i32>,
+    ) -> Result<SubsonicSearchResult3>;
+
+    // === Playlists ===
+    /// Get all playlists
+    async fn get_playlists(&self, username: Option<&str>) -> Result<Vec<SubsonicPlaylist>>;
+
+    /// Get single playlist with songs
     async fn get_playlist(&self, id: &str) -> Result<Option<SubsonicPlaylistWithSongs>>;
-    async fn create_playlist(&self, name: &str, username: &str) -> Result<String>;
+
+    /// Create playlist
+    async fn create_playlist(
+        &self,
+        name: Option<&str>,
+        playlist_id: Option<&str>,
+        song_ids: &[&str],
+    ) -> Result<SubsonicPlaylistWithSongs>;
+
+    /// Update playlist
+    async fn update_playlist(
+        &self,
+        playlist_id: &str,
+        name: Option<&str>,
+        comment: Option<&str>,
+        public: Option<bool>,
+        song_ids_to_add: &[&str],
+        song_indexes_to_remove: &[i32],
+    ) -> Result<()>;
+
+    /// Delete playlist
     async fn delete_playlist(&self, id: &str) -> Result<()>;
-}
 
-pub struct SearchResult {
-    pub artists: Vec<SubsonicArtist>,
-    pub albums: Vec<MediaFile>,
-    pub songs: Vec<MediaFile>,
-}
+    // === Media Retrieval (paths only, actual streaming handled by network layer) ===
+    /// Get file path for streaming
+    async fn get_stream_path(&self, id: &str) -> Result<Option<String>>;
 
-pub struct Starred {
-    pub artists: Vec<SubsonicArtist>,
-    pub albums: Vec<MediaFile>,
-    pub songs: Vec<MediaFile>,
-}
+    /// Get cover art path
+    async fn get_cover_art_path(&self, id: &str) -> Result<Option<String>>;
 
-pub struct AlbumList {
-    pub albums: Vec<MediaFile>,
-}
+    /// Get lyrics
+    async fn get_lyrics(
+        &self,
+        artist: Option<&str>,
+        title: Option<&str>,
+    ) -> Result<Option<SubsonicLyrics>>;
 
-pub struct SubsonicPlaylist {
-    pub id: String,
-    pub name: String,
-    pub owner: String,
-    pub song_count: i32,
-    pub duration: i32,
-    pub public: bool,
-    pub created: chrono::DateTime<chrono::Utc>,
-    pub changed: chrono::DateTime<chrono::Utc>,
-}
+    /// Get lyrics by song ID (OpenSubsonic)
+    async fn get_lyrics_by_song_id(&self, id: &str) -> Result<Vec<SubsonicStructuredLyrics>>;
 
-pub struct SubsonicPlaylistWithSongs {
-    pub id: String,
-    pub name: String,
-    pub owner: String,
-    pub song_count: i32,
-    pub duration: i32,
-    pub public: bool,
-    pub created: chrono::DateTime<chrono::Utc>,
-    pub changed: chrono::DateTime<chrono::Utc>,
-    pub entries: Vec<MediaFile>,
+    /// Get avatar path for user
+    async fn get_avatar_path(&self, username: &str) -> Result<Option<String>>;
+
+    // === Media Annotation ===
+    /// Star items (add to favorites)
+    async fn star(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()>;
+
+    /// Unstar items (remove from favorites)
+    async fn unstar(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()>;
+
+    /// Set rating (0-5)
+    async fn set_rating(&self, id: &str, rating: i32) -> Result<()>;
+
+    /// Scrobble (record play)
+    async fn scrobble(&self, id: &str, time: Option<i64>, submission: bool) -> Result<()>;
+
+    // === Bookmarks ===
+    /// Get all bookmarks for user
+    async fn get_bookmarks(&self) -> Result<Vec<SubsonicBookmark>>;
+
+    /// Create/update bookmark
+    async fn create_bookmark(&self, id: &str, position: i64, comment: Option<&str>) -> Result<()>;
+
+    /// Delete bookmark
+    async fn delete_bookmark(&self, id: &str) -> Result<()>;
+
+    /// Get play queue
+    async fn get_play_queue(&self) -> Result<Option<SubsonicPlayQueue>>;
+
+    /// Save play queue
+    async fn save_play_queue(
+        &self,
+        ids: &[&str],
+        current: Option<&str>,
+        position: Option<i64>,
+    ) -> Result<()>;
+
+    // === Sharing ===
+    /// Get all shares
+    async fn get_shares(&self) -> Result<Vec<SubsonicShare>>;
+
+    /// Create share
+    async fn create_share(
+        &self,
+        ids: &[&str],
+        description: Option<&str>,
+        expires: Option<i64>,
+    ) -> Result<SubsonicShare>;
+
+    /// Update share
+    async fn update_share(
+        &self,
+        id: &str,
+        description: Option<&str>,
+        expires: Option<i64>,
+    ) -> Result<()>;
+
+    /// Delete share
+    async fn delete_share(&self, id: &str) -> Result<()>;
+
+    // === Internet Radio ===
+    /// Get all internet radio stations
+    async fn get_internet_radio_stations(&self) -> Result<Vec<SubsonicInternetRadioStation>>;
+
+    /// Create internet radio station
+    async fn create_internet_radio_station(
+        &self,
+        stream_url: &str,
+        name: &str,
+        homepage_url: Option<&str>,
+    ) -> Result<()>;
+
+    /// Update internet radio station
+    async fn update_internet_radio_station(
+        &self,
+        id: &str,
+        stream_url: &str,
+        name: &str,
+        homepage_url: Option<&str>,
+    ) -> Result<()>;
+
+    /// Delete internet radio station
+    async fn delete_internet_radio_station(&self, id: &str) -> Result<()>;
+
+    // === User Management ===
+    /// Get user by username
+    async fn get_user(&self, username: &str) -> Result<Option<SubsonicUser>>;
+
+    /// Get all users
+    async fn get_users(&self) -> Result<Vec<SubsonicUser>>;
+
+    /// Create user
+    async fn create_user(
+        &self,
+        username: &str,
+        password: &str,
+        email: Option<&str>,
+        admin_role: bool,
+        settings_role: bool,
+        stream_role: bool,
+        jukebox_role: bool,
+        download_role: bool,
+        upload_role: bool,
+        playlist_role: bool,
+        cover_art_role: bool,
+        comment_role: bool,
+        podcast_role: bool,
+        share_role: bool,
+        video_conversion_role: bool,
+        music_folder_ids: &[i32],
+    ) -> Result<()>;
+
+    /// Update user
+    async fn update_user(
+        &self,
+        username: &str,
+        password: Option<&str>,
+        email: Option<&str>,
+        admin_role: Option<bool>,
+        settings_role: Option<bool>,
+        stream_role: Option<bool>,
+        jukebox_role: Option<bool>,
+        download_role: Option<bool>,
+        upload_role: Option<bool>,
+        playlist_role: Option<bool>,
+        cover_art_role: Option<bool>,
+        comment_role: Option<bool>,
+        podcast_role: Option<bool>,
+        share_role: Option<bool>,
+        video_conversion_role: Option<bool>,
+        music_folder_ids: Option<&[i32]>,
+        max_bit_rate: Option<i32>,
+    ) -> Result<()>;
+
+    /// Delete user
+    async fn delete_user(&self, username: &str) -> Result<()>;
+
+    /// Change password
+    async fn change_password(&self, username: &str, password: &str) -> Result<()>;
+
+    // === Library Scanning ===
+    /// Get scan status
+    async fn get_scan_status(&self) -> Result<SubsonicScanStatus>;
+
+    /// Start library scan
+    async fn start_scan(&self) -> Result<SubsonicScanStatus>;
+
+    // === OpenSubsonic Extensions ===
+    /// Get supported OpenSubsonic extensions
+    async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {
+        Ok(vec![
+            SubsonicOpenSubsonicExtension {
+                name: "transcodeOffset".to_string(),
+                versions: vec![1],
+            },
+            SubsonicOpenSubsonicExtension {
+                name: "formPost".to_string(),
+                versions: vec![1],
+            },
+            SubsonicOpenSubsonicExtension {
+                name: "songLyrics".to_string(),
+                versions: vec![1],
+            },
+        ])
+    }
 }

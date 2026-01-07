@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::error::{Result, StorageError};
 use crate::traits::*;
-use crate::vfs::{SharedVfs, VfsConfig, create_vfs};
+use crate::vfs::{create_vfs, SharedVfs, VfsConfig};
 use reverie_core::{
     Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicArtist,
     SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicDirectory, SubsonicGenre, SubsonicLyrics,
@@ -1134,7 +1134,9 @@ impl FileStorage for DatabaseStorage {
     }
 
     async fn write_file(&self, path: &str, data: &[u8]) -> Result<()> {
-        self.vfs.write(path, bytes::Bytes::copy_from_slice(data)).await
+        self.vfs
+            .write(path, bytes::Bytes::copy_from_slice(data))
+            .await
     }
 
     async fn file_exists(&self, path: &str) -> Result<bool> {
@@ -1173,14 +1175,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_database_storage_init() {
-        let storage = DatabaseStorage::new(DatabaseConfig::memory()).await.unwrap();
+        let storage = DatabaseStorage::new(DatabaseConfig::memory())
+            .await
+            .unwrap();
         storage.initialize().await.unwrap();
         assert!(storage.health_check().await.unwrap());
     }
 
     #[tokio::test]
     async fn test_track_crud() {
-        let storage = DatabaseStorage::new(DatabaseConfig::memory()).await.unwrap();
+        let storage = DatabaseStorage::new(DatabaseConfig::memory())
+            .await
+            .unwrap();
         storage.initialize().await.unwrap();
 
         let track = Track {

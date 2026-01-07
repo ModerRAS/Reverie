@@ -4,15 +4,15 @@
 //! allowing the application to work with different HTTP server implementations
 //! and external connection systems through a unified interface.
 
-pub mod traits;
-pub mod error;
 pub mod dto;
+pub mod error;
 pub mod subsonic;
+pub mod traits;
 
 #[cfg(feature = "axum-server")]
 pub mod axum_server;
 
-pub use traits::*;
-pub use error::*;
 pub use dto::*;
+pub use error::*;
 pub use subsonic::*;
+pub use traits::*;

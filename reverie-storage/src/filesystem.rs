@@ -4,7 +4,7 @@
 //! for audio file storage and metadata.
 
 use async_trait::async_trait;
-use reverie_core::{Album, Artist, Track, User, Playlist, PlaylistTrack};
+use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -93,19 +93,19 @@ impl FileSystemStorage {
 
     async fn load_metadata(&self) -> Result<()> {
         let metadata_dir = self.config.metadata_dir.clone();
-        
+
         let tracks_path = metadata_dir.join("tracks.json");
         let albums_path = metadata_dir.join("albums.json");
         let artists_path = metadata_dir.join("artists.json");
         let users_path = metadata_dir.join("users.json");
         let playlists_path = metadata_dir.join("playlists.json");
-        
+
         let mut tracks = Vec::new();
         let mut albums = Vec::new();
         let mut artists = Vec::new();
         let mut users = Vec::new();
         let mut playlists = Vec::new();
-        
+
         if let Ok(data_str) = tokio::fs::read_to_string(&tracks_path).await {
             if let Ok(loaded) = serde_json::from_str(&data_str) {
                 tracks = loaded;
@@ -157,9 +157,9 @@ impl FileSystemStorage {
                 data.playlists.clone(),
             )
         };
-        
+
         let metadata_dir = self.config.metadata_dir.clone();
-        
+
         let tracks_path = metadata_dir.join("tracks.json");
         let data_str = serde_json::to_string(&tracks).map_err(StorageError::SerializationError)?;
         tokio::fs::write(&tracks_path, data_str).await?;
@@ -177,7 +177,8 @@ impl FileSystemStorage {
         tokio::fs::write(&users_path, data_str).await?;
 
         let playlists_path = metadata_dir.join("playlists.json");
-        let data_str = serde_json::to_string(&playlists).map_err(StorageError::SerializationError)?;
+        let data_str =
+            serde_json::to_string(&playlists).map_err(StorageError::SerializationError)?;
         tokio::fs::write(&playlists_path, data_str).await?;
 
         Ok(())
@@ -188,7 +189,7 @@ impl FileSystemStorage {
             let data = self.data.lock().unwrap();
             data.users.len()
         };
-        
+
         if user_count == 0 {
             let mut data = self.data.lock().unwrap();
             data.users.push(User {
@@ -237,7 +238,13 @@ impl TrackStorage for FileSystemStorage {
     async fn list_tracks(&self, limit: usize, offset: usize) -> Result<Vec<Track>> {
         let mut tracks = self.data.lock().unwrap();
         tracks.tracks.sort_by(|a, b| a.title.cmp(&b.title));
-        Ok(tracks.tracks.clone().into_iter().skip(offset).take(limit).collect())
+        Ok(tracks
+            .tracks
+            .clone()
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect())
     }
 
     async fn save_track(&self, track: &Track) -> Result<()> {
@@ -265,7 +272,9 @@ impl TrackStorage for FileSystemStorage {
     async fn search_tracks(&self, query: &str) -> Result<Vec<Track>> {
         let query_lower = query.to_lowercase();
         let tracks = self.data.lock().unwrap();
-        let results: Vec<Track> = tracks.tracks.iter()
+        let results: Vec<Track> = tracks
+            .tracks
+            .iter()
             .filter(|t| t.title.to_lowercase().contains(&query_lower))
             .cloned()
             .collect();
@@ -274,7 +283,9 @@ impl TrackStorage for FileSystemStorage {
 
     async fn get_tracks_by_album(&self, album_id: Uuid) -> Result<Vec<Track>> {
         let tracks = self.data.lock().unwrap();
-        let results: Vec<Track> = tracks.tracks.iter()
+        let results: Vec<Track> = tracks
+            .tracks
+            .iter()
             .filter(|t| t.album_id == Some(album_id))
             .cloned()
             .collect();
@@ -283,7 +294,9 @@ impl TrackStorage for FileSystemStorage {
 
     async fn get_tracks_by_artist(&self, artist_id: Uuid) -> Result<Vec<Track>> {
         let tracks = self.data.lock().unwrap();
-        let results: Vec<Track> = tracks.tracks.iter()
+        let results: Vec<Track> = tracks
+            .tracks
+            .iter()
             .filter(|t| t.artist_id == Some(artist_id))
             .cloned()
             .collect();
@@ -301,7 +314,13 @@ impl AlbumStorage for FileSystemStorage {
     async fn list_albums(&self, limit: usize, offset: usize) -> Result<Vec<Album>> {
         let mut albums = self.data.lock().unwrap();
         albums.albums.sort_by(|a, b| a.name.cmp(&b.name));
-        Ok(albums.albums.clone().into_iter().skip(offset).take(limit).collect())
+        Ok(albums
+            .albums
+            .clone()
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect())
     }
 
     async fn save_album(&self, album: &Album) -> Result<()> {
@@ -328,7 +347,9 @@ impl AlbumStorage for FileSystemStorage {
 
     async fn get_albums_by_artist(&self, artist_id: Uuid) -> Result<Vec<Album>> {
         let albums = self.data.lock().unwrap();
-        let results: Vec<Album> = albums.albums.iter()
+        let results: Vec<Album> = albums
+            .albums
+            .iter()
             .filter(|a| a.artist_id == Some(artist_id))
             .cloned()
             .collect();
@@ -346,7 +367,13 @@ impl ArtistStorage for FileSystemStorage {
     async fn list_artists(&self, limit: usize, offset: usize) -> Result<Vec<Artist>> {
         let mut artists = self.data.lock().unwrap();
         artists.artists.sort_by(|a, b| a.name.cmp(&b.name));
-        Ok(artists.artists.clone().into_iter().skip(offset).take(limit).collect())
+        Ok(artists
+            .artists
+            .clone()
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect())
     }
 
     async fn save_artist(&self, artist: &Artist) -> Result<()> {
@@ -386,7 +413,13 @@ impl UserStorage for FileSystemStorage {
 
     async fn list_users(&self, limit: usize, offset: usize) -> Result<Vec<User>> {
         let users = self.data.lock().unwrap();
-        Ok(users.users.clone().into_iter().skip(offset).take(limit).collect())
+        Ok(users
+            .users
+            .clone()
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect())
     }
 
     async fn save_user(&self, user: &User) -> Result<()> {
@@ -421,7 +454,9 @@ impl PlaylistStorage for FileSystemStorage {
 
     async fn get_playlists_by_user(&self, user_id: Uuid) -> Result<Vec<Playlist>> {
         let playlists = self.data.lock().unwrap();
-        let results: Vec<Playlist> = playlists.playlists.iter()
+        let results: Vec<Playlist> = playlists
+            .playlists
+            .iter()
             .filter(|p| p.user_id == user_id)
             .cloned()
             .collect();

@@ -4,8 +4,8 @@
 //! allowing different HTTP server implementations to be swapped
 //! without changing the core application logic.
 
-use async_trait::async_trait;
 use crate::error::Result;
+use async_trait::async_trait;
 use std::net::SocketAddr;
 
 /// Trait for HTTP server implementation
@@ -101,7 +101,12 @@ pub trait MediaStreamer: Send + Sync {
     fn supports_transcoding(&self) -> bool;
 
     /// Transcode a file to a different format
-    async fn transcode_file(&self, path: &str, format: &str, bitrate: Option<u32>) -> Result<Vec<u8>>;
+    async fn transcode_file(
+        &self,
+        path: &str,
+        format: &str,
+        bitrate: Option<u32>,
+    ) -> Result<Vec<u8>>;
 }
 
 /// Trait for external network connections (e.g., for federation, cloud sync)
