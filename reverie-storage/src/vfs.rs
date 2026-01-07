@@ -385,6 +385,7 @@ impl Vfs for OpendalVfs {
         self.operator
             .write(path, data)
             .await
+            .map(|_| ())
             .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))
     }
 
