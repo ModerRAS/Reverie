@@ -70,9 +70,18 @@ pub fn create_router() -> Router {
         .route("/deleteShare", get(delete_share_handler))
         // === Internet Radio ===
         .route("/getInternetRadioStations", get(radio_stations_handler))
-        .route("/createInternetRadioStation", get(create_radio_station_handler))
-        .route("/updateInternetRadioStation", get(update_radio_station_handler))
-        .route("/deleteInternetRadioStation", get(delete_radio_station_handler))
+        .route(
+            "/createInternetRadioStation",
+            get(create_radio_station_handler),
+        )
+        .route(
+            "/updateInternetRadioStation",
+            get(update_radio_station_handler),
+        )
+        .route(
+            "/deleteInternetRadioStation",
+            get(delete_radio_station_handler),
+        )
         // === User Management ===
         .route("/getUser", get(user_handler))
         .route("/getUsers", get(users_handler))
@@ -80,7 +89,10 @@ pub fn create_router() -> Router {
         .route("/getScanStatus", get(scan_status_handler))
         .route("/startScan", get(start_scan_handler))
         // === OpenSubsonic Extensions ===
-        .route("/getOpenSubsonicExtensions", get(open_subsonic_extensions_handler))
+        .route(
+            "/getOpenSubsonicExtensions",
+            get(open_subsonic_extensions_handler),
+        )
 }
 
 async fn ping_handler() -> &'static str {

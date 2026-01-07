@@ -7,12 +7,11 @@ use async_trait::async_trait;
 use chrono::Utc;
 use reverie_core::{
     Album, Artist, MediaFile, Playlist, PlaylistTrack, SubsonicAlbum, SubsonicAlbumInfo,
-    SubsonicArtist, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark,
-    SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics,
-    SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist,
-    SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3,
-    SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
-    Track, User,
+    SubsonicArtist, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory,
+    SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder,
+    SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
+    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
+    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, Track, User,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -510,8 +509,16 @@ impl SubsonicStorage for MemoryStorage {
         genre: Option<&str>,
         music_folder_id: Option<i32>,
     ) -> Result<Vec<SubsonicAlbum>> {
-        self.get_album_list(list_type, size, offset, from_year, to_year, genre, music_folder_id)
-            .await
+        self.get_album_list(
+            list_type,
+            size,
+            offset,
+            from_year,
+            to_year,
+            genre,
+            music_folder_id,
+        )
+        .await
     }
 
     async fn get_random_songs(
