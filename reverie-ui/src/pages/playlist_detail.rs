@@ -25,17 +25,17 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                 album_id: Some(format!("album-{}", (i % 5) + 1)),
                 artist: Some(format!("Artist {}", (i % 3) + 1)),
                 artist_id: Some(format!("artist-{}", (i % 3) + 1)),
-                track: Some(i as i32),
+                track: Some(i),
                 year: Some(2023),
                 genre: Some("Mixed".to_string()),
                 cover_art: None,
-                duration: Some(180 + (i * 15) as i32),
+                duration: Some(180 + i * 15),
                 bit_rate: Some(320),
                 suffix: Some("mp3".to_string()),
                 content_type: None,
                 path: None,
                 starred: None,
-                play_count: i as i32 * 5,
+                play_count: i * 5,
             })
             .collect();
 
@@ -43,7 +43,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
 
         let demo_playlist = Playlist {
             id: id.clone(),
-            name: format!("Playlist {}", id.split('-').last().unwrap_or("1")),
+            name: format!("Playlist {}", id.split('-').next_back().unwrap_or("1")),
             song_count: demo_songs.len() as i32,
             duration: total_duration,
             owner: Some("admin".to_string()),

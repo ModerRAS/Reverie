@@ -40,7 +40,7 @@ pub fn SearchPage() -> Element {
                 album_id: Some(format!("album-{}", i)),
                 artist: Some(format!("Artist {}", i)),
                 artist_id: Some(format!("artist-{}", i)),
-                track: Some(i as i32),
+                track: Some(i),
                 year: Some(2023),
                 genre: None,
                 cover_art: None,

@@ -20,8 +20,8 @@ pub fn PlaylistsPage() -> Element {
             .map(|i| Playlist {
                 id: format!("playlist-{}", i),
                 name: format!("My Playlist {}", i),
-                song_count: 10 + (i * 5) as i32,
-                duration: 2400 + (i * 600) as i32,
+                song_count: 10 + i * 5,
+                duration: 2400 + i * 600,
                 owner: Some("admin".to_string()),
                 public: Some(i % 2 == 0),
                 created: None,
