@@ -75,15 +75,15 @@ pub fn AlbumsPage() -> Element {
                 artist: Some(format!("Artist {}", (i % 5) + 1)),
                 artist_id: Some(format!("artist-{}", (i % 5) + 1)),
                 cover_art: None,
-                song_count: Some(10 + (i % 5) as i32),
-                duration: Some(2400 + (i * 60) as i32),
-                year: Some(2020 + (i % 5) as i32),
+                song_count: Some(10 + (i % 5)),
+                duration: Some(2400 + i * 60),
+                year: Some(2020 + (i % 5)),
                 genre: Some(
                     ["Rock", "Pop", "Jazz", "Electronic", "Classical"][i as usize % 5].to_string(),
                 ),
                 created: None,
                 starred: None,
-                play_count: i as i32 * 10,
+                play_count: i * 10,
             })
             .collect();
 
