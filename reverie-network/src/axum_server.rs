@@ -176,14 +176,8 @@ where
     }
 }
 
-// Application state shared across handlers
-#[derive(Clone)]
-struct AppState<S> {
-    storage: Arc<S>,
-}
-
 // Query parameters for pagination
-    State(state): State<subsonic::SubsonicState<S>>,
+#[derive(Deserialize)]
 struct PaginationQuery {
     #[serde(default = "default_limit")]
     limit: usize,

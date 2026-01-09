@@ -89,8 +89,9 @@ pub fn create_router<S: SubsonicStorage + Clone + 'static>(storage: Arc<S>) -> R
         .with_state(SubsonicState::new(storage))
 }
 
+#[derive(Clone)]
 pub(crate) struct SubsonicState<S: SubsonicStorage + Clone> {
-    storage: Arc<S>,
+    pub(crate) storage: Arc<S>,
 }
 
 impl<S: SubsonicStorage + Clone> SubsonicState<S> {
