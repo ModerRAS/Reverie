@@ -350,4 +350,123 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().0, 10);
     }
+
+    #[tokio::test]
+    async fn test_get_auth_context_helper() {
+        let ctx = AuthContext {
+            username: "testuser".to_string(),
+            is_admin: true,
+            token: Some("token123".to_string()),
+            salt: Some("salt456".to_string()),
+        };
+
+        let req = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+        let mut extensions = req.extensions_mut();
+        extensions.insert(ctx);
+
+        let extracted = get_auth_context(&req);
+        assert!(extracted.is_some());
+        assert_eq!(extracted.unwrap().username, "testuser");
+        assert!(extracted.unwrap().is_admin);
+    }
+
+    #[tokio::test]
+    async fn test_get_username_helper() {
+        let ctx = AuthContext {
+            username: "admin".to_string(),
+            is_admin: false,
+            token: None,
+            salt: None,
+        };
+
+        let req = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+        let mut extensions = req.extensions_mut();
+        extensions.insert(ctx);
+
+        let username = get_username(&req);
+        assert_eq!(username, Some("admin".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_get_username_no_context() {
+        let req = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+
+        let username = get_username(&req);
+        assert!(username.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_is_admin_helper() {
+        let admin_ctx = AuthContext {
+            username: "admin".to_string(),
+            is_admin: true,
+            token: None,
+            salt: None,
+        };
+
+        let req = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+        let mut extensions = req.extensions_mut();
+        extensions.insert(admin_ctx);
+
+        assert!(is_admin(&req));
+
+        let user_ctx = AuthContext {
+            username: "user".to_string(),
+            is_admin: false,
+            token: None,
+            salt: None,
+        };
+
+        let req2 = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+        let mut extensions2 = req2.extensions_mut();
+        extensions2.insert(user_ctx);
+
+        assert!(!is_admin(&req2));
+    }
+
+    #[tokio::test]
+    async fn test_is_admin_no_context() {
+        let req = Request::builder()
+            .uri("/rest/ping")
+            .body(Body::empty())
+            .unwrap();
+
+        assert!(!is_admin(&req));
+    }
+
+    #[tokio::test]
+    async fn test_auth_context_clone() {
+        let ctx = AuthContext {
+            username: "test".to_string(),
+            is_admin: false,
+            token: Some("tok".to_string()),
+            salt: Some("sal".to_string()),
+        };
+
+        let cloned = ctx.clone();
+        assert_eq!(ctx.username, cloned.username);
+        assert_eq!(ctx.is_admin, cloned.is_admin);
+        assert_eq!(ctx.token, cloned.token);
+        assert_eq!(ctx.salt, cloned.salt);
+    }
+
+    #[test]
+    fn test_subsonic_api_version_constant() {
+        assert_eq!(SUBSONIC_API_VERSION, "1.16.1");
+    }
 }
