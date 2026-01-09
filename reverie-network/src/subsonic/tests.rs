@@ -410,4 +410,31 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn delete_internet_radio_station(&self, _id: &str) -> Result<()> {
         Ok(())
     }
+
+    async fn get_user(&self, _username: &str) -> Result<Option<reverie_core::SubsonicUser>> {
+        Ok(Some(reverie_core::SubsonicUser {
+            username: "admin".to_string(),
+            email: None,
+            scrobbling_enabled: true,
+            max_bit_rate: None,
+            admin_role: true,
+            settings_role: true,
+            download_role: true,
+            upload_role: true,
+            playlist_role: true,
+            cover_art_role: true,
+            comment_role: true,
+            podcast_role: true,
+            stream_role: true,
+            jukebox_role: true,
+            share_role: true,
+            video_conversion_role: false,
+            avatar_last_changed: None,
+            folders: vec![1],
+        }))
+    }
+
+    async fn get_users(&self) -> Result<Vec<reverie_core::SubsonicUser>> {
+        Ok(vec![])
+    }
 }
