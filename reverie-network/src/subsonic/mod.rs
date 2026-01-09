@@ -14,7 +14,7 @@ pub use params::{
 use crate::subsonic::response::{subsonic_ok, subsonic_error};
 use axum::{
     body::Body,
-    extract::Query,
+    extract::{Query, State},
     response::IntoResponse,
     routing::get,
     Router,
@@ -25,8 +25,8 @@ use std::sync::Arc;
 pub const SUBSONIC_API_VERSION: &str = "1.16.1";
 
 #[cfg(feature = "axum-server")]
-pub fn create_router<S: SubsonicStorage + Clone + 'static>(storage: Arc<S>) -> Router {
-    Router::new()
+pub fn create_router<S: SubsonicStorage + Clone + 'static>(storage: Arc<S>) -> Router<SubsonicState<S>> {
+    Router::<SubsonicState<S>>::new()
         .route("/ping", get(ping_handler))
         .route("/getLicense", get(license_handler))
         .route("/getMusicFolders", get(music_folders_handler))
@@ -86,15 +86,15 @@ pub fn create_router<S: SubsonicStorage + Clone + 'static>(storage: Arc<S>) -> R
         .route("/getScanStatus", get(scan_status_handler))
         .route("/startScan", get(start_scan_handler))
         .route("/getOpenSubsonicExtensions", get(open_subsonic_extensions_handler))
-        .with_state(storage)
+        .with_state(SubsonicState::new(storage))
 }
 
-struct SubsonicState<S: SubsonicStorage + Clone> {
+pub(crate) struct SubsonicState<S: SubsonicStorage + Clone> {
     storage: Arc<S>,
 }
 
 impl<S: SubsonicStorage + Clone> SubsonicState<S> {
-    fn new(storage: Arc<S>) -> Self {
+    pub(crate) fn new(storage: Arc<S>) -> Self {
         Self { storage }
     }
 }
@@ -492,7 +492,7 @@ async fn album_list_handler<S: SubsonicStorage + Clone>(
     let offset = params.offset;
     let from_year = params.from_year;
     let to_year = params.to_year;
-    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
+    let genre = params.genre.as_deref();
 
     match state.storage.get_album_list(&list_type, size, offset, from_year, to_year, genre, None).await {
         Ok(albums) => {
@@ -520,7 +520,7 @@ async fn album_list2_handler<S: SubsonicStorage + Clone>(
     let offset = params.offset;
     let from_year = params.from_year;
     let to_year = params.to_year;
-    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
+    let genre = params.genre.as_deref();
 
     match state.storage.get_album_list2(&list_type, size, offset, from_year, to_year, genre, None).await {
         Ok(albums) => {
@@ -544,7 +544,7 @@ async fn random_songs_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<RandomSongsParams>,
 ) -> String {
     let size = params.size;
-    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
+    let genre = params.genre.as_deref();
     let from_year = params.from_year;
     let to_year = params.to_year;
 
