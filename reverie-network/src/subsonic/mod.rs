@@ -6,6 +6,9 @@
 mod auth;
 mod response;
 
+#[cfg(test)]
+mod tests;
+
 use axum::{
     extract::{Query, State},
     http::{header, StatusCode},
