@@ -490,4 +490,39 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn change_password(&self, _username: &str, _password: &str) -> Result<()> {
         Ok(())
     }
+
+    async fn get_scan_status(&self) -> Result<reverie_core::SubsonicScanStatus> {
+        Ok(reverie_core::SubsonicScanStatus {
+            scanning: false,
+            count: 100,
+            folder_count: 1,
+            last_scan: None,
+            error: None,
+            scan_type: None,
+            elapsed_time: None,
+        })
+    }
+
+    async fn start_scan(&self) -> Result<reverie_core::SubsonicScanStatus> {
+        self.get_scan_status().await
+    }
+}
+
+// === Test Helper Functions ===
+
+fn create_test_router() -> axum::Router {
+    let storage = Arc::new(MockSubsonicStorage::new());
+    create_subsonic_router(storage)
+}
+
+async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value {
+    let response = router
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+    
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    serde_json::from_slice(&body).unwrap()
 }
