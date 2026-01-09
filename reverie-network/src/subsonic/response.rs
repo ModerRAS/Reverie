@@ -1,6 +1,6 @@
-//! Subsonic API response types and serialization
+//! Subsonic API 响应类型和序列化
 //!
-//! Supports both JSON and XML output formats as per Subsonic API spec.
+//! 根据 Subsonic API 规范支持 JSON 和 XML 两种输出格式。
 
 use reverie_core::{
     MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex,
@@ -11,7 +11,7 @@ use reverie_core::{
 };
 use serde::Serialize;
 
-/// Main Subsonic response wrapper for JSON format
+/// JSON 格式的 Subsonic 响应主包装器
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubsonicResponse {
@@ -138,7 +138,7 @@ pub enum ResponseData {
     OpenSubsonicExtensions(OpenSubsonicExtensionsData),
 }
 
-// === License ===
+// === 许可证 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct LicenseData {
     pub license: License,
@@ -153,7 +153,7 @@ impl From<LicenseData> for ResponseData {
     }
 }
 
-// === Music Folders ===
+// === 音乐文件夹 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MusicFoldersData {
@@ -184,7 +184,7 @@ impl From<MusicFoldersData> for ResponseData {
     }
 }
 
-// === Indexes ===
+// === 索引 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct IndexesData {
     pub indexes: IndexesList,
@@ -209,7 +209,7 @@ impl From<IndexesData> for ResponseData {
     }
 }
 
-// === Artists (ID3) ===
+// === 艺术家 (ID3) ===
 #[derive(Debug, Clone, Serialize)]
 pub struct ArtistsData {
     pub artists: ArtistsList,
@@ -234,7 +234,7 @@ impl From<ArtistsData> for ResponseData {
     }
 }
 
-// === Artist (folder-based) ===
+// === 艺术家 (基于文件夹) ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtistItem {
@@ -262,7 +262,7 @@ impl From<&SubsonicArtist> for ArtistItem {
     }
 }
 
-// === Artist ID3 ===
+// === 艺术家 ID3 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtistID3Item {
@@ -292,7 +292,7 @@ impl From<&SubsonicArtist> for ArtistID3Item {
     }
 }
 
-// === Single Artist with Albums ===
+// === 单个艺术家及其专辑 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct ArtistData {
     pub artist: ArtistWithAlbums,
@@ -329,7 +329,7 @@ impl From<&SubsonicArtist> for ArtistWithAlbums {
     }
 }
 
-// === Album ID3 ===
+// === 专辑 ID3 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AlbumID3Item {
@@ -373,7 +373,7 @@ impl From<&SubsonicAlbum> for AlbumID3Item {
     }
 }
 
-// === Single Album with Songs ===
+// === 单个专辑及其歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct AlbumData {
     pub album: AlbumWithSongs,
@@ -430,7 +430,7 @@ impl From<&SubsonicAlbum> for AlbumWithSongs {
     }
 }
 
-// === Child (Song/MediaFile) ===
+// === 子项 (歌曲/媒体文件) ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Child {
@@ -517,7 +517,7 @@ impl From<&MediaFile> for Child {
     }
 }
 
-// === Single Song ===
+// === 单个歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct SongData {
     pub song: Child,
@@ -528,7 +528,7 @@ impl From<SongData> for ResponseData {
     }
 }
 
-// === Directory ===
+// === 目录 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct DirectoryData {
     pub directory: DirectoryItem,
@@ -555,7 +555,7 @@ impl From<DirectoryData> for ResponseData {
     }
 }
 
-// === Genres ===
+// === 流派 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct GenresData {
     pub genres: GenresList,
@@ -587,7 +587,7 @@ impl From<GenresData> for ResponseData {
     }
 }
 
-// === Album Lists ===
+// === 专辑列表 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AlbumListData {
@@ -620,7 +620,7 @@ impl From<AlbumList2Data> for ResponseData {
     }
 }
 
-// === Random Songs ===
+// === 随机歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RandomSongsData {
@@ -637,7 +637,7 @@ impl From<RandomSongsData> for ResponseData {
     }
 }
 
-// === Songs by Genre ===
+// === 按流派歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SongsByGenreData {
@@ -654,7 +654,7 @@ impl From<SongsByGenreData> for ResponseData {
     }
 }
 
-// === Now Playing ===
+// === 正在播放 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NowPlayingData {
@@ -694,7 +694,7 @@ impl From<NowPlayingData> for ResponseData {
     }
 }
 
-// === Starred ===
+// === 收藏 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct StarredData {
     pub starred: StarredInner,
@@ -733,7 +733,7 @@ impl From<Starred2Data> for ResponseData {
     }
 }
 
-// === Search Results ===
+// === 搜索结果 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchResult2Data {
@@ -774,7 +774,7 @@ impl From<SearchResult3Data> for ResponseData {
     }
 }
 
-// === Playlists ===
+// === 播放列表 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct PlaylistsData {
     pub playlists: PlaylistsList,
@@ -867,7 +867,7 @@ impl From<PlaylistData> for ResponseData {
     }
 }
 
-// === Users ===
+// === 用户 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct UserData {
     pub user: UserItem,
@@ -940,7 +940,7 @@ impl From<UsersData> for ResponseData {
     }
 }
 
-// === Bookmarks ===
+// === 书签 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct BookmarksData {
     pub bookmarks: BookmarksList,
@@ -979,7 +979,7 @@ impl From<BookmarksData> for ResponseData {
     }
 }
 
-// === Play Queue ===
+// === 播放队列 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayQueueData {
@@ -1015,7 +1015,7 @@ impl From<PlayQueueData> for ResponseData {
     }
 }
 
-// === Shares ===
+// === 分享 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct SharesData {
     pub shares: SharesList,
@@ -1063,7 +1063,7 @@ impl From<SharesData> for ResponseData {
     }
 }
 
-// === Internet Radio Stations ===
+// === 网络电台 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InternetRadioStationsData {
@@ -1100,7 +1100,7 @@ impl From<InternetRadioStationsData> for ResponseData {
     }
 }
 
-// === Lyrics ===
+// === 歌词 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct LyricsData {
     pub lyrics: LyricsInner,
@@ -1184,7 +1184,7 @@ impl From<LyricsListData> for ResponseData {
     }
 }
 
-// === Scan Status ===
+// === 扫描状态 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanStatusData {
@@ -1216,7 +1216,7 @@ impl From<ScanStatusData> for ResponseData {
     }
 }
 
-// === Artist Info ===
+// === 艺术家信息 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtistInfoData {
@@ -1270,7 +1270,7 @@ impl From<ArtistInfo2Data> for ResponseData {
     }
 }
 
-// === Album Info ===
+// === 专辑信息 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AlbumInfoData {
@@ -1310,7 +1310,7 @@ impl From<AlbumInfoData> for ResponseData {
     }
 }
 
-// === Similar Songs ===
+// === 相似歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SimilarSongsData {
@@ -1338,7 +1338,7 @@ impl From<SimilarSongs2Data> for ResponseData {
     }
 }
 
-// === Top Songs ===
+// === 热门歌曲 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopSongsData {
@@ -1355,7 +1355,7 @@ impl From<TopSongsData> for ResponseData {
     }
 }
 
-// === OpenSubsonic Extensions ===
+// === OpenSubsonic 扩展 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenSubsonicExtensionsData {
@@ -1380,7 +1380,7 @@ impl From<OpenSubsonicExtensionsData> for ResponseData {
     }
 }
 
-// === Helper functions ===
+// === 辅助函数 ===
 
 pub fn build_indexes(indexes: &[SubsonicArtistIndex], last_modified: i64) -> IndexesData {
     IndexesData {
