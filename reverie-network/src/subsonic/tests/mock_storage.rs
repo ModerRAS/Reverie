@@ -1,23 +1,25 @@
-//! Subsonic API 集成测试
+//! Mock Subsonic Storage 实现
 
-use super::*;
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
+use async_trait::async_trait;
+use reverie_core::{SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, MediaFile};
 use reverie_storage::{error::StorageError, SubsonicStorage};
-use std::sync::Arc;
-use tower::ServiceExt;
+use std::fmt;
 
 type Result<T> = std::result::Result<T, StorageError>;
 
 /// 用于测试的模拟存储
 #[derive(Clone)]
-struct MockSubsonicStorage;
+pub struct MockSubsonicStorage;
 
 impl MockSubsonicStorage {
-    fn new() -> Self {
+    pub fn new() -> Self {
         MockSubsonicStorage
+    }
+}
+
+impl fmt::Debug for MockSubsonicStorage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "MockSubsonicStorage")
     }
 }
 
@@ -29,8 +31,8 @@ impl SubsonicStorage for MockSubsonicStorage {
     }
 
     // === Browsing ===
-    async fn get_music_folders(&self) -> Result<Vec<reverie_core::SubsonicMusicFolder>> {
-        Ok(vec![reverie_core::SubsonicMusicFolder {
+    async fn get_music_folders(&self) -> Result<Vec<SubsonicMusicFolder>> {
+        Ok(vec![SubsonicMusicFolder {
             id: 1,
             name: "Music".to_string(),
         }])
@@ -40,28 +42,28 @@ impl SubsonicStorage for MockSubsonicStorage {
         &self,
         _music_folder_id: Option<i32>,
         _if_modified_since: Option<i64>,
-    ) -> Result<reverie_core::SubsonicArtistIndexes> {
+    ) -> Result<SubsonicArtistIndexes> {
         Ok(vec![])
     }
 
-    async fn get_genres(&self) -> Result<Vec<reverie_core::SubsonicGenre>> {
+    async fn get_genres(&self) -> Result<Vec<SubsonicGenre>> {
         Ok(vec![])
     }
 
     async fn get_music_directory(
         &self,
         _id: &str,
-    ) -> Result<Option<reverie_core::SubsonicDirectory>> {
+    ) -> Result<Option<SubsonicDirectory>> {
         Ok(None)
     }
 
     async fn get_artists(
         &self,
         _music_folder_id: Option<i32>,
-    ) -> Result<reverie_core::SubsonicArtistIndexes> {
-        Ok(vec![reverie_core::SubsonicArtistIndex {
+    ) -> Result<SubsonicArtistIndexes> {
+        Ok(vec![SubsonicArtistIndex {
             id: "A".to_string(),
-            artists: vec![reverie_core::SubsonicArtist {
+            artists: vec![SubsonicArtist {
                 id: "artist-1".to_string(),
                 name: "Test Artist".to_string(),
                 cover_art: None,
@@ -72,8 +74,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         }])
     }
 
-    async fn get_artist(&self, _id: &str) -> Result<Option<reverie_core::SubsonicArtist>> {
-        Ok(Some(reverie_core::SubsonicArtist {
+    async fn get_artist(&self, _id: &str) -> Result<Option<SubsonicArtist>> {
+        Ok(Some(SubsonicArtist {
             id: "artist-1".to_string(),
             name: "Test Artist".to_string(),
             cover_art: None,
@@ -83,8 +85,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         }))
     }
 
-    async fn get_album(&self, _id: &str) -> Result<Option<reverie_core::SubsonicAlbum>> {
-        Ok(Some(reverie_core::SubsonicAlbum {
+    async fn get_album(&self, _id: &str) -> Result<Option<SubsonicAlbum>> {
+        Ok(Some(SubsonicAlbum {
             id: "album-1".to_string(),
             name: "Test Album".to_string(),
             album_artist: Some("Test Artist".to_string()),
@@ -103,8 +105,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         }))
     }
 
-    async fn get_song(&self, _id: &str) -> Result<Option<reverie_core::MediaFile>> {
-        Ok(Some(reverie_core::MediaFile::default()))
+    async fn get_song(&self, _id: &str) -> Result<Option<MediaFile>> {
+        Ok(Some(MediaFile::default()))
     }
 
     async fn get_artist_info(
@@ -112,8 +114,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         _id: &str,
         _count: Option<i32>,
         _include_not_present: Option<bool>,
-    ) -> Result<reverie_core::SubsonicArtistInfo> {
-        Ok(reverie_core::SubsonicArtistInfo {
+    ) -> Result<SubsonicArtistInfo> {
+        Ok(SubsonicArtistInfo {
             biography: None,
             music_brainz_id: None,
             last_fm_url: None,
@@ -129,13 +131,13 @@ impl SubsonicStorage for MockSubsonicStorage {
         _id: &str,
         _count: Option<i32>,
         _include_not_present: Option<bool>,
-    ) -> Result<reverie_core::SubsonicArtistInfo> {
+    ) -> Result<SubsonicArtistInfo> {
         self.get_artist_info(_id, _count, _include_not_present)
             .await
     }
 
-    async fn get_album_info(&self, _id: &str) -> Result<reverie_core::SubsonicAlbumInfo> {
-        Ok(reverie_core::SubsonicAlbumInfo {
+    async fn get_album_info(&self, _id: &str) -> Result<SubsonicAlbumInfo> {
+        Ok(SubsonicAlbumInfo {
             notes: None,
             music_brainz_id: None,
             last_fm_url: None,
@@ -145,7 +147,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         })
     }
 
-    async fn get_album_info2(&self, _id: &str) -> Result<reverie_core::SubsonicAlbumInfo> {
+    async fn get_album_info2(&self, _id: &str) -> Result<SubsonicAlbumInfo> {
         self.get_album_info(_id).await
     }
 
@@ -153,7 +155,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         &self,
         _id: &str,
         _count: Option<i32>,
-    ) -> Result<Vec<reverie_core::MediaFile>> {
+    ) -> Result<Vec<MediaFile>> {
         Ok(vec![])
     }
 
@@ -161,7 +163,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         &self,
         _id: &str,
         _count: Option<i32>,
-    ) -> Result<Vec<reverie_core::MediaFile>> {
+    ) -> Result<Vec<MediaFile>> {
         Ok(vec![])
     }
 
@@ -169,8 +171,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         &self,
         _artist: &str,
         _count: Option<i32>,
-    ) -> Result<reverie_core::SubsonicTopSongs> {
-        Ok(reverie_core::SubsonicTopSongs { songs: vec![] })
+    ) -> Result<SubsonicTopSongs> {
+        Ok(SubsonicTopSongs { songs: vec![] })
     }
 
     async fn get_album_list(
@@ -182,7 +184,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         _to_year: Option<i32>,
         _genre: Option<&str>,
         _music_folder_id: Option<i32>,
-    ) -> Result<Vec<reverie_core::SubsonicAlbum>> {
+    ) -> Result<Vec<SubsonicAlbum>> {
         Ok(vec![])
     }
 
@@ -195,8 +197,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         _to_year: Option<i32>,
         _genre: Option<&str>,
         _music_folder_id: Option<i32>,
-    ) -> Result<Vec<reverie_core::SubsonicAlbum>> {
-        Ok(vec![reverie_core::SubsonicAlbum {
+    ) -> Result<Vec<SubsonicAlbum>> {
+        Ok(vec![SubsonicAlbum {
             id: "album-1".to_string(),
             name: "Test Album".to_string(),
             album_artist: Some("Test Artist".to_string()),
@@ -222,7 +224,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         _from_year: Option<i32>,
         _to_year: Option<i32>,
         _music_folder_id: Option<i32>,
-    ) -> Result<Vec<reverie_core::MediaFile>> {
+    ) -> Result<Vec<MediaFile>> {
         Ok(vec![])
     }
 
@@ -232,19 +234,19 @@ impl SubsonicStorage for MockSubsonicStorage {
         _count: Option<i32>,
         _offset: Option<i32>,
         _music_folder_id: Option<i32>,
-    ) -> Result<Vec<reverie_core::MediaFile>> {
+    ) -> Result<Vec<MediaFile>> {
         Ok(vec![])
     }
 
-    async fn get_now_playing(&self) -> Result<Vec<reverie_core::SubsonicNowPlaying>> {
+    async fn get_now_playing(&self) -> Result<Vec<SubsonicNowPlaying>> {
         Ok(vec![])
     }
 
     async fn get_starred(
         &self,
         _music_folder_id: Option<i32>,
-    ) -> Result<reverie_core::SubsonicStarred> {
-        Ok(reverie_core::SubsonicStarred {
+    ) -> Result<SubsonicStarred> {
+        Ok(SubsonicStarred {
             artists: vec![],
             albums: vec![],
             songs: vec![],
@@ -254,7 +256,7 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn get_starred2(
         &self,
         _music_folder_id: Option<i32>,
-    ) -> Result<reverie_core::SubsonicStarred> {
+    ) -> Result<SubsonicStarred> {
         self.get_starred(_music_folder_id).await
     }
 
@@ -295,14 +297,14 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn get_playlists(
         &self,
         _username: Option<&str>,
-    ) -> Result<Vec<reverie_core::SubsonicPlaylist>> {
+    ) -> Result<Vec<SubsonicPlaylist>> {
         Ok(vec![])
     }
 
     async fn get_playlist(
         &self,
         _id: &str,
-    ) -> Result<Option<reverie_core::SubsonicPlaylistWithSongs>> {
+    ) -> Result<Option<SubsonicPlaylistWithSongs>> {
         Ok(None)
     }
 
@@ -311,8 +313,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         _name: Option<&str>,
         _playlist_id: Option<&str>,
         _song_ids: &[&str],
-    ) -> Result<reverie_core::SubsonicPlaylistWithSongs> {
-        Ok(reverie_core::SubsonicPlaylistWithSongs {
+    ) -> Result<SubsonicPlaylistWithSongs> {
+        Ok(SubsonicPlaylistWithSongs {
             id: "playlist-1".to_string(),
             name: "Test Playlist".to_string(),
             comment: None,
@@ -355,14 +357,14 @@ impl SubsonicStorage for MockSubsonicStorage {
         &self,
         _artist: Option<&str>,
         _title: Option<&str>,
-    ) -> Result<Option<reverie_core::SubsonicLyrics>> {
+    ) -> Result<Option<SubsonicLyrics>> {
         Ok(None)
     }
 
     async fn get_lyrics_by_song_id(
         &self,
         _id: &str,
-    ) -> Result<Vec<reverie_core::SubsonicStructuredLyrics>> {
+    ) -> Result<Vec<SubsonicStructuredLyrics>> {
         Ok(vec![])
     }
 
@@ -386,7 +388,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_bookmarks(&self) -> Result<Vec<reverie_core::SubsonicBookmark>> {
+    async fn get_bookmarks(&self) -> Result<Vec<SubsonicBookmark>> {
         Ok(vec![])
     }
 
@@ -403,7 +405,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_play_queue(&self) -> Result<Option<reverie_core::SubsonicPlayQueue>> {
+    async fn get_play_queue(&self) -> Result<Option<SubsonicPlayQueue>> {
         Ok(None)
     }
 
@@ -416,7 +418,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_shares(&self) -> Result<Vec<reverie_core::SubsonicShare>> {
+    async fn get_shares(&self) -> Result<Vec<SubsonicShare>> {
         Ok(vec![])
     }
 
@@ -425,8 +427,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         _ids: &[&str],
         _description: Option<&str>,
         _expires: Option<i64>,
-    ) -> Result<reverie_core::SubsonicShare> {
-        Ok(reverie_core::SubsonicShare {
+    ) -> Result<SubsonicShare> {
+        Ok(SubsonicShare {
             id: "share-1".to_string(),
             url: "http://example.com/share/1".to_string(),
             description: None,
@@ -454,7 +456,7 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn get_internet_radio_stations(
         &self,
-    ) -> Result<Vec<reverie_core::SubsonicInternetRadioStation>> {
+    ) -> Result<Vec<SubsonicInternetRadioStation>> {
         Ok(vec![])
     }
 
@@ -481,8 +483,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_user(&self, _username: &str) -> Result<Option<reverie_core::SubsonicUser>> {
-        Ok(Some(reverie_core::SubsonicUser {
+    async fn get_user(&self, _username: &str) -> Result<Option<SubsonicUser>> {
+        Ok(Some(SubsonicUser {
             username: "admin".to_string(),
             email: None,
             scrobbling_enabled: true,
@@ -504,7 +506,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         }))
     }
 
-    async fn get_users(&self) -> Result<Vec<reverie_core::SubsonicUser>> {
+    async fn get_users(&self) -> Result<Vec<SubsonicUser>> {
         Ok(vec![])
     }
 
@@ -561,8 +563,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_scan_status(&self) -> Result<reverie_core::SubsonicScanStatus> {
-        Ok(reverie_core::SubsonicScanStatus {
+    async fn get_scan_status(&self) -> Result<SubsonicScanStatus> {
+        Ok(SubsonicScanStatus {
             scanning: false,
             count: 100,
             folder_count: 1,
@@ -573,90 +575,7 @@ impl SubsonicStorage for MockSubsonicStorage {
         })
     }
 
-    async fn start_scan(&self) -> Result<reverie_core::SubsonicScanStatus> {
+    async fn start_scan(&self) -> Result<SubsonicScanStatus> {
         self.get_scan_status().await
     }
-}
-
-// === 测试辅助函数 ===
-
-fn create_test_router() -> axum::Router {
-    let storage = Arc::new(MockSubsonicStorage::new());
-    let state = SubsonicState::new(storage);
-    create_router::<MockSubsonicStorage>().with_state(state)
-}
-
-async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value {
-    let response = router
-        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    serde_json::from_slice(&body).unwrap()
-}
-
-// === 测试用例 ===
-
-#[tokio::test]
-async fn test_ping_returns_ok() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/ping?f=json").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-}
-
-#[tokio::test]
-async fn test_get_license_returns_valid() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/getLicense?f=json").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-    assert_eq!(json["subsonic-response"]["license"]["valid"], true);
-}
-
-#[tokio::test]
-async fn test_get_music_folders() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/getMusicFolders?f=json").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-    let folders = &json["subsonic-response"]["musicFolders"]["musicFolder"];
-    assert!(folders.is_array());
-}
-
-#[tokio::test]
-async fn test_get_artists() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/getArtists?f=json").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-}
-
-#[tokio::test]
-async fn test_get_album_list2() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/getAlbumList2?f=json&type=recent").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-}
-
-#[tokio::test]
-async fn test_search3() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/search3?f=json&query=test").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
-}
-
-#[tokio::test]
-async fn test_get_scan_status() {
-    let router = create_test_router();
-    let json = get_json_response(router, "/getScanStatus?f=json").await;
-
-    assert_eq!(json["subsonic-response"]["status"], "ok");
 }

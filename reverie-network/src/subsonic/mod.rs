@@ -4,7 +4,7 @@
 //! 该模块提供了所有 Subsonic API 端点的处理程序。
 
 mod auth;
-mod response;
+pub mod response;
 
 #[cfg(test)]
 mod tests;
@@ -19,7 +19,7 @@ use axum::{
 use reverie_storage::SubsonicStorage;
 use std::{collections::HashMap, sync::Arc};
 
-use response::*;
+use response::{self, *};
 
 // === State and Response Helpers ===
 
@@ -34,7 +34,7 @@ impl<S: Clone> SubsonicState<S> {
     }
 }
 
-//! 根据格式参数返回 JSON 或 XML
+/// 根据格式参数返回 JSON 或 XML
 fn format_response(params: &HashMap<String, String>, response: SubsonicResponse) -> Response {
     let format = params.get("f").map(|s| s.as_str()).unwrap_or("xml");
 
@@ -64,10 +64,10 @@ fn error_response(params: &HashMap<String, String>, code: i32, message: &str) ->
     format_response(params, SubsonicResponse::error(code, message))
 }
 
-//! 创建 Subsonic 路由器。
-//!
-//! 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
-//! 通过 `Router::with_state` 实现。
+/// 创建 Subsonic 路由器。
+///
+/// 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
+/// 通过 `Router::with_state` 实现。
 #[cfg(feature = "axum-server")]
 pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
     Router::new()
@@ -140,14 +140,14 @@ pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<Su
 
 // ===== 系统处理器 =====
 
-//! GET /rest/ping - 测试连接
+/// GET /rest/ping - 测试连接
 async fn ping_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     ok_response(&params)
 }
 
-//! GET /rest/getLicense - 获取服务器许可证信息
+/// GET /rest/getLicense - 获取服务器许可证信息
 async fn get_license_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
@@ -157,7 +157,7 @@ async fn get_license_handler<S: SubsonicStorage + Clone>(
     format_response(&params, response)
 }
 
-//! GET /rest/getMusicFolders - 获取已配置的音乐文件夹
+/// GET /rest/getMusicFolders - 获取已配置的音乐文件夹
 async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -179,7 +179,7 @@ async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
 
 // ===== 未实现端点的存根处理器 =====
 
-//! 未实现端点的存根处理器 - 返回空的 OK 响应
+/// 未实现端点的存根处理器 - 返回空的 OK 响应
 async fn stub_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
@@ -188,7 +188,7 @@ async fn stub_handler<S: SubsonicStorage + Clone>(
 
 // ===== 浏览处理器 =====
 
-//! GET /rest/getArtists - 获取所有艺术家
+/// GET /rest/getArtists - 获取所有艺术家
 async fn get_artists_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -205,7 +205,7 @@ async fn get_artists_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-//! GET /rest/getArtist - 获取艺术家详情
+/// GET /rest/getArtist - 获取艺术家详情
 async fn get_artist_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -228,7 +228,7 @@ async fn get_artist_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-//! GET /rest/getAlbum - 获取专辑详情
+/// GET /rest/getAlbum - 获取专辑详情
 async fn get_album_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -251,7 +251,7 @@ async fn get_album_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-//! GET /rest/getSong - 获取歌曲详情
+/// GET /rest/getSong - 获取歌曲详情
 async fn get_song_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -276,7 +276,7 @@ async fn get_song_handler<S: SubsonicStorage + Clone>(
 
 // ===== 专辑列表处理器 =====
 
-//! GET /rest/getAlbumList2 - 按类型获取专辑列表（基于 ID3 标签）
+/// GET /rest/getAlbumList2 - 按类型获取专辑列表（基于 ID3 标签）
 async fn get_album_list2_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -320,7 +320,7 @@ async fn get_album_list2_handler<S: SubsonicStorage + Clone>(
 
 // ===== 搜索处理器 =====
 
-//! GET /rest/search3 - 使用 ID3 标签搜索
+/// GET /rest/search3 - 使用 ID3 标签搜索
 async fn search3_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -373,7 +373,7 @@ async fn search3_handler<S: SubsonicStorage + Clone>(
 
 // ===== 媒体检索处理器 =====
 
-//! GET /rest/getCoverArt - 获取封面图片
+/// GET /rest/getCoverArt - 获取封面图片
 async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -406,7 +406,7 @@ async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-//! GET /rest/stream - 流式传输媒体文件
+/// GET /rest/stream - 流式传输媒体文件
 async fn stream_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
