@@ -1,3 +1,19 @@
+[package]
+name = "reverie"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+default-run = "reverie"
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+reverie-server = { path = "./reverie-server" }
+reverie-storage = { path = "./reverie-storage", features = ["memory"] }
+
 [workspace]
 members = [
     "reverie-core",

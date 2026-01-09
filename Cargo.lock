@@ -5309,6 +5309,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "reverie"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reverie-server",
+ "reverie-storage",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "reverie-core"
 version = "0.1.0"
 dependencies = [

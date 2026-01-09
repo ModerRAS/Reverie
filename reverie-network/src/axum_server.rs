@@ -5,43 +5,84 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Json},
-    routing::get,
+    routing::{get, get_service},
     Router,
 };
 use serde::Deserialize;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
 use crate::{
     dto::*,
     error::{NetworkError, Result},
+    subsonic,
     traits::{HttpServer, NetworkConfig},
 };
-use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, TrackStorage};
+use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage};
 
 /// Axum-based HTTP server
 pub struct AxumServer<S> {
     storage: Arc<S>,
     config: NetworkConfig,
+    ui_dir: Option<PathBuf>,
     addr: Arc<RwLock<Option<SocketAddr>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
 impl<S> AxumServer<S>
 where
-    S: TrackStorage + AlbumStorage + ArtistStorage + PlaylistStorage + Clone + 'static,
+    S: TrackStorage
+        + AlbumStorage
+        + ArtistStorage
+        + PlaylistStorage
+        + SubsonicStorage
+        + Clone
+        + 'static,
 {
     pub fn new(storage: Arc<S>, config: NetworkConfig) -> Self {
         Self {
             storage,
             config,
+            ui_dir: None,
             addr: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         }
+    }
+
+    /// Serve a built web UI (dx build output) from the given directory.
+    ///
+    /// Expected structure:
+    /// - index.html
+    /// - assets/
+    /// - wasm/
+    pub fn with_ui_dir(mut self, ui_dir: impl Into<PathBuf>) -> Self {
+        self.ui_dir = Some(ui_dir.into());
+        self
+    }
+
+    fn create_ui_router(&self) -> Option<Router> {
+        let ui_dir = self.ui_dir.clone()?;
+
+        let index = ui_dir.join("index.html");
+        let assets_dir = ui_dir.join("assets");
+        let wasm_dir = ui_dir.join("wasm");
+
+        // Serve static assets and WASM without falling back to index.html.
+        // For SPA routes, serve index.html.
+        Some(
+            Router::new()
+                .route("/", get_service(ServeFile::new(index.clone())))
+                .route("/favicon.ico", get_service(ServeFile::new(ui_dir.join("favicon.ico"))))
+                .nest_service("/assets", ServeDir::new(assets_dir))
+                .nest_service("/wasm", ServeDir::new(wasm_dir))
+                .route("/*path", get_service(ServeFile::new(index))),
+        )
     }
 
     fn create_router(&self) -> Router {
@@ -49,9 +90,11 @@ where
             storage: Arc::clone(&self.storage),
         };
 
-        Router::new()
+        let mut router = Router::new()
             // Health check
             .route("/health", get(health_handler))
+            // Subsonic API
+            .nest("/rest", subsonic::create_router(Arc::clone(&self.storage)))
             // Track routes
             .route("/api/tracks", get(list_tracks_handler::<S>))
             .route("/api/tracks/:id", get(get_track_handler::<S>))
@@ -68,7 +111,13 @@ where
                 get(get_artist_albums_handler::<S>),
             )
             // Playlist routes
-            .route("/api/playlists/:id", get(get_playlist_handler::<S>))
+            .route("/api/playlists/:id", get(get_playlist_handler::<S>));
+
+        if let Some(ui_router) = self.create_ui_router() {
+            router = router.merge(ui_router);
+        }
+
+        router
             .with_state(app_state)
             .layer(if self.config.enable_cors {
                 CorsLayer::permissive()
@@ -82,7 +131,13 @@ where
 #[async_trait]
 impl<S> HttpServer for AxumServer<S>
 where
-    S: TrackStorage + AlbumStorage + ArtistStorage + PlaylistStorage + Clone + 'static,
+    S: TrackStorage
+        + AlbumStorage
+        + ArtistStorage
+        + PlaylistStorage
+        + SubsonicStorage
+        + Clone
+        + 'static,
 {
     async fn start(&self, addr: SocketAddr) -> Result<()> {
         let router = self.create_router();
