@@ -50,6 +50,9 @@ pub mod memory;
 #[cfg(feature = "database")]
 pub mod database;
 
+#[cfg(test)]
+mod tests;
+
 pub use error::*;
 pub use traits::*;
 pub use vfs::{create_vfs, OpendalVfs, SharedVfs, Vfs, VfsConfig, VfsEntry, VfsMetadata};
