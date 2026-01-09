@@ -6,5 +6,8 @@
 pub mod error;
 pub mod models;
 
+#[cfg(test)]
+mod tests;
+
 pub use error::*;
 pub use models::*;
