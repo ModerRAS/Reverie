@@ -149,7 +149,7 @@ async fn test_endpoint() {
 
 ## 参考项目
 
-- `temp/navidrome/` - Go 实现的 Subsonic 服务器，功能参考
-- `temp/opendal/` - Rust 存储抽象层，VFS 实现参考
-- `temp/docsite/` - Reverie 文档站点，架构和设计文档参考
-
+- `temp/navidrome/` - Go 实现的 Subsonic 服务器，功能参考，如果不存在可以从https://github.com/navidrome/navidrome.git重新clone过来
+- `temp/opendal/` - Rust 存储抽象层，VFS 实现参考，如果不存在可以从https://github.com/apache/opendal.git重新clone过来
+- `temp/docsite/` - Reverie 文档站点，架构和设计文档参考，如果不存在可以从https://github.com/DioxusLabs/docsite.git重新clone过来
+- `temp/dioxus/` - Dioxus UI 框架，Reverie UI 实现参考，如果不存在可以从https://github.com/DioxusLabs/dioxus.git重新clone过来
