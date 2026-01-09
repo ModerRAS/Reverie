@@ -555,3 +555,35 @@ async fn test_get_music_folders() {
     let folders = &json["subsonic-response"]["musicFolders"]["musicFolder"];
     assert!(folders.is_array());
 }
+
+#[tokio::test]
+async fn test_get_artists() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getArtists?f=json").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_get_album_list2() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getAlbumList2?f=json&type=recent").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_search3() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/search3?f=json&query=test").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_get_scan_status() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getScanStatus?f=json").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
