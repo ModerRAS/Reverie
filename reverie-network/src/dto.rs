@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// 曲目信息响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrackResponse {
     pub id: Uuid,
     pub title: String,
