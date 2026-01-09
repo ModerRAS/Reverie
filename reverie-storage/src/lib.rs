@@ -1,36 +1,36 @@
-//! Reverie Storage - Storage Abstraction Layer
+//! Reverie 存储 - 存储抽象层
 //!
-//! This crate provides a trait-based abstraction for storage operations,
-//! allowing the application to work with different storage backends
-//! (filesystem, database, cloud storage, etc.) through a unified interface.
+//! 该 crate 提供了基于 trait 的存储操作抽象，
+//! 允许应用程序通过统一接口使用不同的存储后端
+//!（文件系统、数据库、云存储等）。
 //!
-//! ## Architecture
+//! ## 架构
 //!
-//! The storage layer is split into two main components:
+//! 存储层分为两个主要组件：
 //!
-//! 1. **Metadata Storage** - Stores track, album, artist, user, and playlist information
-//!    - `MemoryStorage` - In-memory storage for testing
-//!    - `DatabaseStorage` - SQLite-based persistent storage
+//! 1. **元数据存储** - 存储曲目、专辑、艺术家、用户和播放列表信息
+//!    - `MemoryStorage` - 用于测试的内存存储
+//!    - `DatabaseStorage` - 基于 SQLite 的持久化存储
 //!
-//! 2. **File Storage (VFS)** - Stores actual media files using OpenDAL
-//!    - Local filesystem
-//!    - S3-compatible storage (AWS S3, MinIO, etc.)
-//!    - Azure Blob Storage
+//! 2. **文件存储 (VFS)** - 使用 OpenDAL 存储实际的媒体文件
+//!    - 本地文件系统
+//!    - S3 兼容存储（AWS S3、MinIO 等）
+//!    - Azure Blob 存储
 //!    - Google Cloud Storage
 //!    - WebDAV
 //!    - SFTP
 //!
-//! ## Usage
+//! ## 用法
 //!
 //! ```rust,ignore
 //! use reverie_storage::{DatabaseStorage, DatabaseConfig, VfsConfig};
 //!
-//! // Create storage with local filesystem backend
+//! // 使用本地文件系统后端创建存储
 //! let config = DatabaseConfig::new("reverie.db", VfsConfig::local("./music"));
 //! let storage = DatabaseStorage::new(config).await?;
 //! storage.initialize().await?;
 //!
-//! // Or with S3 backend
+//! // 或使用 S3 后端
 //! let config = DatabaseConfig::new(
 //!     "reverie.db",
 //!     VfsConfig::s3("my-bucket", "us-east-1", None, None, None)

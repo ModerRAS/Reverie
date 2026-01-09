@@ -1,36 +1,36 @@
-//! Storage abstraction traits
+//! 存储抽象 traits
 //!
-//! These traits define the interface for storage operations,
-//! allowing different implementations to be swapped without
-//! changing the core application logic.
+//! 这些 traits 定义了存储操作的接口，
+//! 允许在不更改核心应用程序逻辑的情况下切换不同的实现。
 
 use crate::error::Result;
 use async_trait::async_trait;
 use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
 use uuid::Uuid;
 
-/// Trait for managing music tracks storage
+//! 用于管理音乐曲目存储的 trait
 #[async_trait]
 pub trait TrackStorage: Send + Sync {
-    /// Get a track by ID
+    //! 通过 ID 获取曲目
     async fn get_track(&self, id: Uuid) -> Result<Option<Track>>;
 
-    /// Get all tracks
+    //! 获取所有曲目
     async fn list_tracks(&self, limit: usize, offset: usize) -> Result<Vec<Track>>;
 
-    /// Save a track
+    //! 保存曲目
     async fn save_track(&self, track: &Track) -> Result<()>;
 
-    /// Delete a track
+    //! 删除曲目
     async fn delete_track(&self, id: Uuid) -> Result<()>;
 
-    /// Search tracks by title
+    //! 按标题搜索曲目
     async fn search_tracks(&self, query: &str) -> Result<Vec<Track>>;
 
-    /// Get tracks by album
+    //! 按专辑获取曲目
     async fn get_tracks_by_album(&self, album_id: Uuid) -> Result<Vec<Track>>;
 
-    /// Get tracks by artist
+    //! 按艺术家获取曲目
+    async fn get_tracks_by_artist(&self, artist_id: Uuid
     async fn get_tracks_by_artist(&self, artist_id: Uuid) -> Result<Vec<Track>>;
 }
 

@@ -1,4 +1,4 @@
-//! Error types for storage operations
+//! 存储操作的错误类型
 
 use thiserror::Error;
 
