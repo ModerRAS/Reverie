@@ -1,11 +1,11 @@
-//! Subsonic API authentication middleware
+//! Subsonic API 身份验证中间件
 //!
-//! Supports:
-//! - Username/password authentication (u=, p= params)
-//! - Token-based authentication (u=, t=, s= params)
+//! 支持：
+//! - 用户名/密码身份验证 (u=, p= 参数)
+//! - 基于令牌的身份验证 (u=, t=, s= 参数)
 //!
-//! NOTE: Current implementation is simplified and does NOT perform real password/token validation.
-//! This is a placeholder for development purposes.
+//! 注意：当前实现是简化版本，不执行真实的密码/令牌验证。
+//! 这是用于开发目的的占位符。
 
 use axum::{
     body::Body,
@@ -18,14 +18,14 @@ use std::sync::Arc;
 
 pub const SUBSONIC_API_VERSION: &str = "1.16.1";
 
-/// Authentication context extracted from request
+/// 从请求中提取的身份验证上下文
 #[derive(Debug, Clone)]
 pub struct AuthContext {
     pub username: String,
     pub is_admin: bool,
 }
 
-/// Authentication middleware for Subsonic API requests
+/// Subsonic API 请求的身份验证中间件
 pub async fn auth_middleware<S: SubsonicStorage>(
     State(storage): State<Arc<S>>,
     mut req: Request<Body>,
@@ -43,7 +43,7 @@ async fn extract_auth<S: SubsonicStorage>(
 ) -> Result<AuthContext, (i32, String)> {
     let query = req.uri().query().unwrap_or("");
 
-    // Parse query parameters
+    // 解析查询参数
     let mut username = None;
     let mut _password = None;
     let mut _token = None;
@@ -65,14 +65,14 @@ async fn extract_auth<S: SubsonicStorage>(
         }
     }
 
-    // Check if username is provided
+    // 检查是否提供了用户名
     let username = username.ok_or((10, "Missing username parameter".to_string()))?;
 
-    // Look up user in storage
+    // 在存储中查找用户
     match storage.get_user(&username).await {
         Ok(Some(user)) => {
-            // TODO: Implement proper password/token validation
-            // For now, just check that user exists
+            // TODO: 实现正确的密码/令牌验证
+            // 目前只检查用户是否存在
             Ok(AuthContext {
                 username: user.username,
                 is_admin: user.admin_role,
@@ -83,7 +83,7 @@ async fn extract_auth<S: SubsonicStorage>(
     }
 }
 
-/// Simple percent-decoding for URL parameters
+/// 简单的 URL 参数百分号解码
 fn percent_decode(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     let mut chars = s.chars().peekable();
@@ -106,7 +106,7 @@ fn percent_decode(s: &str) -> String {
     result
 }
 
-/// Helper to get auth context from request extensions
+/// 从请求扩展中获取身份验证上下文的辅助函数
 #[allow(dead_code)]
 pub fn get_auth_context(req: &Request<Body>) -> Option<&AuthContext> {
     req.extensions().get()
