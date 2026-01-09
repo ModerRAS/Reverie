@@ -1,4 +1,4 @@
-//! Core domain models for Reverie
+//! Reverie 核心领域模型
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -6,18 +6,18 @@ use uuid::Uuid;
 
 pub const SUBSONIC_API_VERSION: &str = "1.16.1";
 
-/// Represents a music track
+/// 表示音乐曲目
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Track {
     pub id: Uuid,
     pub title: String,
     pub album_id: Option<Uuid>,
     pub artist_id: Option<Uuid>,
-    pub duration: u32, // in seconds
+    pub duration: u32, // 时长（秒）
     pub file_path: String,
     pub file_size: u64,
     pub bitrate: u32,
-    pub format: String, // e.g., "mp3", "flac"
+    pub format: String, // 例如："mp3", "flac"
     pub track_number: Option<u32>,
     pub disc_number: Option<u32>,
     pub year: Option<u32>,
@@ -26,7 +26,7 @@ pub struct Track {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Represents an album
+/// 表示专辑
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Album {
     pub id: Uuid,
@@ -39,7 +39,7 @@ pub struct Album {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Represents an artist
+/// 表示艺术家
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Artist {
     pub id: Uuid,
@@ -49,7 +49,7 @@ pub struct Artist {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Represents a user in the system
+/// 表示系统中的用户
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
@@ -62,7 +62,7 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Represents a playlist
+/// 表示播放列表
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Playlist {
     pub id: Uuid,
@@ -74,7 +74,7 @@ pub struct Playlist {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Represents a track in a playlist
+/// 表示播放列表中的曲目
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaylistTrack {
     pub playlist_id: Uuid,
@@ -83,7 +83,7 @@ pub struct PlaylistTrack {
     pub added_at: DateTime<Utc>,
 }
 
-/// Library scanning statistics
+/// 库扫描统计信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanStats {
     pub total_tracks: u64,
@@ -282,7 +282,7 @@ impl SubsonicDirectory {
     }
 }
 
-/// Bookmark for resuming playback
+/// 用于恢复播放的书签
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicBookmark {
     pub position: i64,
@@ -293,7 +293,7 @@ pub struct SubsonicBookmark {
     pub entry: MediaFile,
 }
 
-/// Internet radio station
+/// 互联网广播电台
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicInternetRadioStation {
     pub id: String,
@@ -302,7 +302,7 @@ pub struct SubsonicInternetRadioStation {
     pub homepage_url: Option<String>,
 }
 
-/// Share for sharing media with others
+/// 用于与他人分享媒体的分享
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicShare {
     pub id: String,
@@ -316,7 +316,7 @@ pub struct SubsonicShare {
     pub entries: Vec<MediaFile>,
 }
 
-/// Now playing entry
+/// 当前播放条目
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicNowPlaying {
     pub entry: MediaFile,
@@ -326,13 +326,13 @@ pub struct SubsonicNowPlaying {
     pub player_name: Option<String>,
 }
 
-/// Similar song
+/// 相似歌曲
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicSimilarSong {
     pub song: MediaFile,
 }
 
-/// Artist info with biography and similar artists
+/// 包含传记和相似艺术家的艺术家信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicArtistInfo {
     pub biography: Option<String>,
@@ -344,7 +344,7 @@ pub struct SubsonicArtistInfo {
     pub similar_artists: Vec<SubsonicArtist>,
 }
 
-/// Album info with notes and similar albums
+/// 包含注释和相似专辑的专辑信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicAlbumInfo {
     pub notes: Option<String>,
@@ -355,13 +355,13 @@ pub struct SubsonicAlbumInfo {
     pub large_image_url: Option<String>,
 }
 
-/// Top songs result
+/// 热门歌曲结果
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicTopSongs {
     pub songs: Vec<MediaFile>,
 }
 
-/// Structured lyrics (OpenSubsonic)
+/// 结构化歌词 (OpenSubsonic)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicStructuredLyrics {
     pub display_artist: Option<String>,
@@ -372,21 +372,21 @@ pub struct SubsonicStructuredLyrics {
     pub lines: Vec<SubsonicLyricLine>,
 }
 
-/// Lyric line for synced lyrics
+/// 同步歌词的歌词行
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicLyricLine {
     pub start: Option<i64>,
     pub value: String,
 }
 
-/// OpenSubsonic extension
+/// OpenSubsonic 扩展
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicOpenSubsonicExtension {
     pub name: String,
     pub versions: Vec<i32>,
 }
 
-/// Playlist with songs
+/// 包含歌曲的播放列表
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicPlaylist {
     pub id: String,
@@ -401,7 +401,7 @@ pub struct SubsonicPlaylist {
     pub cover_art: Option<String>,
 }
 
-/// Playlist with songs included
+/// 包含歌曲的播放列表（包含歌曲详情）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicPlaylistWithSongs {
     pub id: String,
@@ -417,7 +417,7 @@ pub struct SubsonicPlaylistWithSongs {
     pub entries: Vec<MediaFile>,
 }
 
-/// User information
+/// 用户信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicUser {
     pub username: String,
@@ -440,7 +440,7 @@ pub struct SubsonicUser {
     pub folders: Vec<i32>,
 }
 
-/// Starred content
+/// 收藏的内容
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicStarred {
     pub artists: Vec<SubsonicArtist>,
@@ -448,7 +448,7 @@ pub struct SubsonicStarred {
     pub songs: Vec<MediaFile>,
 }
 
-/// Search result (search2)
+/// 搜索结果 (search2)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicSearchResult2 {
     pub artists: Vec<SubsonicArtist>,
@@ -456,7 +456,7 @@ pub struct SubsonicSearchResult2 {
     pub songs: Vec<MediaFile>,
 }
 
-/// Search result (search3)
+/// 搜索结果 (search3)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubsonicSearchResult3 {
     pub artists: Vec<SubsonicArtist>,

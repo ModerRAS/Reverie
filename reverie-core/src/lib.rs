@@ -1,7 +1,7 @@
-//! Reverie Core - Domain Models and Business Logic
+//! Reverie 核心模块 - 领域模型和业务逻辑
 //!
-//! This crate contains the core domain models and business logic for Reverie,
-//! independent of storage and network implementation details.
+//! 此 crate 包含 Reverie 的核心领域模型和业务逻辑，
+//! 与存储和网络实现细节无关。
 
 pub mod error;
 pub mod models;

@@ -1,8 +1,8 @@
-//! Error types for Reverie core
+//! Reverie 核心错误类型
 
 use thiserror::Error;
 
-/// Core error types for Reverie
+/// Reverie 核心错误类型
 #[derive(Error, Debug)]
 pub enum ReverieError {
     #[error("Resource not found: {0}")]
