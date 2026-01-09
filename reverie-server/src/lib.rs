@@ -1,4 +1,4 @@
-//! Reverie server application wiring.
+//! Reverie 服务器应用连接
 
 use anyhow::Result;
 use reverie_network::{axum_server::AxumServer, HttpServer, NetworkConfig};

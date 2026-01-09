@@ -1,7 +1,7 @@
-//! Subsonic API implementation
+//! Subsonic API 实现
 //!
-//! Reverie aims to be compatible with Subsonic API 1.16.1.
-//! This module provides handlers for all Subsonic API endpoints.
+//! Reverie 旨在兼容 Subsonic API 1.16.1。
+//! 该模块提供了所有 Subsonic API 端点的处理程序。
 
 mod auth;
 mod response;
@@ -34,7 +34,7 @@ impl<S: Clone> SubsonicState<S> {
     }
 }
 
-/// Return JSON or XML based on format parameter
+//! 根据格式参数返回 JSON 或 XML
 fn format_response(params: &HashMap<String, String>, response: SubsonicResponse) -> Response {
     let format = params.get("f").map(|s| s.as_str()).unwrap_or("xml");
 
@@ -46,7 +46,7 @@ fn format_response(params: &HashMap<String, String>, response: SubsonicResponse)
         )
             .into_response()
     } else {
-        // For now, return JSON even for XML requests (proper XML support TODO)
+        // 目前，即使对于 XML 请求也返回 JSON（完整的 XML 支持待办）
         (
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/json")],
@@ -64,10 +64,10 @@ fn error_response(params: &HashMap<String, String>, code: i32, message: &str) ->
     format_response(params, SubsonicResponse::error(code, message))
 }
 
-/// Create the Subsonic router.
-///
-/// Note: The returned router is *missing* `SubsonicState<S>` and is intended to be
-/// nested into an outer router that provides state via `Router::with_state`.
+//! 创建 Subsonic 路由器。
+//!
+//! 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
+//! 通过 `Router::with_state` 实现。
 #[cfg(feature = "axum-server")]
 pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
     Router::new()
@@ -138,16 +138,16 @@ pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<Su
         .route("/getOpenSubsonicExtensions", get(stub_handler::<S>))
 }
 
-// ===== System Handlers =====
+// ===== 系统处理器 =====
 
-/// GET /rest/ping - Test connectivity
+//! GET /rest/ping - 测试连接
 async fn ping_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     ok_response(&params)
 }
 
-/// GET /rest/getLicense - Get server license info
+//! GET /rest/getLicense - 获取服务器许可证信息
 async fn get_license_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
@@ -157,7 +157,7 @@ async fn get_license_handler<S: SubsonicStorage + Clone>(
     format_response(&params, response)
 }
 
-/// GET /rest/getMusicFolders - Get configured music folders  
+//! GET /rest/getMusicFolders - 获取已配置的音乐文件夹
 async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -177,18 +177,18 @@ async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-// ===== Stub Handler for unimplemented endpoints =====
+// ===== 未实现端点的存根处理器 =====
 
-/// Stub handler for unimplemented endpoints - returns empty OK response
+//! 未实现端点的存根处理器 - 返回空的 OK 响应
 async fn stub_handler<S: SubsonicStorage + Clone>(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     ok_response(&params)
 }
 
-// ===== Browsing Handlers =====
+// ===== 浏览处理器 =====
 
-/// GET /rest/getArtists - Get all artists
+//! GET /rest/getArtists - 获取所有艺术家
 async fn get_artists_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -205,7 +205,7 @@ async fn get_artists_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-/// GET /rest/getArtist - Get artist details
+//! GET /rest/getArtist - 获取艺术家详情
 async fn get_artist_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -228,7 +228,7 @@ async fn get_artist_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-/// GET /rest/getAlbum - Get album details
+//! GET /rest/getAlbum - 获取专辑详情
 async fn get_album_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -251,7 +251,7 @@ async fn get_album_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-/// GET /rest/getSong - Get song details
+//! GET /rest/getSong - 获取歌曲详情
 async fn get_song_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -274,9 +274,9 @@ async fn get_song_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-// ===== Album List Handlers =====
+// ===== 专辑列表处理器 =====
 
-/// GET /rest/getAlbumList2 - Get album list by type (ID3 tag based)
+//! GET /rest/getAlbumList2 - 按类型获取专辑列表（基于 ID3 标签）
 async fn get_album_list2_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -318,9 +318,9 @@ async fn get_album_list2_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-// ===== Search Handlers =====
+// ===== 搜索处理器 =====
 
-/// GET /rest/search3 - Search using ID3 tags
+//! GET /rest/search3 - 使用 ID3 标签搜索
 async fn search3_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -371,9 +371,9 @@ async fn search3_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-// ===== Media Retrieval Handlers =====
+// ===== 媒体检索处理器 =====
 
-/// GET /rest/getCoverArt - Get cover art image
+//! GET /rest/getCoverArt - 获取封面图片
 async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -385,10 +385,10 @@ async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     let _size: Option<i32> = params.get("size").and_then(|s| s.parse().ok());
 
     match state.storage.get_cover_art_path(id).await {
-        Ok(Some(path)) => {
-            // For now, return a placeholder response
-            // In production, this would stream the actual image file
-            // The storage layer would use VFS to read the file
+        Ok(Some(_path)) => {
+            // 目前，返回占位符响应
+            // 在生产环境中，这将流式传输实际的图像文件
+            // 存储层将使用 VFS 来读取文件
             Response::builder()
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, "image/jpeg")
@@ -406,7 +406,7 @@ async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-/// GET /rest/stream - Stream media file
+//! GET /rest/stream - 流式传输媒体文件
 async fn stream_handler<S: SubsonicStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
@@ -418,8 +418,8 @@ async fn stream_handler<S: SubsonicStorage + Clone>(
 
     match state.storage.get_stream_path(id).await {
         Ok(Some(_path)) => {
-            // For now, return a placeholder response
-            // In production, this would stream the actual media file
+            // 目前，返回占位符响应
+            // 在生产环境中，这将流式传输实际的媒体文件
             Response::builder()
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, "audio/mpeg")

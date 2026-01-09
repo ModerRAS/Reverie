@@ -1,7 +1,7 @@
-//! Reverie - A Music Streaming Server
+//! Reverie - 音乐流媒体服务器
 //!
-//! Reverie is a music streaming server similar to Navidrome, written in Rust
-//! with abstracted storage and network layers for flexibility and extensibility.
+//! Reverie 是一个类似于 Navidrome 的音乐流媒体服务器，使用 Rust 编写，
+//! 具有抽象的存储和网络层，以实现灵活性和可扩展性。
 
 use anyhow::Result;
 use std::sync::Arc;
@@ -12,7 +12,7 @@ use reverie_storage::memory::MemoryStorage;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
+    // 初始化追踪
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -21,15 +21,15 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tracing::info!("Starting Reverie Music Server");
+    tracing::info!("正在启动 Reverie 音乐服务器");
 
-    // Initialize storage backend (using in-memory for this example)
+    // 初始化存储后端（此示例使用内存存储）
     let storage = Arc::new(MemoryStorage::new());
 
-    tracing::info!("Storage initialized successfully");
+    tracing::info!("存储初始化成功");
 
     let config = ServerRunConfig::default();
-    tracing::info!("Starting HTTP server on {}:{}", config.host, config.port);
+    tracing::info!("正在启动 HTTP 服务器 {}:{}", config.host, config.port);
 
     run_with_storage(storage.clone(), config).await
 }
