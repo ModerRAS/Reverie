@@ -26,11 +26,11 @@ fn subsonic_ok() -> String {
 }
 
 #[derive(Clone)]
-pub(crate) struct SubsonicState<S: SubsonicStorage + Clone> {
+pub(crate) struct SubsonicState<S: Clone> {
     pub(crate) storage: Arc<S>,
 }
 
-impl<S: SubsonicStorage + Clone> SubsonicState<S> {
+impl<S: Clone> SubsonicState<S> {
     pub(crate) fn new(storage: Arc<S>) -> Self {
         Self { storage }
     }
@@ -41,7 +41,7 @@ impl<S: SubsonicStorage + Clone> SubsonicState<S> {
 /// Note: The returned router is *missing* `SubsonicState<S>` and is intended to be
 /// nested into an outer router that provides state via `Router::with_state`.
 #[cfg(feature = "axum-server")]
-pub fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
+pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
     Router::new()
         .route("/ping", get(stub_handler::<S>))
         .route("/getLicense", get(stub_handler::<S>))

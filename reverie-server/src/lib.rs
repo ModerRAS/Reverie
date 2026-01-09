@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use reverie_network::{axum_server::AxumServer, HttpServer, NetworkConfig};
-use reverie_storage::Storage;
+use reverie_storage::{Storage, SubsonicStorage};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -32,7 +32,7 @@ impl Default for ServerRunConfig {
 
 pub async fn run_with_storage<S>(storage: Arc<S>, config: ServerRunConfig) -> Result<()>
 where
-    S: Storage + Clone + 'static,
+    S: Storage + SubsonicStorage + Clone + 'static,
 {
     storage
         .initialize()
