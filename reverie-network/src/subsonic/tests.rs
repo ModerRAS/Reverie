@@ -1,4 +1,4 @@
-//! Subsonic API integration tests
+//! Subsonic API 集成测试
 
 use super::*;
 use axum::{
@@ -11,7 +11,7 @@ use tower::ServiceExt;
 
 type Result<T> = std::result::Result<T, StorageError>;
 
-/// Mock storage for testing
+/// 用于测试的模拟存储
 #[derive(Clone)]
 struct MockSubsonicStorage;
 
@@ -578,7 +578,7 @@ impl SubsonicStorage for MockSubsonicStorage {
     }
 }
 
-// === Test Helper Functions ===
+// === 测试辅助函数 ===
 
 fn create_test_router() -> axum::Router {
     let storage = Arc::new(MockSubsonicStorage::new());
@@ -600,7 +600,7 @@ async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value
     serde_json::from_slice(&body).unwrap()
 }
 
-// === Test Cases ===
+// === 测试用例 ===
 
 #[tokio::test]
 async fn test_ping_returns_ok() {
