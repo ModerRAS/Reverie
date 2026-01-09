@@ -9,13 +9,13 @@ use axum::{
     Router,
 };
 use serde::Deserialize;
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
-use tower_http::cors::CorsLayer;
-use tower_http::services::{ServeDir, ServeFile};
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    cors::CorsLayer,
+    services::{ServeDir, ServeFile},
+    trace::TraceLayer,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -26,7 +26,7 @@ use crate::{
 };
 use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage};
 
-/// Axum-based HTTP server
+/// Axum-based HTTP server.
 pub struct AxumServer<S> {
     storage: Arc<S>,
     config: NetworkConfig,
@@ -43,6 +43,8 @@ where
         + PlaylistStorage
         + SubsonicStorage
         + Clone
+        + Send
+        + Sync
         + 'static,
 {
     pub fn new(storage: Arc<S>, config: NetworkConfig) -> Self {
@@ -73,25 +75,26 @@ where
         let assets_dir = ui_dir.join("assets");
         let wasm_dir = ui_dir.join("wasm");
 
-        // Serve static assets and WASM without falling back to index.html.
         Some(
             Router::<subsonic::SubsonicState<S>>::new()
                 .route("/", get_service(ServeFile::new(index.clone())))
-                .route("/favicon.ico", get_service(ServeFile::new(ui_dir.join("favicon.ico"))))
+                .route(
+                    "/favicon.ico",
+                    get_service(ServeFile::new(ui_dir.join("favicon.ico"))),
+                )
                 .nest_service("/assets", ServeDir::new(assets_dir))
                 .nest_service("/wasm", ServeDir::new(wasm_dir))
+                // SPA fallback: everything else goes to index.html
                 .route("/*path", get_service(ServeFile::new(index))),
         )
     }
 
     fn create_router(&self) -> Router {
-        let app_state = subsonic::SubsonicState::new(Arc::clone(&self.storage));
-
         let mut router = Router::<subsonic::SubsonicState<S>>::new()
             // Health check
             .route("/health", get(health_handler))
             // Subsonic API
-            .nest("/rest", subsonic::create_router(Arc::clone(&self.storage)))
+            .nest("/rest", subsonic::create_router::<S>())
             // Track routes
             .route("/api/tracks", get(list_tracks_handler::<S>))
             .route("/api/tracks/:id", get(get_track_handler::<S>))
@@ -115,7 +118,7 @@ where
         }
 
         router
-            .with_state(app_state)
+            .with_state(subsonic::SubsonicState::new(Arc::clone(&self.storage)))
             .layer(if self.config.enable_cors {
                 CorsLayer::permissive()
             } else {
@@ -134,6 +137,8 @@ where
         + PlaylistStorage
         + SubsonicStorage
         + Clone
+        + Send
+        + Sync
         + 'static,
 {
     async fn start(&self, addr: SocketAddr) -> Result<()> {
@@ -162,13 +167,13 @@ where
     }
 
     fn is_running(&self) -> bool {
-        // Note: This is a simplified check
-        // In a real implementation, we'd need to track the server task
+        // Note: This is a simplified check.
+        // In a real implementation, we'd track the server task.
         false
     }
 
     fn address(&self) -> Option<SocketAddr> {
-        // Note: This would need proper async context in a real implementation
+        // Note: This would need proper async context in a real implementation.
         None
     }
 }
@@ -202,7 +207,7 @@ async fn health_handler() -> Json<HealthResponse> {
 
 // Track handlers
 async fn list_tracks_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
 ) -> impl IntoResponse
 where
@@ -216,7 +221,7 @@ where
         Ok(tracks) => {
             let responses: Vec<TrackResponse> = tracks
                 .into_iter()
-    State(state): State<subsonic::SubsonicState<S>>,
+                .map(|t| TrackResponse {
                     id: t.id,
                     title: t.title,
                     album_id: t.album_id,
@@ -295,12 +300,12 @@ where
 }
 
 async fn search_tracks_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Query(search): Query<SearchQuery>,
 ) -> impl IntoResponse
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
-    State(state): State<subsonic::SubsonicState<S>>,
+{
     match state.storage.search_tracks(&search.q).await {
         Ok(tracks) => {
             let responses: Vec<TrackResponse> = tracks
@@ -333,12 +338,12 @@ where
 
 // Album handlers
 async fn list_albums_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
 ) -> impl IntoResponse
 where
     S: AlbumStorage + Clone + Send + Sync + 'static,
-    State(state): State<subsonic::SubsonicState<S>>,
+{
     match state
         .storage
         .list_albums(pagination.limit, pagination.offset)
@@ -375,12 +380,12 @@ where
                 message: e.to_string(),
             }),
         )
-    State(state): State<subsonic::SubsonicState<S>>,
+            .into_response(),
     }
 }
 
 async fn get_album_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse
 where
@@ -418,9 +423,9 @@ where
 }
 
 async fn get_album_tracks_handler<S>(
-    State(state): State<AppState<S>>,
-    Path(id): Path<Uuid>,
     State(state): State<subsonic::SubsonicState<S>>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
 {
@@ -489,7 +494,7 @@ where
             )
                 .into_response()
         }
-    State(state): State<subsonic::SubsonicState<S>>,
+        Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
                 error: "storage_error".to_string(),
@@ -501,7 +506,7 @@ where
 }
 
 async fn get_artist_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse
 where
@@ -537,7 +542,7 @@ where
 }
 
 async fn get_artist_albums_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse
 where
@@ -571,7 +576,7 @@ where
 
 // Playlist handlers
 async fn get_playlist_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse
 where
