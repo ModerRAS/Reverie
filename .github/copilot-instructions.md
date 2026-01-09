@@ -142,7 +142,7 @@ async fn test_endpoint() {
 - 所有 I/O 操作必须 `async`，使用 `#[async_trait]` 宏
 - 存储 trait 必须包含 `Send + Sync` bounds
 - UUID 使用 `uuid::Uuid`，时间戳使用 `chrono::DateTime<Utc>`
-- Subsonic API 响应格式为 XML，版本号 `1.16.1`
+- Subsonic API 响应格式要求同时支持 XML 和 JSON，版本号 `1.16.1`
 - VFS 路径使用 Unix 风格 (正斜杠)，无论底层操作系统
 - 数据库使用 SQLite，表名使用复数形式 (tracks, albums, artists)
 - 工具调用修改代码时要分步骤多次调用工具修改，而不是一次修改几千行
