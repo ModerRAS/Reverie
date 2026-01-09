@@ -172,47 +172,47 @@ use reverie_core::{
 #[allow(clippy::too_many_arguments)]
 #[async_trait]
 pub trait SubsonicStorage: Send + Sync {
-    // === System ===
-    /// Get server license info (always valid for self-hosted)
+    // === 系统 ===
+    /// 获取服务器许可证信息（自托管始终有效）
     async fn get_license(&self) -> Result<bool> {
         Ok(true)
     }
 
-    // === Browsing ===
-    /// Get all configured music folders
+    // === 浏览 ===
+    /// 获取所有配置的音乐文件夹
     async fn get_music_folders(&self) -> Result<Vec<SubsonicMusicFolder>>;
 
-    /// Get artist indexes (A-Z grouped artists)
+    /// 获取艺术家索引（A-Z 分组的艺术家）
     async fn get_indexes(
         &self,
         music_folder_id: Option<i32>,
         if_modified_since: Option<i64>,
     ) -> Result<SubsonicArtistIndexes>;
 
-    /// Get all genres with song/album counts
+    /// 获取所有流派及歌曲/专辑数量
     async fn get_genres(&self) -> Result<Vec<SubsonicGenre>>;
 
-    /// Get directory contents (for folder-based browsing)
+    /// 获取目录内容（用于基于文件夹的浏览）
     async fn get_music_directory(&self, id: &str) -> Result<Option<SubsonicDirectory>>;
 
-    /// Get artists (ID3 tag based)
+    /// 获取艺术家（基于 ID3 标签）
     async fn get_artists(&self, music_folder_id: Option<i32>) -> Result<SubsonicArtistIndexes>;
 
-    /// Get single artist by ID
+    /// 通过 ID 获取单个艺术家
     async fn get_artist(&self, id: &str) -> Result<Option<SubsonicArtist>>;
 
-    /// Get single album by ID
+    /// 通过 ID 获取单个专辑
     async fn get_album(&self, id: &str) -> Result<Option<SubsonicAlbum>>;
 
-    /// Get single song by ID
+    /// 通过 ID 获取单个歌曲
     async fn get_song(&self, id: &str) -> Result<Option<MediaFile>>;
 
-    /// Get videos (not implemented, returns empty)
+    /// 获取视频（未实现，返回空）
     async fn get_videos(&self) -> Result<Vec<MediaFile>> {
         Ok(vec![])
     }
 
-    /// Get artist info (biography, images, similar artists)
+    /// 获取艺术家信息（简介、图片、相似艺术家）
     async fn get_artist_info(
         &self,
         id: &str,
@@ -220,7 +220,7 @@ pub trait SubsonicStorage: Send + Sync {
         include_not_present: Option<bool>,
     ) -> Result<SubsonicArtistInfo>;
 
-    /// Get artist info (ID3 version)
+    /// 获取艺术家信息（ID3 版本）
     async fn get_artist_info2(
         &self,
         id: &str,
@@ -228,19 +228,19 @@ pub trait SubsonicStorage: Send + Sync {
         include_not_present: Option<bool>,
     ) -> Result<SubsonicArtistInfo>;
 
-    /// Get album info (notes, images)
+    /// 获取专辑信息（备注、图片）
     async fn get_album_info(&self, id: &str) -> Result<SubsonicAlbumInfo>;
 
-    /// Get album info (ID3 version)
+    /// 获取专辑信息（ID3 版本）
     async fn get_album_info2(&self, id: &str) -> Result<SubsonicAlbumInfo>;
 
-    /// Get similar songs
+    /// 获取相似歌曲
     async fn get_similar_songs(&self, id: &str, count: Option<i32>) -> Result<Vec<MediaFile>>;
 
-    /// Get similar songs (ID3 version)
+    /// 获取相似歌曲（ID3 版本）
     async fn get_similar_songs2(&self, id: &str, count: Option<i32>) -> Result<Vec<MediaFile>>;
 
-    /// Get top songs for an artist
+    /// 获取艺术家的热门歌曲
     async fn get_top_songs(&self, artist: &str, count: Option<i32>) -> Result<SubsonicTopSongs>;
 
     // === Album/Song Lists ===
