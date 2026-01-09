@@ -311,4 +311,40 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn delete_playlist(&self, _id: &str) -> Result<()> {
         Ok(())
     }
+
+    async fn get_stream_path(&self, _id: &str) -> Result<Option<String>> {
+        Ok(Some("/music/test.mp3".to_string()))
+    }
+
+    async fn get_cover_art_path(&self, _id: &str) -> Result<Option<String>> {
+        Ok(Some("/covers/test.jpg".to_string()))
+    }
+
+    async fn get_lyrics(&self, _artist: Option<&str>, _title: Option<&str>) -> Result<Option<reverie_core::SubsonicLyrics>> {
+        Ok(None)
+    }
+
+    async fn get_lyrics_by_song_id(&self, _id: &str) -> Result<Vec<reverie_core::SubsonicStructuredLyrics>> {
+        Ok(vec![])
+    }
+
+    async fn get_avatar_path(&self, _username: &str) -> Result<Option<String>> {
+        Ok(None)
+    }
+
+    async fn star(&self, _ids: &[&str], _album_ids: &[&str], _artist_ids: &[&str]) -> Result<()> {
+        Ok(())
+    }
+
+    async fn unstar(&self, _ids: &[&str], _album_ids: &[&str], _artist_ids: &[&str]) -> Result<()> {
+        Ok(())
+    }
+
+    async fn set_rating(&self, _id: &str, _rating: i32) -> Result<()> {
+        Ok(())
+    }
+
+    async fn scrobble(&self, _id: &str, _time: Option<i64>, _submission: bool) -> Result<()> {
+        Ok(())
+    }
 }
