@@ -437,4 +437,57 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn get_users(&self) -> Result<Vec<reverie_core::SubsonicUser>> {
         Ok(vec![])
     }
+
+    async fn create_user(
+        &self,
+        _username: &str,
+        _password: &str,
+        _email: Option<&str>,
+        _admin_role: bool,
+        _settings_role: bool,
+        _stream_role: bool,
+        _jukebox_role: bool,
+        _download_role: bool,
+        _upload_role: bool,
+        _playlist_role: bool,
+        _cover_art_role: bool,
+        _comment_role: bool,
+        _podcast_role: bool,
+        _share_role: bool,
+        _video_conversion_role: bool,
+        _music_folder_ids: &[i32],
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    async fn update_user(
+        &self,
+        _username: &str,
+        _password: Option<&str>,
+        _email: Option<&str>,
+        _admin_role: Option<bool>,
+        _settings_role: Option<bool>,
+        _stream_role: Option<bool>,
+        _jukebox_role: Option<bool>,
+        _download_role: Option<bool>,
+        _upload_role: Option<bool>,
+        _playlist_role: Option<bool>,
+        _cover_art_role: Option<bool>,
+        _comment_role: Option<bool>,
+        _podcast_role: Option<bool>,
+        _share_role: Option<bool>,
+        _video_conversion_role: Option<bool>,
+        _music_folder_ids: Option<&[i32]>,
+        _max_bit_rate: Option<i32>,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    async fn delete_user(&self, _username: &str) -> Result<()> {
+        Ok(())
+    }
+
+    async fn change_password(&self, _username: &str, _password: &str) -> Result<()> {
+        Ok(())
+    }
 }
