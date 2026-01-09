@@ -367,4 +367,47 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn save_play_queue(&self, _ids: &[&str], _current: Option<&str>, _position: Option<i64>) -> Result<()> {
         Ok(())
     }
+
+    async fn get_shares(&self) -> Result<Vec<reverie_core::SubsonicShare>> {
+        Ok(vec![])
+    }
+
+    async fn create_share(&self, _ids: &[&str], _description: Option<&str>, _expires: Option<i64>) -> Result<reverie_core::SubsonicShare> {
+        use chrono::Utc;
+        Ok(reverie_core::SubsonicShare {
+            id: "share-1".to_string(),
+            url: "http://example.com/share/1".to_string(),
+            description: None,
+            username: "admin".to_string(),
+            created: Utc::now(),
+            expires: None,
+            last_visited: None,
+            visit_count: 0,
+            entries: vec![],
+        })
+    }
+
+    async fn update_share(&self, _id: &str, _description: Option<&str>, _expires: Option<i64>) -> Result<()> {
+        Ok(())
+    }
+
+    async fn delete_share(&self, _id: &str) -> Result<()> {
+        Ok(())
+    }
+
+    async fn get_internet_radio_stations(&self) -> Result<Vec<reverie_core::SubsonicInternetRadioStation>> {
+        Ok(vec![])
+    }
+
+    async fn create_internet_radio_station(&self, _stream_url: &str, _name: &str, _homepage_url: Option<&str>) -> Result<()> {
+        Ok(())
+    }
+
+    async fn update_internet_radio_station(&self, _id: &str, _stream_url: &str, _name: &str, _homepage_url: Option<&str>) -> Result<()> {
+        Ok(())
+    }
+
+    async fn delete_internet_radio_station(&self, _id: &str) -> Result<()> {
+        Ok(())
+    }
 }
