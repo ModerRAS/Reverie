@@ -6,6 +6,9 @@ use crate::components::MainLayout;
 use crate::pages::*;
 use crate::state::{AuthState, PlayerState, UiState};
 use dioxus::prelude::*;
+use manganis::asset;
+
+static TAILWIND_CSS: manganis::Asset = asset!("../assets/tailwind.css");
 
 /// Route definitions
 #[derive(Routable, Clone, PartialEq)]
@@ -72,6 +75,7 @@ pub fn App() -> Element {
     });
 
     rsx! {
+        document::Link { rel: "stylesheet", href: "{TAILWIND_CSS}" }
         Router::<Route> {}
     }
 }

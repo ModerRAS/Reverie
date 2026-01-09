@@ -10,6 +10,9 @@ license = "MIT"
 # Dioxus core with fullstack support
 dioxus = { version = "0.7", features = ["fullstack", "router"] }
 
+# Asset pipeline (bundles files under ./assets into the dev/build output)
+manganis = "0.7"
+
 # Core dependencies
 reverie-core = { path = "../reverie-core" }
 

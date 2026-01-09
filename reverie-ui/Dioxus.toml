@@ -11,12 +11,10 @@ watch_path = ["src", "assets"]
 
 [web.resource]
 dev_server_port = 8080
-style = ["assets/tailwind.css"]
 
 [web.resource.dev]
 
 # Same as [web.resource], but for development servers
-style = ["assets/tailwind.css"]
 script = []
 
 [[web.proxy]]
