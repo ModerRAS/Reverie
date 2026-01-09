@@ -1,7 +1,6 @@
-//! Filesystem-based storage implementation
+//! 基于文件系统的存储实现
 //!
-//! This module provides a storage implementation that uses the local filesystem
-//! for audio file storage and metadata.
+//! 此模块提供使用本地文件系统进行音频文件存储和元数据管理的存储实现。
 
 use async_trait::async_trait;
 use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
@@ -14,7 +13,7 @@ use uuid::Uuid;
 use crate::error::{Result, StorageError};
 use crate::traits::*;
 
-/// FileSystem storage configuration
+/// 文件系统存储配置
 #[derive(Debug, Clone)]
 pub struct FileSystemConfig {
     pub music_root: PathBuf,
@@ -34,7 +33,7 @@ impl Default for FileSystemConfig {
     }
 }
 
-/// Media metadata
+/// 媒体元数据
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MediaMetadata {
     pub title: Option<String>,
@@ -52,7 +51,7 @@ pub struct MediaMetadata {
     pub comment: Option<String>,
 }
 
-/// Inner storage data
+/// 内部存储数据
 #[derive(Default)]
 struct StorageData {
     tracks: Vec<Track>,
@@ -62,7 +61,7 @@ struct StorageData {
     playlists: Vec<Playlist>,
 }
 
-/// The main filesystem storage implementation
+/// 主要的文件系统存储实现
 #[derive(Clone)]
 pub struct FileSystemStorage {
     config: FileSystemConfig,

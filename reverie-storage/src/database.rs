@@ -1,7 +1,6 @@
-//! Database storage implementation using SQLite
+//! 使用 SQLite 的数据库存储实现
 //!
-//! This module provides a SQLite-based storage implementation for metadata,
-//! while media files are stored in a VFS backend (local filesystem, S3, etc.)
+//! 此模块提供基于 SQLite 的元数据存储实现，而媒体文件存储在 VFS 后端（本地文件系统、S3 等）
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -23,14 +22,14 @@ use reverie_core::{
     SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, Track, User,
 };
 
-/// Database storage configuration
+/// 数据库存储配置
 #[derive(Debug, Clone)]
 pub struct DatabaseConfig {
-    /// SQLite database path (e.g., "reverie.db" or ":memory:")
+    /// SQLite 数据库路径（例如："reverie.db" 或 ":memory:"）
     pub database_url: String,
-    /// Maximum number of connections in the pool
+    /// 连接池中的最大连接数
     pub max_connections: u32,
-    /// VFS configuration for media file storage
+    /// 媒体文件存储的 VFS 配置
     pub vfs_config: VfsConfig,
 }
 
@@ -45,7 +44,7 @@ impl Default for DatabaseConfig {
 }
 
 impl DatabaseConfig {
-    /// Create a new database configuration
+    /// 创建新的数据库配置
     pub fn new(database_url: impl Into<String>, vfs_config: VfsConfig) -> Self {
         Self {
             database_url: database_url.into(),
@@ -54,7 +53,7 @@ impl DatabaseConfig {
         }
     }
 
-    /// Create an in-memory database configuration (for testing)
+    /// 创建内存数据库配置（用于测试）
     pub fn memory() -> Self {
         Self {
             database_url: ":memory:".to_string(),
@@ -64,7 +63,7 @@ impl DatabaseConfig {
     }
 }
 
-/// SQLite-based storage implementation
+/// 基于 SQLite 的存储实现
 #[derive(Clone)]
 pub struct DatabaseStorage {
     pool: Pool<Sqlite>,
@@ -74,7 +73,7 @@ pub struct DatabaseStorage {
 }
 
 impl DatabaseStorage {
-    /// Create a new database storage
+    /// 创建新的数据库存储
     pub async fn new(config: DatabaseConfig) -> Result<Self> {
         let database_url = if config.database_url == ":memory:" {
             "sqlite::memory:".to_string()
@@ -96,7 +95,7 @@ impl DatabaseStorage {
         Ok(storage)
     }
 
-    /// Run database migrations
+    /// 运行数据库迁移
     async fn run_migrations(&self) -> Result<()> {
         sqlx::query(
             r#"
@@ -288,12 +287,12 @@ impl DatabaseStorage {
         Ok(())
     }
 
-    /// Get the VFS instance
+    /// 获取 VFS 实例
     pub fn vfs(&self) -> &SharedVfs {
         &self.vfs
     }
 
-    /// Get the database pool
+    /// 获取数据库连接池
     pub fn pool(&self) -> &Pool<Sqlite> {
         &self.pool
     }
@@ -302,8 +301,8 @@ impl DatabaseStorage {
 #[async_trait]
 impl Storage for DatabaseStorage {
     async fn initialize(&self) -> Result<()> {
-        // Migrations already run in new()
-        // Ensure default admin user exists
+        // 迁移已在 new() 中运行
+        // 确保默认管理员用户存在
         let user_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
             .fetch_one(&self.pool)
             .await
@@ -1061,7 +1060,7 @@ impl PlaylistStorage for DatabaseStorage {
     }
 
     async fn delete_playlist(&self, id: Uuid) -> Result<()> {
-        // Delete playlist tracks first
+        // 首先删除播放列表曲目
         sqlx::query("DELETE FROM playlist_tracks WHERE playlist_id = ?")
             .bind(id.to_string())
             .execute(&self.pool)
@@ -1264,13 +1263,13 @@ impl SubsonicStorage for DatabaseStorage {
     }
 
     async fn get_music_directory(&self, id: &str) -> Result<Option<SubsonicDirectory>> {
-        // Try to find as album first
+        // 首先尝试作为专辑查找
         if let Some(album) = SubsonicStorage::get_album(self, id).await? {
             let songs = self.get_songs_by_album_internal(id).await?;
             return Ok(Some(SubsonicDirectory::from_album(&album, songs)));
         }
 
-        // Try as artist
+        // 尝试作为艺术家
         if let Some(artist) = SubsonicStorage::get_artist(self, id).await? {
             let albums = self.get_albums_by_artist_internal(id).await?;
             let children: Vec<MediaFile> = albums
@@ -2431,6 +2430,7 @@ impl SubsonicStorage for DatabaseStorage {
             .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
             // 获取当前索引对应的 track id
+            // 获取当前索引对应的 track id
             let current_index = r.get::<Option<i32>, _>("current_index");
             let current_id = if let Some(idx) = current_index {
                 entries.get(idx as usize).map(|e| e.get::<String, _>("id"))
@@ -2902,7 +2902,7 @@ impl SubsonicStorage for DatabaseStorage {
     ) -> Result<()> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
-        let password_hash = format!("{:x}", md5::compute(password)); // Simple hash, should use bcrypt in production
+        let password_hash = format!("{:x}", md5::compute(password)); // 简单散列，生产环境应使用 bcrypt
 
         sqlx::query(
             r#"INSERT INTO users (id, username, password_hash, email, admin_role, settings_role,
@@ -3109,7 +3109,7 @@ impl SubsonicStorage for DatabaseStorage {
     }
 }
 
-// === Helper Methods ===
+// === 辅助方法 ===
 impl DatabaseStorage {
     fn row_to_media_file(&self, r: &sqlx::sqlite::SqliteRow) -> MediaFile {
         use sqlx::Row;
@@ -3254,14 +3254,14 @@ mod tests {
             updated_at: Utc::now(),
         };
 
-        // Create
+        // 创建
         storage.save_track(&track).await.unwrap();
 
-        // Read
+        // 读取
         let retrieved = storage.get_track(track.id).await.unwrap().unwrap();
         assert_eq!(retrieved.title, track.title);
 
-        // Delete
+        // 删除
         storage.delete_track(track.id).await.unwrap();
         assert!(storage.get_track(track.id).await.unwrap().is_none());
     }

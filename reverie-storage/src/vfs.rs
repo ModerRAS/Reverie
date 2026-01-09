@@ -1,7 +1,7 @@
-//! Virtual File System abstraction using OpenDAL
+//! 使用 OpenDAL 的虚拟文件系统抽象
 //!
-//! This module provides a unified interface for file operations across different
-//! storage backends (local filesystem, S3, Azure Blob, etc.) using Apache OpenDAL.
+//! 此模块通过 Apache OpenDAL 为不同的存储后端（本地文件系统、S3、Azure Blob 等）
+//! 提供统一的文件操作接口。
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -10,17 +10,17 @@ use std::sync::Arc;
 
 use crate::error::{Result, StorageError};
 
-/// Virtual File System configuration
+/// 虚拟文件系统配置
 #[derive(Debug, Clone)]
 pub struct VfsConfig {
-    /// The scheme of the storage backend (e.g., "fs", "s3", "azblob", "gcs")
+    /// 存储后端的方案（例如："fs"、"s3"、"azblob"、"gcs"）
     pub scheme: String,
-    /// Backend-specific configuration options
+    /// 后端特定的配置选项
     pub options: std::collections::HashMap<String, String>,
 }
 
 impl VfsConfig {
-    /// Create a local filesystem VFS configuration
+    /// 创建本地文件系统 VFS 配置
     pub fn local(root: impl Into<String>) -> Self {
         let mut options = std::collections::HashMap::new();
         options.insert("root".to_string(), root.into());
@@ -30,7 +30,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create an S3-compatible storage configuration
+    /// 创建 S3 兼容存储配置
     pub fn s3(
         bucket: impl Into<String>,
         region: impl Into<String>,
@@ -56,7 +56,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create an Azure Blob Storage configuration
+    /// 创建 Azure Blob 存储配置
     pub fn azblob(
         container: impl Into<String>,
         account_name: impl Into<String>,
@@ -78,7 +78,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create a Google Cloud Storage configuration
+    /// 创建 Google Cloud Storage 配置
     pub fn gcs(
         bucket: impl Into<String>,
         credential: Option<String>,
@@ -98,7 +98,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create an in-memory storage configuration (useful for testing)
+    /// 创建内存存储配置（用于测试）
     pub fn memory() -> Self {
         Self {
             scheme: "memory".to_string(),
@@ -106,7 +106,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create a WebDAV storage configuration
+    /// 创建 WebDAV 存储配置
     pub fn webdav(
         endpoint: impl Into<String>,
         username: Option<String>,
@@ -126,7 +126,7 @@ impl VfsConfig {
         }
     }
 
-    /// Create an SFTP storage configuration
+    /// 创建 SFTP 存储配置
     pub fn sftp(
         endpoint: impl Into<String>,
         root: impl Into<String>,
@@ -147,7 +147,7 @@ impl VfsConfig {
     }
 }
 
-/// File metadata from VFS
+/// 来自 VFS 的文件元数据
 #[derive(Debug, Clone)]
 pub struct VfsMetadata {
     pub size: u64,
@@ -177,7 +177,7 @@ impl From<Metadata> for VfsMetadata {
     }
 }
 
-/// Directory entry from VFS
+/// 来自 VFS 的目录条目
 #[derive(Debug, Clone)]
 pub struct VfsEntry {
     pub path: String,
@@ -193,47 +193,47 @@ impl From<Entry> for VfsEntry {
     }
 }
 
-/// Virtual File System trait - abstraction over different storage backends
+/// 虚拟文件系统 trait - 不同存储后端的抽象
 #[async_trait]
 pub trait Vfs: Send + Sync {
-    /// Read a file completely into memory
+    /// 将文件完整读取到内存中
     async fn read(&self, path: &str) -> Result<Bytes>;
 
-    /// Read a range of bytes from a file
+    /// 从文件中读取指定范围的字节
     async fn read_range(&self, path: &str, offset: u64, size: u64) -> Result<Bytes>;
 
-    /// Write data to a file (creates or overwrites)
+    /// 向文件写入数据（创建或覆盖）
     async fn write(&self, path: &str, data: Bytes) -> Result<()>;
 
-    /// Append data to a file
+    /// 向文件追加数据
     async fn append(&self, path: &str, data: Bytes) -> Result<()>;
 
-    /// Delete a file
+    /// 删除文件
     async fn delete(&self, path: &str) -> Result<()>;
 
-    /// Check if a path exists
+    /// 检查路径是否存在
     async fn exists(&self, path: &str) -> Result<bool>;
 
-    /// Get metadata for a path
+    /// 获取路径的元数据
     async fn stat(&self, path: &str) -> Result<VfsMetadata>;
 
-    /// List entries in a directory
+    /// 列出目录中的条目
     async fn list(&self, path: &str) -> Result<Vec<VfsEntry>>;
 
-    /// List entries recursively
+    /// 递归列出条目
     async fn list_recursive(&self, path: &str) -> Result<Vec<VfsEntry>>;
 
-    /// Create a directory (and parent directories if needed)
+    /// 创建目录（必要时创建父目录）
     async fn create_dir(&self, path: &str) -> Result<()>;
 
-    /// Copy a file
+    /// 复制文件
     async fn copy(&self, from: &str, to: &str) -> Result<()>;
 
-    /// Rename/move a file
+    /// 重命名/移动文件
     async fn rename(&self, from: &str, to: &str) -> Result<()>;
 }
 
-/// OpenDAL-based VFS implementation
+/// 基于 OpenDAL 的 VFS 实现
 #[derive(Clone)]
 pub struct OpendalVfs {
     operator: Operator,
@@ -241,13 +241,13 @@ pub struct OpendalVfs {
 }
 
 impl OpendalVfs {
-    /// Create a new OpenDAL VFS from configuration
+    /// 从配置创建新的 OpenDAL VFS
     pub fn new(config: VfsConfig) -> Result<Self> {
         let operator = Self::build_operator(&config)?;
         Ok(Self { operator, config })
     }
 
-    /// Build an OpenDAL operator from configuration
+    /// 从配置构建 OpenDAL 操作符
     fn build_operator(config: &VfsConfig) -> Result<Operator> {
         use opendal::services::*;
 
@@ -351,12 +351,12 @@ impl OpendalVfs {
         Ok(op)
     }
 
-    /// Get the underlying OpenDAL operator
+    /// 获取底层 OpenDAL 操作符
     pub fn operator(&self) -> &Operator {
         &self.operator
     }
 
-    /// Get the VFS configuration
+    /// 获取 VFS 配置
     pub fn config(&self) -> &VfsConfig {
         &self.config
     }
@@ -472,10 +472,10 @@ impl Vfs for OpendalVfs {
     }
 }
 
-/// A wrapper that provides Arc-based sharing of VFS
+/// 提供 Arc 共享的 VFS 包装器
 pub type SharedVfs = Arc<dyn Vfs>;
 
-/// Create a shared VFS from configuration
+/// 从配置创建共享 VFS
 pub fn create_vfs(config: VfsConfig) -> Result<SharedVfs> {
     Ok(Arc::new(OpendalVfs::new(config)?))
 }
@@ -488,20 +488,20 @@ mod tests {
     async fn test_memory_vfs() {
         let vfs = OpendalVfs::new(VfsConfig::memory()).unwrap();
 
-        // Write
+        // 写入
         vfs.write("test.txt", Bytes::from("hello world"))
             .await
             .unwrap();
 
-        // Read
+        // 读取
         let data = vfs.read("test.txt").await.unwrap();
         assert_eq!(&data[..], b"hello world");
 
-        // Exists
+        // 存在性检查
         assert!(vfs.exists("test.txt").await.unwrap());
         assert!(!vfs.exists("nonexistent.txt").await.unwrap());
 
-        // Delete
+        // 删除
         vfs.delete("test.txt").await.unwrap();
         assert!(!vfs.exists("test.txt").await.unwrap());
     }
