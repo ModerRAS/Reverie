@@ -36,7 +36,7 @@ pub async fn auth_middleware<S: SubsonicStorage>(
     Ok(next.run(req).await)
 }
 
-/// Extract authentication information from request query parameters
+/// 从请求查询参数中提取身份验证信息
 async fn extract_auth<S: SubsonicStorage>(
     storage: &Arc<S>,
     req: &Request<Body>,
