@@ -104,9 +104,10 @@ pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<Su
         .route("/createPlaylist", get(stub_handler::<S>))
         .route("/updatePlaylist", get(stub_handler::<S>))
         .route("/deletePlaylist", get(stub_handler::<S>))
-        .route("/stream", get(stub_handler::<S>))
+        // Media retrieval endpoints
+        .route("/stream", get(stream_handler::<S>))
         .route("/download", get(stub_handler::<S>))
-        .route("/getCoverArt", get(stub_handler::<S>))
+        .route("/getCoverArt", get(get_cover_art_handler::<S>))
         .route("/getLyrics", get(stub_handler::<S>))
         .route("/getLyricsBySongId", get(stub_handler::<S>))
         .route("/getAvatar", get(stub_handler::<S>))
@@ -342,5 +343,71 @@ async fn search3_handler<S: SubsonicStorage + Clone>(
             format_response(&params, response)
         }
         Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+// ===== Media Retrieval Handlers =====
+
+/// GET /rest/getCoverArt - Get cover art image
+async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+    let _size: Option<i32> = params.get("size").and_then(|s| s.parse().ok());
+
+    match state.storage.get_cover_art_path(id).await {
+        Ok(Some(path)) => {
+            // For now, return a placeholder response
+            // In production, this would stream the actual image file
+            // The storage layer would use VFS to read the file
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, "image/jpeg")
+                .body(axum::body::Body::empty())
+                .unwrap()
+        }
+        Ok(None) => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(axum::body::Body::from("Cover art not found"))
+            .unwrap(),
+        Err(e) => Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(axum::body::Body::from(e.to_string()))
+            .unwrap(),
+    }
+}
+
+/// GET /rest/stream - Stream media file
+async fn stream_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.get_stream_path(id).await {
+        Ok(Some(_path)) => {
+            // For now, return a placeholder response
+            // In production, this would stream the actual media file
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, "audio/mpeg")
+                .body(axum::body::Body::empty())
+                .unwrap()
+        }
+        Ok(None) => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(axum::body::Body::from("Media file not found"))
+            .unwrap(),
+        Err(e) => Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(axum::body::Body::from(e.to_string()))
+            .unwrap(),
     }
 }
