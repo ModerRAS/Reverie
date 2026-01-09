@@ -1190,3 +1190,188 @@ async fn open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(State(stat
         Err(_) => subsonic_error(0, "Failed to get extensions"),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use async_trait::async_trait;
+    use reverie_core::{SubsonicDirectory, SubsonicArtist, SubsonicAlbum, MediaFile, SubsonicGenre, SubsonicMusicFolder};
+    use reverie_storage::StorageError;
+    use std::sync::Arc;
+
+    #[derive(Clone)]
+    struct MockStorage;
+
+    #[async_trait]
+    impl SubsonicStorage for MockStorage {
+        async fn get_license(&self) -> Result<bool, StorageError> { Ok(true) }
+        async fn get_music_folders(&self) -> Result<Vec<SubsonicMusicFolder>, StorageError> {
+            Ok(vec![SubsonicMusicFolder { id: "1".to_string(), name: "Music".to_string() }])
+        }
+        async fn get_indexes(&self, _: Option<i32>, _: Option<i64>) -> Result<reverie_core::SubsonicArtistIndexes, StorageError> {
+            Ok(vec![])
+        }
+        async fn get_genres(&self) -> Result<Vec<SubsonicGenre>, StorageError> {
+            Ok(vec![SubsonicGenre { value: "Rock".to_string(), song_count: 10, album_count: 5 }])
+        }
+        async fn get_music_directory(&self, _: &str) -> Result<Option<SubsonicDirectory>, StorageError> { Ok(None) }
+        async fn get_artists(&self, _: Option<i32>) -> Result<reverie_core::SubsonicArtistIndexes, StorageError> { Ok(vec![]) }
+        async fn get_artist(&self, _: &str) -> Result<Option<SubsonicArtist>, StorageError> { Ok(None) }
+        async fn get_album(&self, _: &str) -> Result<Option<SubsonicAlbum>, StorageError> { Ok(None) }
+        async fn get_song(&self, _: &str) -> Result<Option<MediaFile>, StorageError> { Ok(None) }
+        async fn get_artist_info(&self, _: &str, _: Option<i32>, _: Option<bool>) -> Result<reverie_core::SubsonicArtistInfo, StorageError> { Ok(Default::default()) }
+        async fn get_artist_info2(&self, _: &str, _: Option<i32>, _: Option<bool>) -> Result<reverie_core::SubsonicArtistInfo, StorageError> { Ok(Default::default()) }
+        async fn get_album_info(&self, _: &str) -> Result<reverie_core::SubsonicAlbumInfo, StorageError> { Ok(Default::default()) }
+        async fn get_album_info2(&self, _: &str) -> Result<reverie_core::SubsonicAlbumInfo, StorageError> { Ok(Default::default()) }
+        async fn get_similar_songs(&self, _: &str, _: Option<i32>) -> Result<Vec<MediaFile>, StorageError> { Ok(vec![]) }
+        async fn get_similar_songs2(&self, _: &str, _: Option<i32>) -> Result<Vec<MediaFile>, StorageError> { Ok(vec![]) }
+        async fn get_top_songs(&self, _: &str, _: Option<i32>) -> Result<reverie_core::SubsonicTopSongs, StorageError> { Ok(Default::default()) }
+        async fn get_album_list(&self, _: &str, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<&str>, _: Option<i32>) -> Result<Vec<SubsonicAlbum>, StorageError> { Ok(vec![]) }
+        async fn get_album_list2(&self, _: &str, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<&str>, _: Option<i32>) -> Result<Vec<SubsonicAlbum>, StorageError> { Ok(vec![]) }
+        async fn get_random_songs(&self, _: Option<i32>, _: Option<&str>, _: Option<i32>, _: Option<i32>, _: Option<i32>) -> Result<Vec<MediaFile>, StorageError> { Ok(vec![]) }
+        async fn get_songs_by_genre(&self, _: &str, _: Option<i32>, _: Option<i32>, _: Option<i32>) -> Result<Vec<MediaFile>, StorageError> { Ok(vec![]) }
+        async fn get_now_playing(&self) -> Result<Vec<reverie_core::SubsonicNowPlaying>, StorageError> { Ok(vec![]) }
+        async fn get_starred(&self, _: Option<i32>) -> Result<reverie_core::SubsonicStarred, StorageError> { Ok(Default::default()) }
+        async fn get_starred2(&self, _: Option<i32>) -> Result<reverie_core::SubsonicStarred, StorageError> { Ok(Default::default()) }
+        async fn search2(&self, _: &str, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>) -> Result<reverie_core::SubsonicSearchResult2, StorageError> { Ok(Default::default()) }
+        async fn search3(&self, _: &str, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>, _: Option<i32>) -> Result<reverie_core::SubsonicSearchResult3, StorageError> { Ok(Default::default()) }
+        async fn get_playlists(&self, _: Option<&str>) -> Result<Vec<reverie_core::SubsonicPlaylist>, StorageError> { Ok(vec![]) }
+        async fn get_playlist(&self, _: &str) -> Result<Option<reverie_core::SubsonicPlaylistWithSongs>, StorageError> { Ok(None) }
+        async fn create_playlist(&self, _: Option<&str>, _: Option<&str>, _: &[&str]) -> Result<reverie_core::SubsonicPlaylistWithSongs, StorageError> { Ok(Default::default()) }
+        async fn update_playlist(&self, _: &str, _: Option<&str>, _: Option<&str>, _: Option<bool>, _: &[&str], _: &[i32]) -> Result<(), StorageError> { Ok(()) }
+        async fn delete_playlist(&self, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn get_stream_path(&self, _: &str) -> Result<Option<String>, StorageError> { Ok(None) }
+        async fn get_cover_art_path(&self, _: &str) -> Result<Option<String>, StorageError> { Ok(None) }
+        async fn get_lyrics(&self, _: Option<&str>, _: Option<&str>) -> Result<Option<reverie_core::SubsonicLyrics>, StorageError> { Ok(None) }
+        async fn get_lyrics_by_song_id(&self, _: &str) -> Result<Vec<reverie_core::SubsonicStructuredLyrics>, StorageError> { Ok(vec![]) }
+        async fn get_avatar_path(&self, _: &str) -> Result<Option<String>, StorageError> { Ok(None) }
+        async fn star(&self, _: &[&str], _: &[&str], _: &[&str]) -> Result<(), StorageError> { Ok(()) }
+        async fn unstar(&self, _: &[&str], _: &[&str], _: &[&str]) -> Result<(), StorageError> { Ok(()) }
+        async fn set_rating(&self, _: &str, _: i32) -> Result<(), StorageError> { Ok(()) }
+        async fn scrobble(&self, _: &str, _: Option<i64>, _: bool) -> Result<(), StorageError> { Ok(()) }
+        async fn get_bookmarks(&self) -> Result<Vec<reverie_core::SubsonicBookmark>, StorageError> { Ok(vec![]) }
+        async fn create_bookmark(&self, _: &str, _: i64, _: Option<&str>) -> Result<(), StorageError> { Ok(()) }
+        async fn delete_bookmark(&self, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn get_play_queue(&self) -> Result<Option<reverie_core::SubsonicPlayQueue>, StorageError> { Ok(None) }
+        async fn save_play_queue(&self, _: &[&str], _: Option<&str>, _: Option<i64>) -> Result<(), StorageError> { Ok(()) }
+        async fn get_shares(&self) -> Result<Vec<reverie_core::SubsonicShare>, StorageError> { Ok(vec![]) }
+        async fn create_share(&self, _: &[&str], _: Option<&str>, _: Option<i64>) -> Result<reverie_core::SubsonicShare, StorageError> { Ok(Default::default()) }
+        async fn update_share(&self, _: &str, _: Option<&str>, _: Option<i64>) -> Result<(), StorageError> { Ok(()) }
+        async fn delete_share(&self, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn get_internet_radio_stations(&self) -> Result<Vec<reverie_core::SubsonicInternetRadioStation>, StorageError> { Ok(vec![]) }
+        async fn create_internet_radio_station(&self, _: &str, _: &str, _: Option<&str>) -> Result<(), StorageError> { Ok(()) }
+        async fn update_internet_radio_station(&self, _: &str, _: &str, _: &str, _: Option<&str>) -> Result<(), StorageError> { Ok(()) }
+        async fn delete_internet_radio_station(&self, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn get_user(&self, _: &str) -> Result<Option<reverie_core::SubsonicUser>, StorageError> { Ok(None) }
+        async fn get_users(&self) -> Result<Vec<reverie_core::SubsonicUser>, StorageError> { Ok(vec![]) }
+        async fn create_user(&self, _: &str, _: &str, _: Option<&str>, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: bool, _: &[i32]) -> Result<(), StorageError> { Ok(()) }
+        async fn update_user(&self, _: &str, _: Option<&str>, _: Option<&str>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<bool>, _: Option<i32>) -> Result<(), StorageError> { Ok(()) }
+        async fn delete_user(&self, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn change_password(&self, _: &str, _: &str) -> Result<(), StorageError> { Ok(()) }
+        async fn get_scan_status(&self) -> Result<reverie_core::SubsonicScanStatus, StorageError> { Ok(Default::default()) }
+        async fn start_scan(&self) -> Result<reverie_core::SubsonicScanStatus, StorageError> { Ok(Default::default()) }
+        async fn get_open_subsonic_extensions(&self) -> Result<Vec<reverie_core::OpenSubsonicExtension>, StorageError> { Ok(vec![]) }
+    }
+
+    #[test]
+    fn test_get_query_params_with_uri() {
+        use http::Uri;
+        let uri = Uri::from_static("/rest/getSong?id=123&type=album");
+        let params = get_query_params(&uri);
+        assert_eq!(params.get("id"), Some(&"123".to_string()));
+        assert_eq!(params.get("type"), Some(&"album".to_string()));
+    }
+
+    #[test]
+    fn test_get_query_params_empty_uri() {
+        use http::Uri;
+        let uri = Uri::from_static("/rest/ping");
+        let params = get_query_params(&uri);
+        assert!(params.is_empty());
+    }
+
+    #[test]
+    fn test_get_query_params_complex_query() {
+        use http::Uri;
+        let uri = Uri::from_static("/rest/search3?query=rock&artistCount=5&albumCount=10&songCount=20");
+        let params = get_query_params(&uri);
+        assert_eq!(params.get("query"), Some(&"rock".to_string()));
+        assert_eq!(params.get("artistCount"), Some(&"5".to_string()));
+        assert_eq!(params.get("albumCount"), Some(&"10".to_string()));
+        assert_eq!(params.get("songCount"), Some(&"20".to_string()));
+    }
+
+    #[test]
+    fn test_subsonic_api_version_constant() {
+        assert_eq!(SUBSONIC_API_VERSION, "1.16.1");
+    }
+
+    #[tokio::test]
+    async fn test_ping_handler_returns_ok() {
+        let storage = Arc::new(MockStorage);
+        let state = SubsonicState::new(storage);
+        let response = ping_handler(State(state), Uri::from_static("/rest/ping")).await;
+        assert!(response.contains(r#"status="ok""#));
+        assert!(response.contains(r#"version="1.16.1""#));
+    }
+
+    #[tokio::test]
+    async fn test_genres_handler_returns_xml() {
+        let storage = Arc::new(MockStorage);
+        let state = SubsonicState::new(storage);
+        let response = genres_handler(State(state), Uri::from_static("/rest/getGenres")).await;
+        assert!(response.contains(r#"<?xml version="1.0" encoding="UTF-8"?>"#));
+        assert!(response.contains(r#"<subsonic-response"#));
+        assert!(response.contains(r#"<genres>"#));
+    }
+
+    #[tokio::test]
+    async fn test_music_folders_handler_returns_xml() {
+        let storage = Arc::new(MockStorage);
+        let state = SubsonicState::new(storage);
+        let response = music_folders_handler(State(state), Uri::from_static("/rest/getMusicFolders")).await;
+        assert!(response.contains(r#"<?xml version="1.0" encoding="UTF-8"?>"#));
+        assert!(response.contains(r#"<subsonic-response"#));
+        assert!(response.contains(r#"<musicFolders>"#));
+        assert!(response.contains(r#"musicFolder"#));
+    }
+
+    #[tokio::test]
+    async fn test_error_response_for_missing_resource() {
+        let storage = Arc::new(MockStorage);
+        let state = SubsonicState::new(storage);
+        let response = artist_handler(State(state), Uri::from_static("/rest/getArtist?id=missing")).await;
+        assert!(response.contains(r#"status="failed""#));
+        assert!(response.contains(r#"error code="70""#));
+        assert!(response.contains("Artist not found"));
+    }
+
+    #[test]
+    fn test_create_router_has_all_routes() {
+        let storage = Arc::new(MockStorage);
+        let router = create_router(storage);
+        let routes: Vec<_> = router.iter().collect();
+        let route_paths: Vec<&str> = routes.iter().filter_map(|r| r.path()).collect();
+
+        assert!(route_paths.contains(&"/ping"));
+        assert!(route_paths.contains(&"/getLicense"));
+        assert!(route_paths.contains(&"/getMusicFolders"));
+        assert!(route_paths.contains(&"/getIndexes"));
+        assert!(route_paths.contains(&"/getGenres"));
+        assert!(route_paths.contains(&"/getArtists"));
+        assert!(route_paths.contains(&"/getAlbum"));
+        assert!(route_paths.contains(&"/getSong"));
+        assert!(route_paths.contains(&"/search2"));
+        assert!(route_paths.contains(&"/search3"));
+        assert!(route_paths.contains(&"/stream"));
+        assert!(route_paths.contains(&"/getCoverArt"));
+    }
+
+    #[test]
+    fn test_router_has_expected_route_count() {
+        let storage = Arc::new(MockStorage);
+        let router = create_router(storage);
+        let routes: Vec<_> = router.iter().collect();
+        assert_eq!(routes.len(), 47);
+    }
+}
