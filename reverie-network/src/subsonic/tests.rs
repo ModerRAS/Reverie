@@ -5,7 +5,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use reverie_storage::{error::StorageError, traits::SubsonicStorage};
+use reverie_storage::error::StorageError;
 use std::sync::Arc;
 use tower::ServiceExt;
 
@@ -280,7 +280,6 @@ impl SubsonicStorage for MockSubsonicStorage {
         _playlist_id: Option<&str>,
         _song_ids: &[&str],
     ) -> Result<reverie_core::SubsonicPlaylistWithSongs> {
-        use chrono::Utc;
         Ok(reverie_core::SubsonicPlaylistWithSongs {
             id: "playlist-1".to_string(),
             name: "Test Playlist".to_string(),
@@ -289,8 +288,8 @@ impl SubsonicStorage for MockSubsonicStorage {
             public: false,
             song_count: 0,
             duration: 0,
-            created: Utc::now(),
-            changed: Utc::now(),
+            created: chrono::Utc::now(),
+            changed: chrono::Utc::now(),
             cover_art: None,
             entries: vec![],
         })
@@ -373,13 +372,12 @@ impl SubsonicStorage for MockSubsonicStorage {
     }
 
     async fn create_share(&self, _ids: &[&str], _description: Option<&str>, _expires: Option<i64>) -> Result<reverie_core::SubsonicShare> {
-        use chrono::Utc;
         Ok(reverie_core::SubsonicShare {
             id: "share-1".to_string(),
             url: "http://example.com/share/1".to_string(),
             description: None,
             username: "admin".to_string(),
-            created: Utc::now(),
+            created: chrono::Utc::now(),
             expires: None,
             last_visited: None,
             visit_count: 0,
@@ -512,7 +510,8 @@ impl SubsonicStorage for MockSubsonicStorage {
 
 fn create_test_router() -> axum::Router {
     let storage = Arc::new(MockSubsonicStorage::new());
-    create_subsonic_router(storage)
+    let state = SubsonicState::new(storage);
+    create_router::<MockSubsonicStorage>().with_state(state)
 }
 
 async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value {
