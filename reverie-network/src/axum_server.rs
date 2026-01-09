@@ -1,5 +1,4 @@
-//! Axum-based HTTP server implementation
-
+//! 基于 Axum 的 HTTP 服务器实现
 use async_trait::async_trait;
 use axum::{
     extract::{Path, Query, State},
@@ -26,7 +25,7 @@ use crate::{
 };
 use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage};
 
-/// Axum-based HTTP server.
+/// 基于 Axum 的 HTTP 服务器。
 pub struct AxumServer<S> {
     storage: Arc<S>,
     config: NetworkConfig,
@@ -57,9 +56,9 @@ where
         }
     }
 
-    /// Serve a built web UI (dx build output) from the given directory.
+    /// 从给定目录提供构建好的 Web UI (dx 构建输出)。
     ///
-    /// Expected structure:
+    /// 预期结构：
     /// - index.html
     /// - assets/
     /// - wasm/
@@ -84,33 +83,33 @@ where
                 )
                 .nest_service("/assets", ServeDir::new(assets_dir))
                 .nest_service("/wasm", ServeDir::new(wasm_dir))
-                // SPA fallback: everything else goes to index.html
+                // SPA 回退：其他所有内容都指向 index.html
                 .route("/*path", get_service(ServeFile::new(index))),
         )
     }
 
     fn create_router(&self) -> Router {
         let mut router = Router::<subsonic::SubsonicState<S>>::new()
-            // Health check
+            // 健康检查
             .route("/health", get(health_handler))
             // Subsonic API
             .nest("/rest", subsonic::create_router::<S>())
-            // Track routes
+            // 曲目路由
             .route("/api/tracks", get(list_tracks_handler::<S>))
             .route("/api/tracks/:id", get(get_track_handler::<S>))
             .route("/api/tracks/search", get(search_tracks_handler::<S>))
-            // Album routes
+            // 专辑路由
             .route("/api/albums", get(list_albums_handler::<S>))
             .route("/api/albums/:id", get(get_album_handler::<S>))
             .route("/api/albums/:id/tracks", get(get_album_tracks_handler::<S>))
-            // Artist routes
+            // 艺术家路由
             .route("/api/artists", get(list_artists_handler::<S>))
             .route("/api/artists/:id", get(get_artist_handler::<S>))
             .route(
                 "/api/artists/:id/albums",
                 get(get_artist_albums_handler::<S>),
             )
-            // Playlist routes
+            // 播放列表路由
             .route("/api/playlists/:id", get(get_playlist_handler::<S>));
 
         if let Some(ui_router) = self.create_ui_router() {
@@ -147,7 +146,7 @@ where
         *self.is_running.write().await = true;
         *self.addr.write().await = Some(addr);
 
-        tracing::info!("Starting Axum server on {}", addr);
+        tracing::info!("正在启动 Axum 服务器 {}", addr);
 
         let listener = tokio::net::TcpListener::bind(addr)
             .await
@@ -167,18 +166,18 @@ where
     }
 
     fn is_running(&self) -> bool {
-        // Note: This is a simplified check.
-        // In a real implementation, we'd track the server task.
+        // 注意：这是一个简化检查。
+        // 在实际实现中，我们会跟踪服务器任务。
         false
     }
 
     fn address(&self) -> Option<SocketAddr> {
-        // Note: This would need proper async context in a real implementation.
+        // 注意：在实际实现中需要适当的异步上下文。
         None
     }
 }
 
-// Query parameters for pagination
+// 用于分页的查询参数
 #[derive(Deserialize)]
 struct PaginationQuery {
     #[serde(default = "default_limit")]
@@ -191,13 +190,13 @@ fn default_limit() -> usize {
     50
 }
 
-// Query parameters for search
+// 用于搜索的查询参数
 #[derive(Deserialize)]
 struct SearchQuery {
     q: String,
 }
 
-// Health check handler
+/// 健康检查处理程序
 async fn health_handler() -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "healthy".to_string(),
@@ -205,7 +204,7 @@ async fn health_handler() -> Json<HealthResponse> {
     })
 }
 
-// Track handlers
+/// 曲目处理程序
 async fn list_tracks_handler<S>(
     State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
@@ -336,7 +335,7 @@ where
     }
 }
 
-// Album handlers
+/// 专辑处理程序
 async fn list_albums_handler<S>(
     State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
@@ -459,7 +458,7 @@ where
     }
 }
 
-// Artist handlers
+/// 艺术家处理程序
 async fn list_artists_handler<S>(
     State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
@@ -574,7 +573,7 @@ where
     }
 }
 
-// Playlist handlers
+/// 播放列表处理程序
 async fn get_playlist_handler<S>(
     State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
