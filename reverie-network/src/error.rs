@@ -1,5 +1,4 @@
-//! Error types for network operations
-
+//! 网络操作错误类型
 use thiserror::Error;
 
 #[derive(Error, Debug)]
