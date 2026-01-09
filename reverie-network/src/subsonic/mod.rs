@@ -5,29 +5,24 @@ pub mod response;
 pub mod auth;
 pub mod params;
 
-use crate::subsonic::params::parse_query_params;
+pub use params::{
+    AlbumListParams, AnnotationParams, BookmarkParams, CommonParams, CoverArtParams,
+    LyricsParams, PlaylistParams, PlayQueueParams, RadioParams, ScanParams, SearchParams,
+    ShareParams, SongsByGenreParams, StreamParams,
+};
+
 use crate::subsonic::response::{subsonic_ok, subsonic_error};
 use axum::{
     body::Body,
-    extract::Request,
-    http::Uri,
+    extract::Query,
     response::IntoResponse,
     routing::get,
     Router,
 };
 use reverie_storage::SubsonicStorage;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 pub const SUBSONIC_API_VERSION: &str = "1.16.1";
-
-fn get_query_params(uri: &Uri) -> HashMap<String, String> {
-    if let Some(query) = uri.query() {
-        parse_query_params(query)
-    } else {
-        HashMap::new()
-    }
-}
 
 #[cfg(feature = "axum-server")]
 pub fn create_router<S: SubsonicStorage + Clone + 'static>(storage: Arc<S>) -> Router {
@@ -102,26 +97,13 @@ impl<S: SubsonicStorage + Clone> SubsonicState<S> {
     fn new(storage: Arc<S>) -> Self {
         Self { storage }
     }
-
-    async fn get_params(&self, uri: &Uri) -> HashMap<String, String> {
-        get_query_params(uri)
-    }
 }
 
-macro_rules! handler {
-    ($name:ident) => {
-        async fn $name<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-            let params = state.get_params(&uri).await;
-            $name_inner(&state.storage, &params).await
-        }
-    };
-}
-
-async fn ping_handler<S: SubsonicStorage + Clone>(_: State<SubsonicState<S>>, _: Uri) -> String {
+async fn ping_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     subsonic_ok()
 }
 
-async fn license_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn license_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     let valid = state.storage.get_license().await.unwrap_or(true);
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -132,7 +114,7 @@ async fn license_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     )
 }
 
-async fn music_folders_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn music_folders_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_music_folders().await {
         Ok(folders) => {
             let folders_xml: String = folders
@@ -152,12 +134,14 @@ async fn music_folders_handler<S: SubsonicStorage + Clone>(State(state): State<S
     }
 }
 
-async fn indexes_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let music_folder_id = params.get("musicFolderId").and_then(|v| v.parse().ok());
-    let if_modified_since = params.get("ifModifiedSince").and_then(|v| v.parse().ok());
+async fn indexes_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let music_folder_id = params.id.and_then(|_| None);
+    let if_modified_since = params.if_modified_since;
 
-    match state.storage.get_indexes(music_folder_id, if_modified_since).await {
+    match state.storage.get_indexes(None, if_modified_since).await {
         Ok(indexes) => {
             let mut indexes_xml = String::new();
             for idx in &indexes {
@@ -185,9 +169,11 @@ async fn indexes_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     }
 }
 
-async fn music_directory_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn music_directory_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_music_directory(&id).await {
         Ok(Some(dir)) => {
@@ -229,7 +215,7 @@ async fn music_directory_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn genres_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn genres_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_genres().await {
         Ok(genres) => {
             let genres_xml: String = genres
@@ -245,11 +231,11 @@ async fn genres_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn artists_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let music_folder_id = params.get("musicFolderId").and_then(|v| v.parse().ok());
-
-    match state.storage.get_artists(music_folder_id).await {
+async fn artists_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    match state.storage.get_artists(None).await {
         Ok(indexes) => {
             let mut indexes_xml = String::new();
             for idx in &indexes {
@@ -269,9 +255,11 @@ async fn artists_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     }
 }
 
-async fn artist_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn artist_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_artist(&id).await {
         Ok(Some(artist)) => {
@@ -285,9 +273,11 @@ async fn artist_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn album_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn album_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_album(&id).await {
         Ok(Some(album)) => {
@@ -309,9 +299,11 @@ async fn album_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicS
     }
 }
 
-async fn song_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn song_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_song(&id).await {
         Ok(Some(song)) => {
@@ -341,12 +333,13 @@ async fn song_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicSt
     }
 }
 
-async fn artist_info_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
+async fn artist_info_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
-    match state.storage.get_artist_info(&id, count, None).await {
+    match state.storage.get_artist_info(&id, None, None).await {
         Ok(info) => {
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
 <subsonic-response status="ok" version="{}">
@@ -364,12 +357,13 @@ async fn artist_info_handler<S: SubsonicStorage + Clone>(State(state): State<Sub
     }
 }
 
-async fn artist_info2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
+async fn artist_info2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
-    match state.storage.get_artist_info2(&id, count, None).await {
+    match state.storage.get_artist_info2(&id, None, None).await {
         Ok(info) => {
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
 <subsonic-response status="ok" version="{}">
@@ -387,9 +381,11 @@ async fn artist_info2_handler<S: SubsonicStorage + Clone>(State(state): State<Su
     }
 }
 
-async fn album_info_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn album_info_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_album_info(&id).await {
         Ok(info) => {
@@ -409,9 +405,11 @@ async fn album_info_handler<S: SubsonicStorage + Clone>(State(state): State<Subs
     }
 }
 
-async fn album_info2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn album_info2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_album_info2(&id).await {
         Ok(info) => {
@@ -431,12 +429,13 @@ async fn album_info2_handler<S: SubsonicStorage + Clone>(State(state): State<Sub
     }
 }
 
-async fn similar_songs_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
+async fn similar_songs_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
-    match state.storage.get_similar_songs(&id, count).await {
+    match state.storage.get_similar_songs(&id, None).await {
         Ok(songs) => {
             let songs_xml: String = songs.iter().map(|s| format!(r#"<song id="{}" title="{}"/>"#, s.id, s.title)).collect();
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -448,12 +447,13 @@ async fn similar_songs_handler<S: SubsonicStorage + Clone>(State(state): State<S
     }
 }
 
-async fn similar_songs2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
+async fn similar_songs2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
-    match state.storage.get_similar_songs2(&id, count).await {
+    match state.storage.get_similar_songs2(&id, None).await {
         Ok(songs) => {
             let songs_xml: String = songs.iter().map(|s| format!(r#"<song id="{}" title="{}"/>"#, s.id, s.title)).collect();
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -465,12 +465,13 @@ async fn similar_songs2_handler<S: SubsonicStorage + Clone>(State(state): State<
     }
 }
 
-async fn top_songs_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let artist = params.get("artist").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
+async fn top_songs_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let artist = params.id.clone().unwrap_or_default();
 
-    match state.storage.get_top_songs(&artist, count).await {
+    match state.storage.get_top_songs(&artist, None).await {
         Ok(top_songs) => {
             let songs_xml: String = top_songs.song.iter().map(|s| format!(r#"<song id="{}" title="{}"/>"#, s.id, s.title)).collect();
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -482,14 +483,16 @@ async fn top_songs_handler<S: SubsonicStorage + Clone>(State(state): State<Subso
     }
 }
 
-async fn album_list_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let list_type = params.get("type").cloned().unwrap_or_else(|| "newest".to_string());
-    let size = params.get("size").and_then(|v| v.parse().ok());
-    let offset = params.get("offset").and_then(|v| v.parse().ok());
-    let from_year = params.get("fromYear").and_then(|v| v.parse().ok());
-    let to_year = params.get("toYear").and_then(|v| v.parse().ok());
-    let genre = params.get("genre").map(|s| s.as_str());
+async fn album_list_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<AlbumListParams>,
+) -> String {
+    let list_type = if params.list_type.is_empty() { "newest".to_string() } else { params.list_type };
+    let size = params.size;
+    let offset = params.offset;
+    let from_year = params.from_year;
+    let to_year = params.to_year;
+    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
 
     match state.storage.get_album_list(&list_type, size, offset, from_year, to_year, genre, None).await {
         Ok(albums) => {
@@ -508,14 +511,16 @@ async fn album_list_handler<S: SubsonicStorage + Clone>(State(state): State<Subs
     }
 }
 
-async fn album_list2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let list_type = params.get("type").cloned().unwrap_or_else(|| "newest".to_string());
-    let size = params.get("size").and_then(|v| v.parse().ok());
-    let offset = params.get("offset").and_then(|v| v.parse().ok());
-    let from_year = params.get("fromYear").and_then(|v| v.parse().ok());
-    let to_year = params.get("toYear").and_then(|v| v.parse().ok());
-    let genre = params.get("genre").map(|s| s.as_str());
+async fn album_list2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<AlbumListParams>,
+) -> String {
+    let list_type = if params.list_type.is_empty() { "newest".to_string() } else { params.list_type };
+    let size = params.size;
+    let offset = params.offset;
+    let from_year = params.from_year;
+    let to_year = params.to_year;
+    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
 
     match state.storage.get_album_list2(&list_type, size, offset, from_year, to_year, genre, None).await {
         Ok(albums) => {
@@ -534,12 +539,14 @@ async fn album_list2_handler<S: SubsonicStorage + Clone>(State(state): State<Sub
     }
 }
 
-async fn random_songs_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let size = params.get("size").and_then(|v| v.parse().ok());
-    let genre = params.get("genre").map(|s| s.as_str());
-    let from_year = params.get("fromYear").and_then(|v| v.parse().ok());
-    let to_year = params.get("toYear").and_then(|v| v.parse().ok());
+async fn random_songs_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<RandomSongsParams>,
+) -> String {
+    let size = params.size;
+    let genre = if params.genre.is_empty() { None } else { Some(&params.genre) };
+    let from_year = params.from_year;
+    let to_year = params.to_year;
 
     match state.storage.get_random_songs(size, genre, from_year, to_year, None).await {
         Ok(songs) => {
@@ -560,11 +567,13 @@ async fn random_songs_handler<S: SubsonicStorage + Clone>(State(state): State<Su
     }
 }
 
-async fn songs_by_genre_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let genre = params.get("genre").cloned().unwrap_or_default();
-    let count = params.get("count").and_then(|v| v.parse().ok());
-    let offset = params.get("offset").and_then(|v| v.parse().ok());
+async fn songs_by_genre_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<SongsByGenreParams>,
+) -> String {
+    let genre = params.genre.clone();
+    let count = params.count;
+    let offset = params.offset;
 
     match state.storage.get_songs_by_genre(&genre, count, offset, None).await {
         Ok(songs) => {
@@ -585,7 +594,7 @@ async fn songs_by_genre_handler<S: SubsonicStorage + Clone>(State(state): State<
     }
 }
 
-async fn now_playing_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn now_playing_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_now_playing().await {
         Ok(entries) => {
             let entries_xml: String = entries.iter().map(|e| {
@@ -607,7 +616,7 @@ async fn now_playing_handler<S: SubsonicStorage + Clone>(State(state): State<Sub
     }
 }
 
-async fn starred_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn starred_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_starred(None).await {
         Ok(starred) => {
             let artists_xml: String = starred.artist.iter().map(|a| format!(r#"<artist id="{}" name="{}" albumCount="{}" coverArt="{}"/>"#, a.id, a.name, a.album_count, a.cover_art.as_deref().unwrap_or(""))).collect();
@@ -622,7 +631,7 @@ async fn starred_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     }
 }
 
-async fn starred2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn starred2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_starred2(None).await {
         Ok(starred) => {
             let artists_xml: String = starred.artist.iter().map(|a| format!(r#"<artist id="{}" name="{}" albumCount="{}" coverArt="{}"/>"#, a.id, a.name, a.album_count, a.cover_art.as_deref().unwrap_or(""))).collect();
@@ -637,17 +646,13 @@ async fn starred2_handler<S: SubsonicStorage + Clone>(State(state): State<Subson
     }
 }
 
-async fn search2_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let query = params.get("query").cloned().unwrap_or_default();
-    let artist_count = params.get("artistCount").and_then(|v| v.parse().ok());
-    let artist_offset = params.get("artistOffset").and_then(|v| v.parse().ok());
-    let album_count = params.get("albumCount").and_then(|v| v.parse().ok());
-    let album_offset = params.get("albumOffset").and_then(|v| v.parse().ok());
-    let song_count = params.get("songCount").and_then(|v| v.parse().ok());
-    let song_offset = params.get("songOffset").and_then(|v| v.parse().ok());
+async fn search2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<SearchParams>,
+) -> String {
+    let query = params.query.clone();
 
-    match state.storage.search2(&query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset).await {
+    match state.storage.search2(&query, params.artist_count, params.artist_offset, params.album_count, params.album_offset, params.song_count, params.song_offset).await {
         Ok(result) => {
             let total_hits = result.artist.len() + result.album.len() + result.song.len();
             let artists_xml: String = result.artist.iter().map(|a| format!(r#"<artist id="{}" name="{}" albumCount="{}" coverArt="{}"/>"#, a.id, a.name, a.album_count, a.cover_art.as_deref().unwrap_or(""))).collect();
@@ -662,17 +667,13 @@ async fn search2_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     }
 }
 
-async fn search3_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let query = params.get("query").cloned().unwrap_or_default();
-    let artist_count = params.get("artistCount").and_then(|v| v.parse().ok());
-    let artist_offset = params.get("artistOffset").and_then(|v| v.parse().ok());
-    let album_count = params.get("albumCount").and_then(|v| v.parse().ok());
-    let album_offset = params.get("albumOffset").and_then(|v| v.parse().ok());
-    let song_count = params.get("songCount").and_then(|v| v.parse().ok());
-    let song_offset = params.get("songOffset").and_then(|v| v.parse().ok());
+async fn search3_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<SearchParams>,
+) -> String {
+    let query = params.query.clone();
 
-    match state.storage.search3(&query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset).await {
+    match state.storage.search3(&query, params.artist_count, params.artist_offset, params.album_count, params.album_offset, params.song_count, params.song_offset).await {
         Ok(result) => {
             let total_hits = result.artist.len() + result.album.len() + result.song.len();
             let artists_xml: String = result.artist.iter().map(|a| format!(r#"<artist id="{}" name="{}" albumCount="{}" coverArt="{}"/>"#, a.id, a.name, a.album_count, a.cover_art.as_deref().unwrap_or(""))).collect();
@@ -687,11 +688,11 @@ async fn search3_handler<S: SubsonicStorage + Clone>(State(state): State<Subsoni
     }
 }
 
-async fn playlists_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let username = params.get("username").map(|s| s.as_str());
-
-    match state.storage.get_playlists(username).await {
+async fn playlists_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlaylistParams>,
+) -> String {
+    match state.storage.get_playlists(params.name.as_deref()).await {
         Ok(playlists) => {
             let playlists_xml: String = playlists.iter().map(|p| {
                 format!(r#"<playlist id="{}" name="{}" owner="{}" songCount="{}" duration="{}" public="{}" created="{}" changed="{}" coverArt="{}"/>"#,
@@ -708,9 +709,11 @@ async fn playlists_handler<S: SubsonicStorage + Clone>(State(state): State<Subso
     }
 }
 
-async fn playlist_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn playlist_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlaylistParams>,
+) -> String {
+    let id = params.id.clone();
 
     match state.storage.get_playlist(&id).await {
         Ok(Some(playlist)) => {
@@ -735,12 +738,13 @@ async fn playlist_handler<S: SubsonicStorage + Clone>(State(state): State<Subson
     }
 }
 
-async fn create_playlist_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let name = params.get("name").map(|s| s.as_str());
-    let playlist_id = params.get("playlistId").map(|s| s.as_str());
-    let song_ids_str = params.get("songIds").map(|s| s.split(',').collect::<Vec<_>>());
-    let song_ids: Vec<&str> = song_ids_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
+async fn create_playlist_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlaylistParams>,
+) -> String {
+    let name = params.name.as_deref();
+    let playlist_id = params.playlist_id.as_deref();
+    let song_ids: Vec<&str> = params.song_ids.as_ref().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
 
     match state.storage.create_playlist(name, playlist_id, &song_ids).await {
         Ok(playlist) => {
@@ -753,16 +757,16 @@ async fn create_playlist_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn update_playlist_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let playlist_id = params.get("playlistId").cloned().unwrap_or_default();
-    let name = params.get("name").map(|s| s.as_str());
-    let comment = params.get("comment").map(|s| s.as_str());
-    let public = params.get("public").map(|s| s == "true" || s == "1");
-    let song_ids_to_add_str = params.get("songIdsToAdd").map(|s| s.split(',').collect::<Vec<_>>());
-    let song_ids_to_add: Vec<&str> = song_ids_to_add_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let song_indexes_str = params.get("songIndexesToRemove").map(|s| s.split(',').filter_map(|x| x.parse().ok()).collect::<Vec<_>>());
-    let song_indexes: Vec<i32> = song_indexes_str.unwrap_or_default();
+async fn update_playlist_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlaylistParams>,
+) -> String {
+    let playlist_id = params.id.clone();
+    let name = params.name.as_deref();
+    let comment = params.comment.as_deref();
+    let public = params.public;
+    let song_ids_to_add: Vec<&str> = params.song_ids_to_add.as_ref().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let song_indexes: Vec<i32> = params.song_indexes_to_remove.as_ref().map(|s| s.split(',').filter_map(|x| x.parse().ok()).collect::<Vec<_>>()).unwrap_or_default();
 
     match state.storage.update_playlist(&playlist_id, name, comment, public, &song_ids_to_add, &song_indexes).await {
         Ok(_) => subsonic_ok(),
@@ -770,9 +774,11 @@ async fn update_playlist_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn delete_playlist_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn delete_playlist_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlaylistParams>,
+) -> String {
+    let id = params.id.clone();
 
     match state.storage.delete_playlist(&id).await {
         Ok(_) => subsonic_ok(),
@@ -780,11 +786,13 @@ async fn delete_playlist_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn stream_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let format = params.get("format").cloned().unwrap_or_else(|| "mp3".to_string());
-    let bitrate = params.get("bitrate").and_then(|v| v.parse().ok()).unwrap_or(320);
+async fn stream_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<StreamParams>,
+) -> String {
+    let id = params.id.clone();
+    let format = params.format.unwrap_or_else(|| "mp3".to_string());
+    let bitrate = params.bitrate.unwrap_or(320);
 
     match state.storage.get_stream_path(&id).await {
         Ok(Some(_path)) => {
@@ -798,9 +806,11 @@ async fn stream_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn download_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn download_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<StreamParams>,
+) -> String {
+    let id = params.id.clone();
 
     match state.storage.get_stream_path(&id).await {
         Ok(Some(_path)) => {
@@ -814,10 +824,12 @@ async fn download_handler<S: SubsonicStorage + Clone>(State(state): State<Subson
     }
 }
 
-async fn cover_art_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let size = params.get("size").and_then(|v| v.parse().ok()).unwrap_or(0);
+async fn cover_art_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CoverArtParams>,
+) -> String {
+    let id = params.id.clone();
+    let size = params.size.unwrap_or(0);
 
     match state.storage.get_cover_art_path(&id).await {
         Ok(Some(_path)) => {
@@ -831,12 +843,11 @@ async fn cover_art_handler<S: SubsonicStorage + Clone>(State(state): State<Subso
     }
 }
 
-async fn lyrics_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let artist = params.get("artist").map(|s| s.as_str());
-    let title = params.get("title").map(|s| s.as_str());
-
-    match state.storage.get_lyrics(artist, title).await {
+async fn lyrics_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<LyricsParams>,
+) -> String {
+    match state.storage.get_lyrics(params.artist.as_deref(), params.title.as_deref()).await {
         Ok(Some(lyrics)) => {
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
 <subsonic-response status="ok" version="{}">
@@ -848,9 +859,11 @@ async fn lyrics_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn lyrics_by_song_id_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn lyrics_by_song_id_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.get_lyrics_by_song_id(&id).await {
         Ok(lyrics_list) => {
@@ -867,9 +880,11 @@ async fn lyrics_by_song_id_handler<S: SubsonicStorage + Clone>(State(state): Sta
     }
 }
 
-async fn avatar_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let username = params.get("username").cloned().unwrap_or_default();
+async fn avatar_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let username = params.id.unwrap_or_default();
 
     match state.storage.get_avatar_path(&username).await {
         Ok(Some(_path)) => {
@@ -883,42 +898,40 @@ async fn avatar_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn star_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id_str = params.get("id").map(|s| s.split(',').collect::<Vec<_>>());
-    let album_id_str = params.get("albumId").map(|s| s.split(',').collect::<Vec<_>>());
-    let artist_id_str = params.get("artistId").map(|s| s.split(',').collect::<Vec<_>>());
+async fn star_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let album_id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let artist_id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
 
-    let ids: Vec<&str> = id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let album_ids: Vec<&str> = album_id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let artist_ids: Vec<&str> = artist_id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-
-    match state.storage.star(&ids, &album_ids, &artist_ids).await {
+    match state.storage.star(&id, &album_id, &artist_id).await {
         Ok(_) => subsonic_ok(),
         Err(_) => subsonic_error(0, "Failed to star"),
     }
 }
 
-async fn unstar_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id_str = params.get("id").map(|s| s.split(',').collect::<Vec<_>>());
-    let album_id_str = params.get("albumId").map(|s| s.split(',').collect::<Vec<_>>());
-    let artist_id_str = params.get("artistId").map(|s| s.split(',').collect::<Vec<_>>());
+async fn unstar_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let album_id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let artist_id = params.id.clone().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
 
-    let ids: Vec<&str> = id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let album_ids: Vec<&str> = album_id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let artist_ids: Vec<&str> = artist_id_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-
-    match state.storage.unstar(&ids, &album_ids, &artist_ids).await {
+    match state.storage.unstar(&id, &album_id, &artist_id).await {
         Ok(_) => subsonic_ok(),
         Err(_) => subsonic_error(0, "Failed to unstar"),
     }
 }
 
-async fn rating_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let rating = params.get("rating").and_then(|v| v.parse().ok()).unwrap_or(0);
+async fn rating_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<AnnotationParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
+    let rating = params.rating.unwrap_or(0);
 
     match state.storage.set_rating(&id, rating).await {
         Ok(_) => subsonic_ok(),
@@ -926,11 +939,13 @@ async fn rating_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn scrobble_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let time = params.get("time").and_then(|v| v.parse().ok());
-    let submission = params.get("submission").map(|s| s == "true" || s == "1").unwrap_or(true);
+async fn scrobble_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<AnnotationParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
+    let time = params.time;
+    let submission = params.submission.unwrap_or(true);
 
     match state.storage.scrobble(&id, time, submission).await {
         Ok(_) => subsonic_ok(),
@@ -938,7 +953,7 @@ async fn scrobble_handler<S: SubsonicStorage + Clone>(State(state): State<Subson
     }
 }
 
-async fn bookmarks_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn bookmarks_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_bookmarks().await {
         Ok(bookmarks) => {
             let bookmarks_xml: String = bookmarks.iter().map(|b| {
@@ -955,11 +970,13 @@ async fn bookmarks_handler<S: SubsonicStorage + Clone>(State(state): State<Subso
     }
 }
 
-async fn create_bookmark_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let position = params.get("position").and_then(|v| v.parse().ok()).unwrap_or(0);
-    let comment = params.get("comment").map(|s| s.as_str());
+async fn create_bookmark_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<BookmarkParams>,
+) -> String {
+    let id = params.id.clone();
+    let position = params.position;
+    let comment = params.comment.as_deref();
 
     match state.storage.create_bookmark(&id, position, comment).await {
         Ok(_) => subsonic_ok(),
@@ -967,9 +984,11 @@ async fn create_bookmark_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn delete_bookmark_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn delete_bookmark_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<BookmarkParams>,
+) -> String {
+    let id = params.id.clone();
 
     match state.storage.delete_bookmark(&id).await {
         Ok(_) => subsonic_ok(),
@@ -977,7 +996,7 @@ async fn delete_bookmark_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn play_queue_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn play_queue_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_play_queue().await {
         Ok(Some(queue)) => {
             let entries_xml: String = queue.entry.iter().map(|s| {
@@ -997,12 +1016,13 @@ async fn play_queue_handler<S: SubsonicStorage + Clone>(State(state): State<Subs
     }
 }
 
-async fn save_play_queue_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let ids_str = params.get("ids").map(|s| s.split(',').collect::<Vec<_>>());
-    let ids: Vec<&str> = ids_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let current = params.get("current").map(|s| s.as_str());
-    let position = params.get("position").and_then(|v| v.parse().ok());
+async fn save_play_queue_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<PlayQueueParams>,
+) -> String {
+    let ids: Vec<&str> = params.ids.as_ref().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let current = params.current.as_deref();
+    let position = params.position;
 
     match state.storage.save_play_queue(&ids, current, position).await {
         Ok(_) => subsonic_ok(),
@@ -1010,7 +1030,7 @@ async fn save_play_queue_handler<S: SubsonicStorage + Clone>(State(state): State
     }
 }
 
-async fn shares_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn shares_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_shares().await {
         Ok(shares) => {
             let shares_xml: String = shares.iter().map(|s| {
@@ -1029,12 +1049,13 @@ async fn shares_handler<S: SubsonicStorage + Clone>(State(state): State<Subsonic
     }
 }
 
-async fn create_share_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let ids_str = params.get("ids").map(|s| s.split(',').collect::<Vec<_>>());
-    let ids: Vec<&str> = ids_str.as_ref().map(|v| v.as_slice()).unwrap_or(&[]);
-    let description = params.get("description").map(|s| s.as_str());
-    let expires = params.get("expires").and_then(|v| v.parse().ok());
+async fn create_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<ShareParams>,
+) -> String {
+    let ids: Vec<&str> = params.ids.as_ref().map(|s| s.split(',').collect::<Vec<_>>()).unwrap_or_default();
+    let description = params.description.as_deref();
+    let expires = params.expires;
 
     match state.storage.create_share(&ids, description, expires).await {
         Ok(share) => {
@@ -1047,11 +1068,13 @@ async fn create_share_handler<S: SubsonicStorage + Clone>(State(state): State<Su
     }
 }
 
-async fn update_share_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let description = params.get("description").map(|s| s.as_str());
-    let expires = params.get("expires").and_then(|v| v.parse().ok());
+async fn update_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<ShareParams>,
+) -> String {
+    let id = params.id.clone();
+    let description = params.description.as_deref();
+    let expires = params.expires;
 
     match state.storage.update_share(&id, description, expires).await {
         Ok(_) => subsonic_ok(),
@@ -1059,9 +1082,11 @@ async fn update_share_handler<S: SubsonicStorage + Clone>(State(state): State<Su
     }
 }
 
-async fn delete_share_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn delete_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<ShareParams>,
+) -> String {
+    let id = params.id.clone();
 
     match state.storage.delete_share(&id).await {
         Ok(_) => subsonic_ok(),
@@ -1069,7 +1094,7 @@ async fn delete_share_handler<S: SubsonicStorage + Clone>(State(state): State<Su
     }
 }
 
-async fn radio_stations_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn radio_stations_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_internet_radio_stations().await {
         Ok(stations) => {
             let stations_xml: String = stations.iter().map(|s| {
@@ -1085,11 +1110,13 @@ async fn radio_stations_handler<S: SubsonicStorage + Clone>(State(state): State<
     }
 }
 
-async fn create_radio_station_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let stream_url = params.get("streamUrl").cloned().unwrap_or_default();
-    let name = params.get("name").cloned().unwrap_or_default();
-    let homepage_url = params.get("homePageUrl").map(|s| s.as_str());
+async fn create_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<RadioParams>,
+) -> String {
+    let stream_url = params.stream_url.unwrap_or_default();
+    let name = params.name.unwrap_or_default();
+    let homepage_url = params.homepage_url.as_deref();
 
     match state.storage.create_internet_radio_station(&stream_url, &name, homepage_url).await {
         Ok(_) => subsonic_ok(),
@@ -1097,12 +1124,14 @@ async fn create_radio_station_handler<S: SubsonicStorage + Clone>(State(state): 
     }
 }
 
-async fn update_radio_station_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
-    let stream_url = params.get("streamUrl").cloned().unwrap_or_default();
-    let name = params.get("name").cloned().unwrap_or_default();
-    let homepage_url = params.get("homePageUrl").map(|s| s.as_str());
+async fn update_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<RadioParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
+    let stream_url = params.stream_url.unwrap_or_default();
+    let name = params.name.unwrap_or_default();
+    let homepage_url = params.homepage_url.as_deref();
 
     match state.storage.update_internet_radio_station(&id, &stream_url, &name, homepage_url).await {
         Ok(_) => subsonic_ok(),
@@ -1110,9 +1139,11 @@ async fn update_radio_station_handler<S: SubsonicStorage + Clone>(State(state): 
     }
 }
 
-async fn delete_radio_station_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let id = params.get("id").cloned().unwrap_or_default();
+async fn delete_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<RadioParams>,
+) -> String {
+    let id = params.id.unwrap_or_default();
 
     match state.storage.delete_internet_radio_station(&id).await {
         Ok(_) => subsonic_ok(),
@@ -1120,9 +1151,11 @@ async fn delete_radio_station_handler<S: SubsonicStorage + Clone>(State(state): 
     }
 }
 
-async fn user_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, uri: Uri) -> String {
-    let params = state.get_params(&uri).await;
-    let username = params.get("username").cloned().unwrap_or_default();
+async fn user_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<CommonParams>,
+) -> String {
+    let username = params.id.unwrap_or_default();
 
     match state.storage.get_user(&username).await {
         Ok(Some(user)) => {
@@ -1136,7 +1169,7 @@ async fn user_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicSt
     }
 }
 
-async fn users_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn users_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_users().await {
         Ok(users) => {
             let users_xml: String = users.iter().map(|u| {
@@ -1152,7 +1185,7 @@ async fn users_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicS
     }
 }
 
-async fn scan_status_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn scan_status_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_scan_status().await {
         Ok(status) => {
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -1164,7 +1197,7 @@ async fn scan_status_handler<S: SubsonicStorage + Clone>(State(state): State<Sub
     }
 }
 
-async fn start_scan_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn start_scan_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.start_scan().await {
         Ok(status) => {
             format!(r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -1176,7 +1209,7 @@ async fn start_scan_handler<S: SubsonicStorage + Clone>(State(state): State<Subs
     }
 }
 
-async fn open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>, _: Uri) -> String {
+async fn open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(State(state): State<SubsonicState<S>>) -> String {
     match state.storage.get_open_subsonic_extensions().await {
         Ok(extensions) => {
             let extensions_xml: String = extensions.iter().map(|e| {
@@ -1274,34 +1307,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_query_params_with_uri() {
-        use http::Uri;
-        let uri = Uri::from_static("/rest/getSong?id=123&type=album");
-        let params = get_query_params(&uri);
-        assert_eq!(params.get("id"), Some(&"123".to_string()));
-        assert_eq!(params.get("type"), Some(&"album".to_string()));
-    }
-
-    #[test]
-    fn test_get_query_params_empty_uri() {
-        use http::Uri;
-        let uri = Uri::from_static("/rest/ping");
-        let params = get_query_params(&uri);
-        assert!(params.is_empty());
-    }
-
-    #[test]
-    fn test_get_query_params_complex_query() {
-        use http::Uri;
-        let uri = Uri::from_static("/rest/search3?query=rock&artistCount=5&albumCount=10&songCount=20");
-        let params = get_query_params(&uri);
-        assert_eq!(params.get("query"), Some(&"rock".to_string()));
-        assert_eq!(params.get("artistCount"), Some(&"5".to_string()));
-        assert_eq!(params.get("albumCount"), Some(&"10".to_string()));
-        assert_eq!(params.get("songCount"), Some(&"20".to_string()));
-    }
-
-    #[test]
     fn test_subsonic_api_version_constant() {
         assert_eq!(SUBSONIC_API_VERSION, "1.16.1");
     }
@@ -1310,7 +1315,7 @@ mod tests {
     async fn test_ping_handler_returns_ok() {
         let storage = Arc::new(MockStorage);
         let state = SubsonicState::new(storage);
-        let response = ping_handler(State(state), Uri::from_static("/rest/ping")).await;
+        let response = ping_handler(State(state)).await;
         assert!(response.contains(r#"status="ok""#));
         assert!(response.contains(r#"version="1.16.1""#));
     }
@@ -1319,7 +1324,7 @@ mod tests {
     async fn test_genres_handler_returns_xml() {
         let storage = Arc::new(MockStorage);
         let state = SubsonicState::new(storage);
-        let response = genres_handler(State(state), Uri::from_static("/rest/getGenres")).await;
+        let response = genres_handler(State(state)).await;
         assert!(response.contains(r#"<?xml version="1.0" encoding="UTF-8"?>"#));
         assert!(response.contains(r#"<subsonic-response"#));
         assert!(response.contains(r#"<genres>"#));
@@ -1329,7 +1334,7 @@ mod tests {
     async fn test_music_folders_handler_returns_xml() {
         let storage = Arc::new(MockStorage);
         let state = SubsonicState::new(storage);
-        let response = music_folders_handler(State(state), Uri::from_static("/rest/getMusicFolders")).await;
+        let response = music_folders_handler(State(state)).await;
         assert!(response.contains(r#"<?xml version="1.0" encoding="UTF-8"?>"#));
         assert!(response.contains(r#"<subsonic-response"#));
         assert!(response.contains(r#"<musicFolders>"#));
@@ -1340,7 +1345,8 @@ mod tests {
     async fn test_error_response_for_missing_resource() {
         let storage = Arc::new(MockStorage);
         let state = SubsonicState::new(storage);
-        let response = artist_handler(State(state), Uri::from_static("/rest/getArtist?id=missing")).await;
+        let params = CommonParams { id: Some("missing".to_string()), if_modified_since: None };
+        let response = artist_handler(State(state), Query(params)).await;
         assert!(response.contains(r#"status="failed""#));
         assert!(response.contains(r#"error code="70""#));
         assert!(response.contains("Artist not found"));
