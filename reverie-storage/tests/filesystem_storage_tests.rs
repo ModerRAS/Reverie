@@ -437,8 +437,9 @@ async fn test_filesystem_storage_update_track() {
     // Verify update
     let retrieved = storage.get_track(track.id).await.unwrap();
     assert!(retrieved.is_some());
-    assert_eq!(retrieved.unwrap().title, "Updated Title");
-    assert_eq!(retrieved.unwrap().duration, 200);
+    let retrieved = retrieved.unwrap();
+    assert_eq!(retrieved.title, "Updated Title");
+    assert_eq!(retrieved.duration, 200);
 }
 
 #[tokio::test]

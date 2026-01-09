@@ -3,6 +3,8 @@
 use reverie_core::SubsonicAlbum;
 use serde::Serialize;
 
+use super::Child;
+
 // === 专辑 ID3 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -174,9 +176,9 @@ impl From<&reverie_core::SubsonicAlbumInfo> for AlbumInfo {
             notes: a.notes.clone(),
             music_brainz_id: a.music_brainz_id.clone(),
             last_fm_url: a.last_fm_url.clone(),
-            small_url: a.small_url.clone(),
-            medium_url: a.medium_url.clone(),
-            large_url: a.large_url.clone(),
+            small_url: a.small_image_url.clone(),
+            medium_url: a.medium_image_url.clone(),
+            large_url: a.large_image_url.clone(),
         }
     }
 }

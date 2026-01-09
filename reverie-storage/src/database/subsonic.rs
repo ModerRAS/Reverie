@@ -2,16 +2,20 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use sqlx::{Row, Sqlite};
+use sqlx::Row;
 use uuid::Uuid;
 
 use crate::error::{Result, StorageError};
 use crate::traits::*;
-use crate::vfs::VfsConfig;
 use crate::DatabaseStorage;
-use reverie_core::{MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser};
-
-use super::config::DatabaseConfig;
+use reverie_core::{
+    MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex,
+    SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory,
+    SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder,
+    SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
+    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
+    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
+};
 
 #[async_trait]
 impl FileStorage for DatabaseStorage {
@@ -55,7 +59,14 @@ impl FileStorage for DatabaseStorage {
 
 impl DatabaseStorage {
     /// 将数据库行转换为 MediaFile
-    fn row_to_media_file(&self, r: &Row) -> MediaFile {
+    fn row_to_media_file<'r, R: Row>(&self, r: &'r R) -> MediaFile
+    where
+        &'r str: sqlx::ColumnIndex<R>,
+        String: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
+        Option<String>: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
+        Option<i32>: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
+        Option<i64>: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
+    {
         MediaFile {
             id: r.get("id"),
             parent: r.get::<Option<String>, _>("album_id"),
@@ -64,14 +75,14 @@ impl DatabaseStorage {
             album: r.get("album_name"),
             artist: r.get("artist_name"),
             album_artist: r.get("artist_name"),
-            year: r.get::<Option<i32>, _>("year").map(|v| v as i32),
+            year: r.get::<Option<i32>, _>("year"),
             genre: r.get("genre"),
             cover_art: r.get::<Option<String>, _>("cover_art_path"),
-            duration: r.get::<Option<i64>, _>("duration").map(|v| v as f32),
-            bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32),
+            duration: r.get::<Option<i64>, _>("duration").map(|v| v as f32).unwrap_or(0.0),
+            bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32).unwrap_or(0),
             path: r.get("file_path"),
-            size: r.get::<Option<i64>, _>("file_size").map(|v| v as i64),
-            format: r.get("format"),
+            size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
+            suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
             track_number: r.get::<Option<i64>, _>("track_number").map(|v| v as i32),
             disc_number: r.get::<Option<i64>, _>("disc_number").map(|v| v as i32),
             ..Default::default()
@@ -1147,6 +1158,7 @@ impl SubsonicStorage for DatabaseStorage {
             expires: None,
             last_visited: None,
             visit_count: 0,
+            entries: vec![],
         })
     }
 
@@ -1203,7 +1215,10 @@ impl SubsonicStorage for DatabaseStorage {
         .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         Ok(row.map(|r| SubsonicUser {
+            username: r.get("username"),
+            email: r.get("email"),
             scrobbling_enabled: true,
+            max_bit_rate: None,
             admin_role: r.get::<i64, _>("is_admin") != 0,
             settings_role: true,
             download_role: false,
@@ -1212,17 +1227,12 @@ impl SubsonicStorage for DatabaseStorage {
             cover_art_role: false,
             comment_role: false,
             podcast_role: false,
+            stream_role: true,
+            jukebox_role: false,
             share_role: false,
             video_conversion_role: false,
-            upload_avatar_role: false,
-            change_password_role: false,
-            max_bit_rate: 0,
-            user_id: r.get("id"),
-            username: r.get("username"),
-            email: r.get("email"),
-            avatar_url: None,
-            enabled: true,
-            folder_ids: vec![],
+            avatar_last_changed: None,
+            folders: vec![],
         }))
     }
 
@@ -1238,7 +1248,10 @@ impl SubsonicStorage for DatabaseStorage {
         Ok(rows
             .into_iter()
             .map(|r| SubsonicUser {
+                username: r.get("username"),
+                email: r.get("email"),
                 scrobbling_enabled: true,
+                max_bit_rate: None,
                 admin_role: r.get::<i64, _>("is_admin") != 0,
                 settings_role: true,
                 download_role: false,
@@ -1247,17 +1260,12 @@ impl SubsonicStorage for DatabaseStorage {
                 cover_art_role: false,
                 comment_role: false,
                 podcast_role: false,
+                stream_role: true,
+                jukebox_role: false,
                 share_role: false,
                 video_conversion_role: false,
-                upload_avatar_role: false,
-                change_password_role: false,
-                max_bit_rate: 0,
-                user_id: r.get("id"),
-                username: r.get("username"),
-                email: r.get("email"),
-                avatar_url: None,
-                enabled: true,
-                folder_ids: vec![],
+                avatar_last_changed: None,
+                folders: vec![],
             })
             .collect())
     }
@@ -1304,8 +1312,8 @@ impl SubsonicStorage for DatabaseStorage {
     async fn update_user(
         &self,
         username: &str,
+        password: Option<&str>,
         email: Option<&str>,
-        new_password: Option<&str>,
         _admin_role: Option<bool>,
         _settings_role: Option<bool>,
         _stream_role: Option<bool>,
@@ -1319,32 +1327,61 @@ impl SubsonicStorage for DatabaseStorage {
         _share_role: Option<bool>,
         _video_conversion_role: Option<bool>,
         _music_folder_ids: Option<&[i32]>,
+        _max_bit_rate: Option<i32>,
     ) -> Result<()> {
         let now = Utc::now().to_rfc3339();
 
-        let mut query = String::from("UPDATE users SET updated_at = ?");
-        let mut params: Vec<Box<dyn sqlx::Type<Sqlite> + Send>> = vec![Box::new(now)];
+        // 动态构建更新语句
+        let mut updates = vec!["updated_at = ?".to_string()];
+        let mut params: Vec<String> = vec![now];
 
-        if let Some(pwd) = new_password {
-            query.push_str(", password_hash = ?");
-            params.push(Box::new(pwd.to_string()));
+        if let Some(pwd) = password {
+            updates.push("password_hash = ?".to_string());
+            params.push(pwd.to_string());
         }
 
         if let Some(mail) = email {
-            query.push_str(", email = ?");
-            params.push(Box::new(mail.to_string()));
+            updates.push("email = ?".to_string());
+            params.push(mail.to_string());
         }
 
-        query.push_str(" WHERE username = ?");
-        params.push(Box::new(username.to_string()));
+        let query = format!(
+            "UPDATE users SET {} WHERE username = ?",
+            updates.join(", ")
+        );
+        params.push(username.to_string());
 
-        sqlx::query(&query)
-            .bind(&params[0])
-            .bind(&params[1])
-            .bind(&params[2])
-            .execute(self.pool())
-            .await
-            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        // 根据参数数量执行查询
+        match params.len() {
+            2 => {
+                sqlx::query(&query)
+                    .bind(&params[0])
+                    .bind(&params[1])
+                    .execute(self.pool())
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+            }
+            3 => {
+                sqlx::query(&query)
+                    .bind(&params[0])
+                    .bind(&params[1])
+                    .bind(&params[2])
+                    .execute(self.pool())
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+            }
+            4 => {
+                sqlx::query(&query)
+                    .bind(&params[0])
+                    .bind(&params[1])
+                    .bind(&params[2])
+                    .bind(&params[3])
+                    .execute(self.pool())
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+            }
+            _ => {}
+        }
 
         Ok(())
     }
@@ -1369,13 +1406,15 @@ impl SubsonicStorage for DatabaseStorage {
         Ok(match row {
             Some(r) => SubsonicScanStatus {
                 scanning: r.get::<i32, _>("scanning") == 1,
-                count: r.get::<i64, _>("count") as i32,
-                folder_count: r.get::<i64, _>("folder_count") as i32,
+                count: r.get::<i64, _>("count"),
+                folder_count: r.get::<i64, _>("folder_count"),
                 last_scan: r
                     .get::<Option<String>, _>("last_scan")
                     .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
                     .map(|d| d.with_timezone(&Utc)),
                 error: r.get("error"),
+                scan_type: None,
+                elapsed_time: None,
             },
             None => SubsonicScanStatus {
                 scanning: false,
@@ -1383,11 +1422,25 @@ impl SubsonicStorage for DatabaseStorage {
                 folder_count: 0,
                 last_scan: None,
                 error: None,
+                scan_type: None,
+                elapsed_time: None,
             },
         })
     }
 
-    async fn start_scan(&self, _folder: Option<&str>) -> Result<SubsonicScanStatus> {
+    async fn start_scan(&self) -> Result<SubsonicScanStatus> {
         self.get_scan_status().await
+    }
+
+    async fn change_password(&self, username: &str, password: &str) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        sqlx::query("UPDATE users SET password_hash = ?, updated_at = ? WHERE username = ?")
+            .bind(password)
+            .bind(&now)
+            .bind(username)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        Ok(())
     }
 }

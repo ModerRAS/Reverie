@@ -59,6 +59,7 @@ struct StorageData {
     artists: Vec<Artist>,
     users: Vec<User>,
     playlists: Vec<Playlist>,
+    playlist_tracks: Vec<PlaylistTrack>,
 }
 
 /// 主要的文件系统存储实现
@@ -484,18 +485,33 @@ impl PlaylistStorage for FileSystemStorage {
         Ok(())
     }
 
-    async fn add_track_to_playlist(&self, _playlist_track: &PlaylistTrack) -> Result<()> {
+    async fn add_track_to_playlist(&self, playlist_track: &PlaylistTrack) -> Result<()> {
+        {
+            let mut data = self.data.lock().unwrap();
+            data.playlist_tracks.push(playlist_track.clone());
+        }
         self.save_metadata().await?;
         Ok(())
     }
 
-    async fn remove_track_from_playlist(&self, _playlist_id: Uuid, _track_id: Uuid) -> Result<()> {
+    async fn remove_track_from_playlist(&self, playlist_id: Uuid, track_id: Uuid) -> Result<()> {
+        {
+            let mut data = self.data.lock().unwrap();
+            data.playlist_tracks
+                .retain(|pt| !(pt.playlist_id == playlist_id && pt.track_id == track_id));
+        }
         self.save_metadata().await?;
         Ok(())
     }
 
-    async fn get_playlist_tracks(&self, _playlist_id: Uuid) -> Result<Vec<PlaylistTrack>> {
-        Ok(Vec::new())
+    async fn get_playlist_tracks(&self, playlist_id: Uuid) -> Result<Vec<PlaylistTrack>> {
+        let data = self.data.lock().unwrap();
+        Ok(data
+            .playlist_tracks
+            .iter()
+            .filter(|pt| pt.playlist_id == playlist_id)
+            .cloned()
+            .collect())
     }
 }
 

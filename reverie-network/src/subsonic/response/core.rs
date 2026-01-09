@@ -134,13 +134,14 @@ pub enum ResponseData {
 
 // Re-export types from other modules
 pub use super::{
-    AlbumData, AlbumID3Item, AlbumList2Data, AlbumListData, AlbumWithSongs, ArtistData,
-    ArtistID3Item, ArtistInfo2Data, ArtistInfoData, ArtistItem, ArtistWithAlbums, ArtistsData,
-    BookmarkItem, BookmarksData, Child, DirectoryData, DirectoryItem, GenreItem, GenresData,
-    InternetRadioStationItem, InternetRadioStationsData, LicenseData, LyricsData, LyricsListData,
-    MusicFolderItem, MusicFoldersData, NowPlayingData, OpenSubsonicExtensionItem,
-    OpenSubsonicExtensionsData, PlayQueueData, PlaylistData, PlaylistItem, PlaylistWithEntries,
-    PlaylistsData, ScanStatusData, SearchResult2Data, SearchResult3Data, ShareItem, SharesData,
+    AlbumData, AlbumID3Item, AlbumInfoData, AlbumList2Data, AlbumListData, AlbumWithSongs,
+    ArtistData, ArtistID3Item, ArtistInfo2Data, ArtistInfoData, ArtistItem, ArtistWithAlbums,
+    ArtistsData, BookmarkItem, BookmarksData, Child, DirectoryData, DirectoryItem, GenreItem,
+    GenresData, IndexesData, InternetRadioStationItem, InternetRadioStationsData, LicenseData,
+    LyricsData, LyricsListData, MusicFolderItem, MusicFoldersData, NowPlayingData,
+    OpenSubsonicExtensionItem, OpenSubsonicExtensionsData, PlayQueueData, PlaylistData,
+    PlaylistItem, PlaylistWithEntries, PlaylistsData, RandomSongsData, ScanStatusData,
+    SearchResult2Data, SearchResult3Data, ShareItem, SharesData, SimilarSongs2Data,
     SimilarSongsData, SongData, SongsByGenreData, Starred2Data, StarredData, TopSongsData,
     UserData, UserItem, UsersData,
 };

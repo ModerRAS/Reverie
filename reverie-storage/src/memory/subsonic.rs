@@ -307,7 +307,7 @@ impl SubsonicStorage for MemoryStorage {
     // === Searching ===
     async fn search2(
         &self,
-        query: &str,
+        _query: &str,
         _artist_count: Option<i32>,
         _artist_offset: Option<i32>,
         _album_count: Option<i32>,
@@ -324,7 +324,7 @@ impl SubsonicStorage for MemoryStorage {
 
     async fn search3(
         &self,
-        query: &str,
+        _query: &str,
         _artist_count: Option<i32>,
         _artist_offset: Option<i32>,
         _album_count: Option<i32>,
@@ -344,14 +344,18 @@ impl SubsonicStorage for MemoryStorage {
         Ok(Some(SubsonicUser {
             username: "test".to_string(),
             email: None,
-            stream_role: true,
-            jukebox_role: true,
+            scrobbling_enabled: true,
+            max_bit_rate: None,
+            admin_role: false,
+            settings_role: true,
             download_role: true,
             upload_role: true,
             playlist_role: true,
             cover_art_role: true,
             comment_role: true,
             podcast_role: true,
+            stream_role: true,
+            jukebox_role: true,
             share_role: true,
             video_conversion_role: true,
             avatar_last_changed: None,

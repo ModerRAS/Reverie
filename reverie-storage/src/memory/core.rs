@@ -1,7 +1,5 @@
 //! MemoryStorage 基础结构
 
-use crate::traits::*;
-
 use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
 use std::collections::HashMap;
 use std::sync::Arc;

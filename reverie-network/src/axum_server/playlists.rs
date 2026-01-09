@@ -28,11 +28,9 @@ where
             Json(PlaylistResponse {
                 id: playlist.id,
                 name: playlist.name,
-                owner_id: playlist.owner_id,
+                description: playlist.description,
+                user_id: playlist.user_id,
                 is_public: playlist.is_public,
-                track_ids: playlist.track_ids,
-                created_at: playlist.created_at,
-                updated_at: playlist.updated_at,
             }),
         )
             .into_response(),
@@ -56,7 +54,7 @@ where
 }
 
 /// 创建播放列表路由
-pub fn create_router<S>() -> Router
+pub fn create_router<S>() -> Router<subsonic::SubsonicState<S>>
 where
     S: PlaylistStorage + Clone + Send + Sync + 'static,
 {

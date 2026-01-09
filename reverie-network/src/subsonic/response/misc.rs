@@ -1,6 +1,6 @@
 //! 其他 DTO 类型
 
-use reverie_core::{SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicPlayQueue, SubsonicScanStatus, SubsonicStructuredLyrics};
+use reverie_core::{SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicScanStatus, SubsonicStructuredLyrics};
 use serde::Serialize;
 
 // === 许可证 ===
@@ -165,7 +165,7 @@ impl From<&SubsonicInternetRadioStation> for InternetRadioStationItem {
             id: s.id.clone(),
             name: s.name.clone(),
             stream_url: s.stream_url.clone(),
-            home_page_url: s.home_page_url.clone(),
+            home_page_url: s.homepage_url.clone(),
         }
     }
 }
@@ -220,17 +220,24 @@ pub struct LyricsListInner {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StructuredLyricsItem {
-    pub artist: String,
-    pub title: String,
-    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_artist: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_title: Option<String>,
+    pub lang: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
+    pub synced: bool,
 }
 
 impl From<&SubsonicStructuredLyrics> for StructuredLyricsItem {
     fn from(l: &SubsonicStructuredLyrics) -> Self {
         Self {
-            artist: l.artist.clone(),
-            title: l.title.clone(),
-            content: l.content.clone(),
+            display_artist: l.display_artist.clone(),
+            display_title: l.display_title.clone(),
+            lang: l.lang.clone(),
+            offset: l.offset,
+            synced: l.synced,
         }
     }
 }
@@ -285,16 +292,14 @@ pub struct OpenSubsonicExtensionsList {
 #[serde(rename_all = "camelCase")]
 pub struct OpenSubsonicExtensionItem {
     pub name: String,
-    pub version: String,
-    pub description: Option<String>,
+    pub versions: Vec<i32>,
 }
 
 impl From<&SubsonicOpenSubsonicExtension> for OpenSubsonicExtensionItem {
     fn from(e: &SubsonicOpenSubsonicExtension) -> Self {
         Self {
             name: e.name.clone(),
-            version: e.version.clone(),
-            description: e.description.clone(),
+            versions: e.versions.clone(),
         }
     }
 }

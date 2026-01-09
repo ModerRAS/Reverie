@@ -116,7 +116,7 @@ impl From<&reverie_core::SubsonicShare> for ShareItem {
             created: s.created.to_rfc3339(),
             expires: s.expires.map(|d| d.to_rfc3339()),
             last_visited: s.last_visited.map(|d| d.to_rfc3339()),
-            visit_count: s.visit_count,
+            visit_count: s.visit_count as i32,
             entry: s.entries.iter().map(super::Child::from).collect(),
         }
     }

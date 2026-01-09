@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod error_tests {
-    use super::super::*;
+    use crate::StorageError;
     use std::io;
 
     #[test]
@@ -49,13 +49,15 @@ mod error_tests {
     fn test_storage_error_from_io() {
         let io_error = io::Error::new(io::ErrorKind::PermissionDenied, "permission denied");
         let error: StorageError = io_error.into();
-        assert!(format!("{}", error).contains("Permission denied"));
+        // io::Error converts to IoError, not PermissionDenied
+        assert!(format!("{}", error).contains("IO error"));
     }
 
     #[test]
     fn test_storage_error_serialization() {
-        let json_error =
-            serde_json::Error::new(serde_json::error::ErrorCode::EOF, "unexpected end");
+        // Use invalid JSON to trigger serialization error
+        let json_error: serde_json::Error =
+            serde_json::from_str::<String>("invalid json").unwrap_err();
         let error: StorageError = json_error.into();
         assert!(format!("{}", error).contains("Serialization error"));
     }
@@ -63,7 +65,6 @@ mod error_tests {
 
 #[cfg(test)]
 mod traits_tests {
-    use super::super::*;
     use crate::FileMetadata;
     use std::time::SystemTime;
 
@@ -116,9 +117,8 @@ mod traits_tests {
 
 #[cfg(test)]
 mod subsonic_storage_tests {
-    use super::super::*;
+    use crate::memory::MemoryStorage;
     use crate::SubsonicStorage;
-    use reverie_storage::memory::MemoryStorage;
 
     #[tokio::test]
     async fn test_get_license_default() {

@@ -17,11 +17,11 @@ use reverie_storage::{AlbumStorage, ArtistStorage};
 
 /// 用于分页的查询参数
 #[derive(Deserialize)]
-struct PaginationQuery {
+pub struct PaginationQuery {
     #[serde(default = "default_limit")]
-    limit: usize,
+    pub limit: usize,
     #[serde(default)]
-    offset: usize,
+    pub offset: usize,
 }
 
 fn default_limit() -> usize {
@@ -146,7 +146,7 @@ where
 }
 
 /// 创建艺术家路由
-pub fn create_router<S>() -> Router
+pub fn create_router<S>() -> Router<subsonic::SubsonicState<S>>
 where
     S: ArtistStorage + AlbumStorage + Clone + Send + Sync + 'static,
 {

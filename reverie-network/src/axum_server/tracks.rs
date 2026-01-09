@@ -17,11 +17,11 @@ use reverie_storage::TrackStorage;
 
 /// 用于分页的查询参数
 #[derive(Deserialize)]
-struct PaginationQuery {
+pub struct PaginationQuery {
     #[serde(default = "default_limit")]
-    limit: usize,
+    pub limit: usize,
     #[serde(default)]
-    offset: usize,
+    pub offset: usize,
 }
 
 fn default_limit() -> usize {
@@ -30,8 +30,8 @@ fn default_limit() -> usize {
 
 /// 用于搜索的查询参数
 #[derive(Deserialize)]
-struct SearchQuery {
-    q: String,
+pub struct SearchQuery {
+    pub q: String,
 }
 
 /// 列出曲目处理程序
@@ -168,7 +168,7 @@ where
 }
 
 /// 创建曲目路由
-pub fn create_router<S>() -> Router
+pub fn create_router<S>() -> Router<subsonic::SubsonicState<S>>
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
 {

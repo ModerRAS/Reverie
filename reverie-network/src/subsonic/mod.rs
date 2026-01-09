@@ -19,17 +19,17 @@ use axum::{
 use reverie_storage::SubsonicStorage;
 use std::{collections::HashMap, sync::Arc};
 
-use response::{self, *};
+use response::*;
 
 // === State and Response Helpers ===
 
 #[derive(Clone)]
-pub(crate) struct SubsonicState<S: Clone> {
-    pub(crate) storage: Arc<S>,
+pub struct SubsonicState<S: Clone> {
+    pub storage: Arc<S>,
 }
 
 impl<S: Clone> SubsonicState<S> {
-    pub(crate) fn new(storage: Arc<S>) -> Self {
+    pub fn new(storage: Arc<S>) -> Self {
         Self { storage }
     }
 }

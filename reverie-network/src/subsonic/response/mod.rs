@@ -25,9 +25,10 @@ pub use albums::{
 };
 
 pub use artists::{
-    ArtistData, ArtistID3Item, ArtistInfo, ArtistInfo2, ArtistInfo2Data, ArtistInfoData,
-    ArtistIndexItem, ArtistItem, ArtistWithAlbums, ArtistsData, ImageItem, LinkItem,
-    MusicFolderItem, MusicFoldersData, MusicFoldersList,
+    build_artists, build_indexes, ArtistData, ArtistID3Item, ArtistInfo, ArtistInfo2,
+    ArtistInfo2Data, ArtistInfoData, ArtistIndexItem, ArtistItem, ArtistWithAlbums, ArtistsData,
+    ArtistsList, ImageItem, IndexesData, IndexesList, IndexItem, LinkItem, MusicFolderItem,
+    MusicFoldersData, MusicFoldersList,
 };
 
 pub use misc::{

@@ -1,9 +1,6 @@
 //! 基于 Axum 的 HTTP 服务器实现
 use async_trait::async_trait;
 use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
-    response::{IntoResponse, Json},
     routing::{get, get_service},
     Router,
 };
@@ -15,10 +12,8 @@ use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
-use uuid::Uuid;
 
 use crate::{
-    dto::*,
     error::{NetworkError, Result},
     subsonic,
     traits::{HttpServer, NetworkConfig},
@@ -32,25 +27,6 @@ pub mod tracks;
 pub mod albums;
 pub mod artists;
 pub mod playlists;
-
-// 用于分页的查询参数
-#[derive(Deserialize)]
-struct PaginationQuery {
-    #[serde(default = "default_limit")]
-    limit: usize,
-    #[serde(default)]
-    offset: usize,
-}
-
-fn default_limit() -> usize {
-    50
-}
-
-// 用于搜索的查询参数
-#[derive(Deserialize)]
-struct SearchQuery {
-    q: String,
-}
 
 /// 基于 Axum 的 HTTP 服务器。
 pub struct AxumServer<S> {

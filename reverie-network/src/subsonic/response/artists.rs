@@ -3,6 +3,8 @@
 use reverie_core::{SubsonicArtist, SubsonicArtistInfo, SubsonicArtistIndex};
 use serde::Serialize;
 
+use super::AlbumID3Item;
+
 // === 音乐文件夹 ===
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -257,14 +259,48 @@ impl From<&SubsonicArtistInfo> for ArtistInfo {
             biography: a.biography.clone(),
             music_brainz_id: a.music_brainz_id.clone(),
             last_fm_url: a.last_fm_url.clone(),
-            small_url: a.small_url.clone(),
-            medium_url: a.medium_url.clone(),
-            large_url: a.large_url.clone(),
+            small_url: a.small_image_url.clone(),
+            medium_url: a.medium_image_url.clone(),
+            large_url: a.large_image_url.clone(),
             similar_artist: a
-                .similar_artist
+                .similar_artists
                 .iter()
                 .map(ArtistID3Item::from)
                 .collect(),
         }
+    }
+}
+
+// === 辅助函数 ===
+
+pub fn build_indexes(indexes: &[SubsonicArtistIndex], last_modified: i64) -> IndexesData {
+    IndexesData {
+        indexes: IndexesList {
+            last_modified,
+            ignored_articles: "The El La Los Las Le Les".to_string(),
+            index: indexes
+                .iter()
+                .map(|idx| IndexItem {
+                    name: idx.id.clone(),
+                    artist: idx.artists.iter().map(ArtistItem::from).collect(),
+                })
+                .collect(),
+        },
+    }
+}
+
+pub fn build_artists(indexes: &[SubsonicArtistIndex], last_modified: i64) -> ArtistsData {
+    ArtistsData {
+        artists: ArtistsList {
+            last_modified,
+            ignored_articles: "The El La Los Las Le Les".to_string(),
+            index: indexes
+                .iter()
+                .map(|idx| ArtistIndexItem {
+                    name: idx.id.clone(),
+                    artist: idx.artists.iter().map(ArtistID3Item::from).collect(),
+                })
+                .collect(),
+        },
     }
 }
