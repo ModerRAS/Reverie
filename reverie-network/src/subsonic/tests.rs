@@ -526,3 +526,32 @@ async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value
     let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
     serde_json::from_slice(&body).unwrap()
 }
+
+// === Test Cases ===
+
+#[tokio::test]
+async fn test_ping_returns_ok() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/ping?f=json").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_get_license_returns_valid() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getLicense?f=json").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert_eq!(json["subsonic-response"]["license"]["valid"], true);
+}
+
+#[tokio::test]
+async fn test_get_music_folders() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getMusicFolders?f=json").await;
+    
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    let folders = &json["subsonic-response"]["musicFolders"]["musicFolder"];
+    assert!(folders.is_array());
+}
