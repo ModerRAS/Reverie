@@ -11,17 +11,13 @@ watch_path = ["src", "assets"]
 
 [web.resource]
 dev_server_port = 8080
-style = ["assets/main.css"]
+style = ["assets/tailwind.css"]
 
 [web.resource.dev]
 
 # Same as [web.resource], but for development servers
-style = []
+style = ["assets/tailwind.css"]
 script = []
-
-[[web.resource.tailwind_css]]
-input = "assets/tailwind.css"
-output = "assets/main.css"
 
 [[web.proxy]]
 backend = "http://localhost:4533/rest"
