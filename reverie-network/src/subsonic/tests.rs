@@ -5,13 +5,14 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use reverie_storage::error::StorageError;
+use reverie_storage::{error::StorageError, SubsonicStorage};
 use std::sync::Arc;
 use tower::ServiceExt;
 
 type Result<T> = std::result::Result<T, StorageError>;
 
 /// Mock storage for testing
+#[derive(Clone)]
 struct MockSubsonicStorage;
 
 impl MockSubsonicStorage {
