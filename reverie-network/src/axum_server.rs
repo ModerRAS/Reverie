@@ -66,7 +66,7 @@ where
         self
     }
 
-    fn create_ui_router(&self) -> Option<Router> {
+    fn create_ui_router(&self) -> Option<Router<subsonic::SubsonicState<S>>> {
         let ui_dir = self.ui_dir.clone()?;
 
         let index = ui_dir.join("index.html");
@@ -82,15 +82,12 @@ where
                 .nest_service("/wasm", ServeDir::new(wasm_dir))
                 .route("/*path", get_service(ServeFile::new(index))),
         )
-        )
     }
 
     fn create_router(&self) -> Router {
-        let app_state = AppState {
-            storage: Arc::clone(&self.storage),
-        };
+        let app_state = subsonic::SubsonicState::new(Arc::clone(&self.storage));
 
-        let mut router = Router::new()
+        let mut router = Router::<subsonic::SubsonicState<S>>::new()
             // Health check
             .route("/health", get(health_handler))
             // Subsonic API
@@ -132,7 +129,7 @@ where
 impl<S> HttpServer for AxumServer<S>
 where
     S: TrackStorage
-    State(state): State<subsonic::SubsonicState<S>>,
+        + AlbumStorage
         + ArtistStorage
         + PlaylistStorage
         + SubsonicStorage
