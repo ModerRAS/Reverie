@@ -1429,6 +1429,43 @@ impl SubsonicStorage for DatabaseStorage {
     }
 
     async fn start_scan(&self) -> Result<SubsonicScanStatus> {
+        // 获取第一个音乐文件夹路径进行扫描
+        let folders = self.get_music_folders().await?;
+        
+        if folders.is_empty() {
+            return Ok(SubsonicScanStatus {
+                scanning: false,
+                count: 0,
+                folder_count: 0,
+                last_scan: None,
+                error: Some("No music folders configured".to_string()),
+                scan_type: None,
+                elapsed_time: None,
+            });
+        }
+
+        // 获取第一个文件夹的路径
+        let folder_path = sqlx::query_scalar::<_, String>(
+            "SELECT path FROM music_folders WHERE id = ?",
+        )
+        .bind(folders[0].id)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        if let Some(path) = folder_path {
+            // 在后台启动扫描
+            #[cfg(feature = "scanner")]
+            {
+                let storage = self.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = storage.perform_scan(&path).await {
+                        tracing::error!("Scan failed: {}", e);
+                    }
+                });
+            }
+        }
+
         self.get_scan_status().await
     }
 

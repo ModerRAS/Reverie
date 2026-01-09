@@ -6,7 +6,13 @@ use serde::Serialize;
 // === 播放列表 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct PlaylistsData {
-    pub playlists: PlaylistsList,
+    pub playlists: PlaylistsInner,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PlaylistsInner {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub playlist: Vec<PlaylistItem>,
 }
 
 #[derive(Debug, Clone, Serialize)]

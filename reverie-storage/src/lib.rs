@@ -50,6 +50,9 @@ pub mod memory;
 #[cfg(feature = "database")]
 pub mod database;
 
+#[cfg(feature = "scanner")]
+pub mod scanner;
+
 #[cfg(test)]
 mod tests;
 
@@ -59,3 +62,6 @@ pub use vfs::{create_vfs, OpendalVfs, SharedVfs, Vfs, VfsConfig, VfsEntry, VfsMe
 
 #[cfg(feature = "database")]
 pub use database::{DatabaseConfig, DatabaseStorage};
+
+#[cfg(feature = "scanner")]
+pub use scanner::{AudioMetadata, MediaScanner, ScanProgress, ScanResult, ScannedAlbum, ScannedArtist, ScannedTrack};

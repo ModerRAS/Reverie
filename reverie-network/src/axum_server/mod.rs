@@ -19,7 +19,7 @@ use crate::{
     traits::{HttpServer, NetworkConfig},
 };
 use reverie_storage::{
-    AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage,
+    AlbumStorage, ArtistStorage, FileStorage, PlaylistStorage, SubsonicStorage, TrackStorage,
 };
 
 pub mod health;
@@ -44,6 +44,7 @@ where
         + ArtistStorage
         + PlaylistStorage
         + SubsonicStorage
+        + FileStorage
         + Clone
         + Send
         + Sync
@@ -138,6 +139,7 @@ where
         + ArtistStorage
         + PlaylistStorage
         + SubsonicStorage
+        + FileStorage
         + Clone
         + Send
         + Sync

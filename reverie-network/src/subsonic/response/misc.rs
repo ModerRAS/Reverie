@@ -23,7 +23,13 @@ impl From<LicenseData> for super::ResponseData {
 // === 流派 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct GenresData {
-    pub genres: GenresList,
+    pub genres: GenresInner,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GenresInner {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub genre: Vec<GenreItem>,
 }
 
 #[derive(Debug, Clone, Serialize)]

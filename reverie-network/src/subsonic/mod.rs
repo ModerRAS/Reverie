@@ -4,6 +4,9 @@
 //! 该模块提供了所有 Subsonic API 端点的处理程序。
 
 mod auth;
+mod browsing;
+mod playlists;
+mod users;
 pub mod response;
 
 #[cfg(test)]
@@ -16,10 +19,15 @@ use axum::{
     routing::get,
     Router,
 };
-use reverie_storage::SubsonicStorage;
+use reverie_storage::{FileStorage, SubsonicStorage};
 use std::{collections::HashMap, sync::Arc};
 
 use response::*;
+
+// 导入子模块处理器
+use browsing::*;
+use playlists::*;
+use users::*;
 
 // === State and Response Helpers ===
 
@@ -69,16 +77,16 @@ fn error_response(params: &HashMap<String, String>, code: i32, message: &str) ->
 /// 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
 /// 通过 `Router::with_state` 实现。
 #[cfg(feature = "axum-server")]
-pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
+pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
     Router::new()
         // System endpoints
         .route("/ping", get(ping_handler::<S>))
         .route("/getLicense", get(get_license_handler::<S>))
         .route("/getMusicFolders", get(get_music_folders_handler::<S>))
         // Browsing endpoints
-        .route("/getIndexes", get(stub_handler::<S>))
-        .route("/getMusicDirectory", get(stub_handler::<S>))
-        .route("/getGenres", get(stub_handler::<S>))
+        .route("/getIndexes", get(get_indexes_handler::<S>))
+        .route("/getMusicDirectory", get(get_music_directory_handler::<S>))
+        .route("/getGenres", get(get_genres_handler::<S>))
         .route("/getArtists", get(get_artists_handler::<S>))
         .route("/getArtist", get(get_artist_handler::<S>))
         .route("/getAlbum", get(get_album_handler::<S>))
@@ -91,50 +99,57 @@ pub(crate) fn create_router<S: SubsonicStorage + Clone + 'static>() -> Router<Su
         .route("/getSimilarSongs2", get(stub_handler::<S>))
         .route("/getTopSongs", get(stub_handler::<S>))
         // Album list endpoints
-        .route("/getAlbumList", get(stub_handler::<S>))
+        .route("/getAlbumList", get(get_album_list_handler::<S>))
         .route("/getAlbumList2", get(get_album_list2_handler::<S>))
-        .route("/getRandomSongs", get(stub_handler::<S>))
-        .route("/getSongsByGenre", get(stub_handler::<S>))
-        .route("/getNowPlaying", get(stub_handler::<S>))
-        .route("/getStarred", get(stub_handler::<S>))
-        .route("/getStarred2", get(stub_handler::<S>))
+        .route("/getRandomSongs", get(get_random_songs_handler::<S>))
+        .route("/getSongsByGenre", get(get_songs_by_genre_handler::<S>))
+        .route("/getNowPlaying", get(get_now_playing_handler::<S>))
+        .route("/getStarred", get(get_starred_handler::<S>))
+        .route("/getStarred2", get(get_starred2_handler::<S>))
         // Search endpoints
-        .route("/search2", get(stub_handler::<S>))
+        .route("/search2", get(search2_handler::<S>))
         .route("/search3", get(search3_handler::<S>))
         // Playlist endpoints
-        .route("/getPlaylists", get(stub_handler::<S>))
-        .route("/getPlaylist", get(stub_handler::<S>))
-        .route("/createPlaylist", get(stub_handler::<S>))
-        .route("/updatePlaylist", get(stub_handler::<S>))
-        .route("/deletePlaylist", get(stub_handler::<S>))
+        .route("/getPlaylists", get(get_playlists_handler::<S>))
+        .route("/getPlaylist", get(get_playlist_handler::<S>))
+        .route("/createPlaylist", get(create_playlist_handler::<S>))
+        .route("/updatePlaylist", get(update_playlist_handler::<S>))
+        .route("/deletePlaylist", get(delete_playlist_handler::<S>))
         // Media retrieval endpoints
         .route("/stream", get(stream_handler::<S>))
-        .route("/download", get(stub_handler::<S>))
+        .route("/download", get(download_handler::<S>))
         .route("/getCoverArt", get(get_cover_art_handler::<S>))
         .route("/getLyrics", get(stub_handler::<S>))
         .route("/getLyricsBySongId", get(stub_handler::<S>))
         .route("/getAvatar", get(stub_handler::<S>))
-        .route("/star", get(stub_handler::<S>))
-        .route("/unstar", get(stub_handler::<S>))
-        .route("/setRating", get(stub_handler::<S>))
-        .route("/scrobble", get(stub_handler::<S>))
+        // Annotation endpoints
+        .route("/star", get(star_handler::<S>))
+        .route("/unstar", get(unstar_handler::<S>))
+        .route("/setRating", get(set_rating_handler::<S>))
+        .route("/scrobble", get(scrobble_handler::<S>))
+        // Bookmark endpoints
         .route("/getBookmarks", get(stub_handler::<S>))
         .route("/createBookmark", get(stub_handler::<S>))
         .route("/deleteBookmark", get(stub_handler::<S>))
         .route("/getPlayQueue", get(stub_handler::<S>))
         .route("/savePlayQueue", get(stub_handler::<S>))
+        // Share endpoints
         .route("/getShares", get(stub_handler::<S>))
         .route("/createShare", get(stub_handler::<S>))
         .route("/updateShare", get(stub_handler::<S>))
         .route("/deleteShare", get(stub_handler::<S>))
+        // Internet radio endpoints
         .route("/getInternetRadioStations", get(stub_handler::<S>))
         .route("/createInternetRadioStation", get(stub_handler::<S>))
         .route("/updateInternetRadioStation", get(stub_handler::<S>))
         .route("/deleteInternetRadioStation", get(stub_handler::<S>))
-        .route("/getUser", get(stub_handler::<S>))
-        .route("/getUsers", get(stub_handler::<S>))
-        .route("/getScanStatus", get(stub_handler::<S>))
-        .route("/startScan", get(stub_handler::<S>))
+        // User management endpoints
+        .route("/getUser", get(get_user_handler::<S>))
+        .route("/getUsers", get(get_users_handler::<S>))
+        // Scanning endpoints
+        .route("/getScanStatus", get(get_scan_status_handler::<S>))
+        .route("/startScan", get(start_scan_handler::<S>))
+        // OpenSubsonic extensions
         .route("/getOpenSubsonicExtensions", get(stub_handler::<S>))
 }
 
@@ -374,7 +389,7 @@ async fn search3_handler<S: SubsonicStorage + Clone>(
 // ===== 媒体检索处理器 =====
 
 /// GET /rest/getCoverArt - 获取封面图片
-async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
+async fn get_cover_art_handler<S: SubsonicStorage + FileStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
@@ -385,15 +400,34 @@ async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
     let _size: Option<i32> = params.get("size").and_then(|s| s.parse().ok());
 
     match state.storage.get_cover_art_path(id).await {
-        Ok(Some(_path)) => {
-            // 目前，返回占位符响应
-            // 在生产环境中，这将流式传输实际的图像文件
-            // 存储层将使用 VFS 来读取文件
-            Response::builder()
-                .status(StatusCode::OK)
-                .header(header::CONTENT_TYPE, "image/jpeg")
-                .body(axum::body::Body::empty())
-                .unwrap()
+        Ok(Some(path)) => {
+            // 读取封面图片文件
+            match state.storage.read_file(&path).await {
+                Ok(data) => {
+                    // 根据文件扩展名确定 MIME 类型
+                    let mime_type = if path.ends_with(".png") {
+                        "image/png"
+                    } else if path.ends_with(".gif") {
+                        "image/gif"
+                    } else if path.ends_with(".webp") {
+                        "image/webp"
+                    } else {
+                        "image/jpeg"
+                    };
+
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .header(header::CONTENT_TYPE, mime_type)
+                        .header(header::CONTENT_LENGTH, data.len())
+                        .header(header::CACHE_CONTROL, "public, max-age=86400")
+                        .body(axum::body::Body::from(data))
+                        .unwrap()
+                }
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(axum::body::Body::from(format!("Failed to read cover art: {}", e)))
+                    .unwrap(),
+            }
         }
         Ok(None) => Response::builder()
             .status(StatusCode::NOT_FOUND)
@@ -407,7 +441,7 @@ async fn get_cover_art_handler<S: SubsonicStorage + Clone>(
 }
 
 /// GET /rest/stream - 流式传输媒体文件
-async fn stream_handler<S: SubsonicStorage + Clone>(
+async fn stream_handler<S: SubsonicStorage + FileStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
@@ -416,15 +450,45 @@ async fn stream_handler<S: SubsonicStorage + Clone>(
         None => return error_response(&params, 10, "Missing required parameter: id"),
     };
 
+    // 可选参数
+    let _max_bit_rate: Option<i32> = params.get("maxBitRate").and_then(|s| s.parse().ok());
+    let _format = params.get("format").map(|s| s.as_str());
+    let _time_offset: Option<i32> = params.get("timeOffset").and_then(|s| s.parse().ok());
+    let _estimated_content_length: Option<bool> = params.get("estimateContentLength").and_then(|s| s.parse().ok());
+
     match state.storage.get_stream_path(id).await {
-        Ok(Some(_path)) => {
-            // 目前，返回占位符响应
-            // 在生产环境中，这将流式传输实际的媒体文件
-            Response::builder()
-                .status(StatusCode::OK)
-                .header(header::CONTENT_TYPE, "audio/mpeg")
-                .body(axum::body::Body::empty())
-                .unwrap()
+        Ok(Some(path)) => {
+            // 读取媒体文件
+            match state.storage.read_file(&path).await {
+                Ok(data) => {
+                    // 根据文件扩展名确定 MIME 类型
+                    let mime_type = if path.ends_with(".flac") {
+                        "audio/flac"
+                    } else if path.ends_with(".ogg") || path.ends_with(".opus") {
+                        "audio/ogg"
+                    } else if path.ends_with(".m4a") || path.ends_with(".aac") {
+                        "audio/mp4"
+                    } else if path.ends_with(".wav") {
+                        "audio/wav"
+                    } else if path.ends_with(".wma") {
+                        "audio/x-ms-wma"
+                    } else {
+                        "audio/mpeg"
+                    };
+
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .header(header::CONTENT_TYPE, mime_type)
+                        .header(header::CONTENT_LENGTH, data.len())
+                        .header(header::ACCEPT_RANGES, "bytes")
+                        .body(axum::body::Body::from(data))
+                        .unwrap()
+                }
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(axum::body::Body::from(format!("Failed to read media file: {}", e)))
+                    .unwrap(),
+            }
         }
         Ok(None) => Response::builder()
             .status(StatusCode::NOT_FOUND)

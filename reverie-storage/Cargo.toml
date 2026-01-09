@@ -15,9 +15,13 @@ rand = "0.8"
 chrono = "0.4"
 bytes = "1.5"
 md5 = "0.7"
+tracing = "0.1"
 
 # OpenDAL for VFS abstraction
 opendal = { version = "0.55", default-features = false, features = ["services-fs", "services-memory"] }
+
+# Audio metadata parsing
+lofty = { version = "0.21", optional = true }
 
 # Optional dependencies for specific implementations
 sqlx = { workspace = true, optional = true, features = ["runtime-tokio", "sqlite"] }
@@ -27,10 +31,11 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 
 [features]
-default = ["filesystem", "memory", "database"]
+default = ["filesystem", "memory", "database", "scanner"]
 filesystem = ["walkdir", "shellexpand"]
 database = ["sqlx"]
 memory = []
+scanner = ["lofty"]
 
 # VFS backend features
 vfs-s3 = ["opendal/services-s3"]

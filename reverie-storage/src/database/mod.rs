@@ -8,6 +8,8 @@ pub mod track;
 pub mod album;
 pub mod user_playlist;
 pub mod subsonic;
+#[cfg(feature = "scanner")]
+pub mod scan;
 
 // 重新导出主要类型
 pub use config::DatabaseConfig;

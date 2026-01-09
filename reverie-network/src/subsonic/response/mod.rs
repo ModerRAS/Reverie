@@ -32,7 +32,7 @@ pub use artists::{
 };
 
 pub use misc::{
-    BookmarksData, BookmarksList, BookmarkItem, GenresData, GenresList, GenreItem,
+    BookmarksData, BookmarksList, BookmarkItem, GenresData, GenresInner, GenresList, GenreItem,
     InternetRadioStationItem, InternetRadioStationsData, InternetRadioStationsList,
     License, LicenseData, LyricsData, LyricsItem, LyricsListData, LyricsListInner,
     OpenSubsonicExtensionItem, OpenSubsonicExtensionsData, OpenSubsonicExtensionsList,
@@ -40,16 +40,16 @@ pub use misc::{
 };
 
 pub use playlists::{
-    PlaylistData, PlaylistItem, PlaylistWithEntries, PlaylistsData, PlaylistsList,
+    PlaylistData, PlaylistItem, PlaylistsInner, PlaylistWithEntries, PlaylistsData, PlaylistsList,
 };
 
 pub use songs::{
-    Child, DirectoryData, DirectoryItem, NowPlayingData, NowPlayingEntry, NowPlayingInner,
+    Child, DirectoryData, DirectoryInner, DirectoryItem, NowPlayingData, NowPlayingEntry, NowPlayingInner,
     RandomSongsData, RandomSongsInner, SearchResult2Data, SearchResult2Inner,
     SearchResult3Data, SearchResult3Inner, SongData, SongsByGenreData, SongsByGenreInner,
     Starred2Data, Starred2Inner, StarredData, StarredInner,
 };
 
 pub use users::{
-    ShareItem, SharesData, SharesList, UserData, UserItem, UsersData, UsersList,
+    ShareItem, SharesData, SharesList, UserData, UserItem, UsersData, UsersInner, UsersList,
 };

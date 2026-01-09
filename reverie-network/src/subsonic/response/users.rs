@@ -66,7 +66,13 @@ impl From<UserData> for super::ResponseData {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UsersData {
-    pub users: UsersList,
+    pub users: UsersInner,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UsersInner {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub user: Vec<UserItem>,
 }
 
 #[derive(Debug, Clone, Serialize)]

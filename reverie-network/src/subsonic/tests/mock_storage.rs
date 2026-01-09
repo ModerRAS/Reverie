@@ -1,8 +1,7 @@
 //! Mock Subsonic Storage 实现
 
-use async_trait::async_trait;
 use reverie_core::{SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, MediaFile};
-use reverie_storage::{error::StorageError, SubsonicStorage};
+use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
 use std::fmt;
 
 type Result<T> = std::result::Result<T, StorageError>;
@@ -577,5 +576,37 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn start_scan(&self) -> Result<SubsonicScanStatus> {
         self.get_scan_status().await
+    }
+}
+
+#[async_trait::async_trait]
+impl FileStorage for MockSubsonicStorage {
+    async fn read_file(&self, _path: &str) -> Result<Vec<u8>> {
+        Ok(vec![0, 1, 2, 3]) // 返回一些虚拟数据
+    }
+
+    async fn write_file(&self, _path: &str, _data: &[u8]) -> Result<()> {
+        Ok(())
+    }
+
+    async fn file_exists(&self, _path: &str) -> Result<bool> {
+        Ok(true)
+    }
+
+    async fn delete_file(&self, _path: &str) -> Result<()> {
+        Ok(())
+    }
+
+    async fn list_files(&self, _path: &str) -> Result<Vec<String>> {
+        Ok(vec![])
+    }
+
+    async fn get_file_metadata(&self, _path: &str) -> Result<FileMetadata> {
+        Ok(FileMetadata {
+            size: 1024,
+            modified: std::time::SystemTime::now(),
+            is_file: true,
+            is_dir: false,
+        })
     }
 }

@@ -106,7 +106,38 @@ impl From<SongData> for super::ResponseData {
 // === 目录 ===
 #[derive(Debug, Clone, Serialize)]
 pub struct DirectoryData {
-    pub directory: DirectoryItem,
+    pub directory: DirectoryInner,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectoryInner {
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub starred: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_rating: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub play_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub child: Vec<Child>,
+}
+
+impl From<&reverie_core::SubsonicDirectory> for DirectoryInner {
+    fn from(d: &reverie_core::SubsonicDirectory) -> Self {
+        Self {
+            id: d.id.clone(),
+            parent: d.parent.clone(),
+            name: d.name.clone(),
+            starred: d.starred.map(|dt| dt.to_rfc3339()),
+            user_rating: d.user_rating,
+            play_count: d.play_count,
+            child: d.children.iter().map(Child::from).collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
