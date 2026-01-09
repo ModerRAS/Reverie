@@ -2,6 +2,7 @@
 
 use crate::api::Playlist;
 use crate::components::{EmptyState, LoadingSpinner, PageHeader, PlaylistCard};
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Playlists page component
@@ -16,22 +17,8 @@ pub fn PlaylistsPage() -> Element {
         loading.set(true);
 
         // Demo data
-        let demo_playlists: Vec<Playlist> = (1..=8)
-            .map(|i| Playlist {
-                id: format!("playlist-{}", i),
-                name: format!("My Playlist {}", i),
-                song_count: 10 + i * 5,
-                duration: 2400 + i * 600,
-                owner: Some("admin".to_string()),
-                public: Some(i % 2 == 0),
-                created: None,
-                changed: None,
-                cover_art: None,
-                entry: vec![],
-            })
-            .collect();
 
-        playlists.set(demo_playlists);
+        playlists.set(mock::playlists(8));
         loading.set(false);
     });
 

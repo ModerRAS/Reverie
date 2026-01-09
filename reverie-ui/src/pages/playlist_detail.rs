@@ -1,7 +1,8 @@
 //! Playlist detail page
 
-use crate::api::{Playlist, Song};
+use crate::api::Playlist;
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
+use crate::mock;
 use crate::state::{apply_player_action, PlayerAction, PlayerState};
 use dioxus::prelude::*;
 
@@ -16,45 +17,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
-        let demo_songs: Vec<Song> = (1..=15)
-            .map(|i| Song {
-                id: format!("{}-song-{}", id, i),
-                title: format!("Playlist Song {}", i),
-                album: Some(format!("Album {}", (i % 5) + 1)),
-                album_id: Some(format!("album-{}", (i % 5) + 1)),
-                artist: Some(format!("Artist {}", (i % 3) + 1)),
-                artist_id: Some(format!("artist-{}", (i % 3) + 1)),
-                track: Some(i),
-                year: Some(2023),
-                genre: Some("Mixed".to_string()),
-                cover_art: None,
-                duration: Some(180 + i * 15),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: None,
-                play_count: i * 5,
-            })
-            .collect();
-
-        let total_duration: i32 = demo_songs.iter().filter_map(|s| s.duration).sum();
-
-        let demo_playlist = Playlist {
-            id: id.clone(),
-            name: format!("Playlist {}", id.split('-').next_back().unwrap_or("1")),
-            song_count: demo_songs.len() as i32,
-            duration: total_duration,
-            owner: Some("admin".to_string()),
-            public: Some(true),
-            created: Some("2024-01-01T00:00:00Z".to_string()),
-            changed: Some("2024-01-15T00:00:00Z".to_string()),
-            cover_art: None,
-            entry: demo_songs,
-        };
-
-        playlist.set(Some(demo_playlist));
+        playlist.set(Some(mock::playlist_detail(&id)));
         loading.set(false);
     });
 

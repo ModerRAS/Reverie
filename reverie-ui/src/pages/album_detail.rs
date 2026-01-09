@@ -3,6 +3,7 @@
 use crate::api::{Album, Song};
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
 use crate::state::{apply_player_action, PlayerAction, PlayerState};
+use crate::mock;
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
@@ -23,45 +24,9 @@ pub fn AlbumDetailPage(id: String) -> Element {
         loading.set(true);
 
         // Demo data
-        let demo_album = Album {
-            id: id.clone(),
-            name: format!("Album {}", id.split('-').next_back().unwrap_or("1")),
-            artist: Some("Demo Artist".to_string()),
-            artist_id: Some("artist-1".to_string()),
-            cover_art: None,
-            song_count: Some(12),
-            duration: Some(3600),
-            year: Some(2023),
-            genre: Some("Rock".to_string()),
-            created: Some("2023-01-01T00:00:00Z".to_string()),
-            starred: None,
-            play_count: 100,
-        };
-
-        let demo_tracks: Vec<Song> = (1..=12)
-            .map(|i| Song {
-                id: format!("{}-track-{}", id, i),
-                title: format!("Track {}", i),
-                album: Some(demo_album.name.clone()),
-                album_id: Some(id.clone()),
-                artist: demo_album.artist.clone(),
-                artist_id: demo_album.artist_id.clone(),
-                track: Some(i),
-                year: demo_album.year,
-                genre: demo_album.genre.clone(),
-                cover_art: None,
-                duration: Some(200 + i * 10),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: None,
-                play_count: i * 10,
-            })
-            .collect();
-
-        album.set(Some(demo_album));
-        tracks.set(demo_tracks);
+        let (mock_album, mock_tracks) = mock::album_detail(&id);
+        album.set(Some(mock_album));
+        tracks.set(mock_tracks);
         loading.set(false);
     });
 

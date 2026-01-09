@@ -2,6 +2,7 @@
 
 use crate::api::{Album, Song};
 use crate::components::{AlbumCard, LoadingSpinner, SongCard};
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Home page component
@@ -16,48 +17,10 @@ pub fn HomePage() -> Element {
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
-        let demo_albums: Vec<Album> = (1..=6)
-            .map(|i| Album {
-                id: format!("recent-album-{}", i),
-                name: format!("Recently Played {}", i),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                cover_art: None,
-                song_count: Some(10),
-                duration: Some(2400),
-                year: Some(2023),
-                genre: None,
-                created: None,
-                starred: None,
-                play_count: 100 - i * 10,
-            })
-            .collect();
+        let (home_albums, home_songs) = mock::home();
+        recent_albums.set(home_albums);
+        recent_songs.set(home_songs);
 
-        let demo_songs: Vec<Song> = (1..=8)
-            .map(|i| Song {
-                id: format!("recent-song-{}", i),
-                title: format!("Recent Song {}", i),
-                album: Some(format!("Album {}", i)),
-                album_id: Some(format!("album-{}", i)),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                track: Some(1),
-                year: Some(2023),
-                genre: None,
-                cover_art: None,
-                duration: Some(200),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: None,
-                play_count: 50 - i * 5,
-            })
-            .collect();
-
-        recent_albums.set(demo_albums);
-        recent_songs.set(demo_songs);
         loading.set(false);
     });
 

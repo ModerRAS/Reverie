@@ -6,6 +6,7 @@
 
 use crate::api::Album;
 use crate::components::{AlbumCard, EmptyState, LoadingSpinner, PageHeader, TabBar};
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Album list type (matching Navidrome's album views)
@@ -63,31 +64,10 @@ pub fn AlbumsPage() -> Element {
         _ => 0,
     };
 
-    // Simulated album data for demo
     use_effect(move || {
         loading.set(true);
 
-        // In production, this would call the API
-        let demo_albums: Vec<Album> = (1..=24)
-            .map(|i| Album {
-                id: format!("album-{}", i),
-                name: format!("Album {}", i),
-                artist: Some(format!("Artist {}", (i % 5) + 1)),
-                artist_id: Some(format!("artist-{}", (i % 5) + 1)),
-                cover_art: None,
-                song_count: Some(10 + (i % 5)),
-                duration: Some(2400 + i * 60),
-                year: Some(2020 + (i % 5)),
-                genre: Some(
-                    ["Rock", "Pop", "Jazz", "Electronic", "Classical"][i as usize % 5].to_string(),
-                ),
-                created: None,
-                starred: None,
-                play_count: i * 10,
-            })
-            .collect();
-
-        albums.set(demo_albums);
+        albums.set(mock::albums(24));
         loading.set(false);
     });
 

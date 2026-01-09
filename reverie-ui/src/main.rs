@@ -5,6 +5,7 @@
 
 mod api;
 mod components;
+mod mock;
 mod pages;
 mod routes;
 mod state;

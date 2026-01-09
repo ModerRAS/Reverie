@@ -2,6 +2,7 @@
 
 use crate::api::{Album, Artist, Song};
 use crate::components::{AlbumCard, CompactSongList, LoadingSpinner};
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Artist detail page component
@@ -17,58 +18,10 @@ pub fn ArtistDetailPage(id: String) -> Element {
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
-        let demo_artist = Artist {
-            id: id.clone(),
-            name: format!("Artist {}", id.split('-').next_back().unwrap_or("1")),
-            album_count: 5,
-            cover_art: None,
-            artist_image_url: None,
-            starred: None,
-        };
-
-        let demo_albums: Vec<Album> = (1..=5)
-            .map(|i| Album {
-                id: format!("{}-album-{}", id, i),
-                name: format!("Album {}", i),
-                artist: Some(demo_artist.name.clone()),
-                artist_id: Some(id.clone()),
-                cover_art: None,
-                song_count: Some(10),
-                duration: Some(2400),
-                year: Some(2020 + i),
-                genre: Some("Rock".to_string()),
-                created: None,
-                starred: None,
-                play_count: i * 50,
-            })
-            .collect();
-
-        let demo_songs: Vec<Song> = (1..=5)
-            .map(|i| Song {
-                id: format!("{}-topsong-{}", id, i),
-                title: format!("Top Song {}", i),
-                album: Some(format!("Album {}", i)),
-                album_id: Some(format!("{}-album-{}", id, i)),
-                artist: Some(demo_artist.name.clone()),
-                artist_id: Some(id.clone()),
-                track: Some(1),
-                year: Some(2023),
-                genre: None,
-                cover_art: None,
-                duration: Some(220),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: None,
-                play_count: (6 - i) * 100,
-            })
-            .collect();
-
-        artist.set(Some(demo_artist));
-        albums.set(demo_albums);
-        top_songs.set(demo_songs);
+        let (mock_artist, mock_albums, mock_top_songs) = mock::artist_detail(&id);
+        artist.set(Some(mock_artist));
+        albums.set(mock_albums);
+        top_songs.set(mock_top_songs);
         loading.set(false);
     });
 

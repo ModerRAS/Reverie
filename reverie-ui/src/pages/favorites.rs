@@ -4,6 +4,7 @@ use crate::api::{Album, Artist, Song};
 use crate::components::{
     AlbumCard, ArtistCard, EmptyState, LoadingSpinner, PageHeader, TabBar, TrackList,
 };
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Favorites page component
@@ -26,57 +27,7 @@ pub fn FavoritesPage() -> Element {
     use_effect(move || {
         loading.set(true);
 
-        // Demo data - starred items
-        let songs: Vec<Song> = (1..=10)
-            .map(|i| Song {
-                id: format!("starred-song-{}", i),
-                title: format!("Favorite Song {}", i),
-                album: Some(format!("Album {}", i)),
-                album_id: Some(format!("album-{}", i)),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                track: Some(i),
-                year: Some(2023),
-                genre: None,
-                cover_art: None,
-                duration: Some(200 + i * 10),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: Some("2024-01-01T00:00:00Z".to_string()),
-                play_count: i * 20,
-            })
-            .collect();
-
-        let albums: Vec<Album> = (1..=6)
-            .map(|i| Album {
-                id: format!("starred-album-{}", i),
-                name: format!("Favorite Album {}", i),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                cover_art: None,
-                song_count: Some(10),
-                duration: Some(2400),
-                year: Some(2023),
-                genre: None,
-                created: None,
-                starred: Some("2024-01-01T00:00:00Z".to_string()),
-                play_count: 0,
-            })
-            .collect();
-
-        let artists: Vec<Artist> = (1..=4)
-            .map(|i| Artist {
-                id: format!("starred-artist-{}", i),
-                name: format!("Favorite Artist {}", i),
-                album_count: 5,
-                cover_art: None,
-                artist_image_url: None,
-                starred: Some("2024-01-01T00:00:00Z".to_string()),
-            })
-            .collect();
-
+        let (songs, albums, artists) = mock::favorites();
         starred_songs.set(songs);
         starred_albums.set(albums);
         starred_artists.set(artists);

@@ -2,6 +2,7 @@
 
 use crate::api::Artist;
 use crate::components::{ArtistCard, EmptyState, LoadingSpinner, PageHeader};
+use crate::mock;
 use dioxus::prelude::*;
 
 /// Artists page component
@@ -16,18 +17,7 @@ pub fn ArtistsPage() -> Element {
         loading.set(true);
 
         // Demo data
-        let demo_artists: Vec<Artist> = (1..=20)
-            .map(|i| Artist {
-                id: format!("artist-{}", i),
-                name: format!("Artist {}", i),
-                album_count: 3 + (i % 5),
-                cover_art: None,
-                artist_image_url: None,
-                starred: None,
-            })
-            .collect();
-
-        artists.set(demo_artists);
+        artists.set(mock::artists(20));
         loading.set(false);
     });
 

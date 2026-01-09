@@ -6,6 +6,7 @@ use crate::components::{
 };
 use crate::state::UiState;
 use dioxus::prelude::*;
+use crate::mock;
 
 /// Search page component
 #[component]
@@ -32,56 +33,7 @@ pub fn SearchPage() -> Element {
         loading.set(true);
 
         // Demo search results
-        let result_songs: Vec<Song> = (1..=5)
-            .map(|i| Song {
-                id: format!("search-song-{}", i),
-                title: format!("{} - Result {}", q, i),
-                album: Some(format!("Album {}", i)),
-                album_id: Some(format!("album-{}", i)),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                track: Some(i),
-                year: Some(2023),
-                genre: None,
-                cover_art: None,
-                duration: Some(200),
-                bit_rate: Some(320),
-                suffix: Some("mp3".to_string()),
-                content_type: None,
-                path: None,
-                starred: None,
-                play_count: 0,
-            })
-            .collect();
-
-        let result_albums: Vec<Album> = (1..=3)
-            .map(|i| Album {
-                id: format!("search-album-{}", i),
-                name: format!("{} Album {}", q, i),
-                artist: Some(format!("Artist {}", i)),
-                artist_id: Some(format!("artist-{}", i)),
-                cover_art: None,
-                song_count: Some(10),
-                duration: Some(2400),
-                year: Some(2023),
-                genre: None,
-                created: None,
-                starred: None,
-                play_count: 0,
-            })
-            .collect();
-
-        let result_artists: Vec<Artist> = (1..=2)
-            .map(|i| Artist {
-                id: format!("search-artist-{}", i),
-                name: format!("{} Artist {}", q, i),
-                album_count: 5,
-                cover_art: None,
-                artist_image_url: None,
-                starred: None,
-            })
-            .collect();
-
+        let (result_songs, result_albums, result_artists) = mock::search(&q);
         songs.set(result_songs);
         albums.set(result_albums);
         artists.set(result_artists);

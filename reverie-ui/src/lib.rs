@@ -4,6 +4,7 @@
 
 pub mod api;
 pub mod components;
+pub mod mock;
 pub mod pages;
 pub mod routes;
 pub mod state;
