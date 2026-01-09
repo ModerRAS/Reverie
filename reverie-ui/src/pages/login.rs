@@ -1,9 +1,9 @@
-//! Login page
+//! 登录页面
 
 use crate::state::AuthState;
 use dioxus::prelude::*;
 
-/// Login page component
+/// 登录页面组件
 #[component]
 pub fn LoginPage() -> Element {
     let mut auth_state = use_context::<Signal<AuthState>>();
@@ -20,15 +20,15 @@ pub fn LoginPage() -> Element {
         loading.set(true);
         error.set(None);
 
-        // Validate inputs
+        // 验证输入
         if username.read().is_empty() || password.read().is_empty() {
-            error.set(Some("Please enter username and password".to_string()));
+            error.set(Some("请输入用户名和密码".to_string()));
             loading.set(false);
             return;
         }
 
-        // In production, this would make an API call to authenticate
-        // For demo, accept any credentials
+        // 在生产环境中，这将调用 API 进行身份验证
+        // 为了演示，接受任何凭据
         auth_state.write().is_authenticated = true;
         auth_state.write().username = username.read().clone();
         auth_state.write().server_url = server_url.read().clone();
@@ -59,15 +59,15 @@ pub fn LoginPage() -> Element {
                         }
                         h1 { class: "text-3xl font-bold text-white", "Reverie" }
                     }
-                    p { class: "text-gray-400", "Music Server" }
+                    p { class: "text-gray-400", "音乐服务器" }
                 }
 
-                // Login form
+                // 登录表单
                 form {
                     class: "card p-8 space-y-6",
                     onsubmit: on_submit,
 
-                    // Error message
+                    // 错误消息
                     if let Some(err) = error() {
                         div {
                             class: "bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg",
@@ -75,11 +75,11 @@ pub fn LoginPage() -> Element {
                         }
                     }
 
-                    // Server URL
+                    // 服务器地址
                     div {
                         label {
                             class: "block text-sm font-medium text-gray-300 mb-2",
-                            "Server URL"
+                            "服务器地址"
                         }
                         input {
                             class: "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
@@ -90,53 +90,53 @@ pub fn LoginPage() -> Element {
                         }
                     }
 
-                    // Username
+                    // 用户名
                     div {
                         label {
                             class: "block text-sm font-medium text-gray-300 mb-2",
-                            "Username"
+                            "用户名"
                         }
                         input {
                             class: "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
                             r#type: "text",
-                            placeholder: "Enter your username",
+                            placeholder: "请输入用户名",
                             value: "{username}",
                             oninput: move |e| username.set(e.value())
                         }
                     }
 
-                    // Password
+                    // 密码
                     div {
                         label {
                             class: "block text-sm font-medium text-gray-300 mb-2",
-                            "Password"
+                            "密码"
                         }
                         input {
                             class: "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
                             r#type: "password",
-                            placeholder: "Enter your password",
+                            placeholder: "请输入密码",
                             value: "{password}",
                             oninput: move |e| password.set(e.value())
                         }
                     }
 
-                    // Submit button
+                    // 提交按钮
                     button {
                         class: "w-full btn-primary py-3 text-lg font-medium",
                         r#type: "submit",
                         disabled: loading(),
                         if loading() {
-                            "Signing in..."
+                            "正在登录..."
                         } else {
-                            "Sign In"
+                            "登录"
                         }
                     }
                 }
 
-                // Footer
+                // 页脚
                 p {
                     class: "text-center text-gray-500 text-sm mt-6",
-                    "Reverie Music Server • Built with Rust & Dioxus"
+                    "Reverie 音乐服务器 • 基于 Rust & Dioxus 构建"
                 }
             }
         }

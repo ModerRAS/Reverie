@@ -1,6 +1,6 @@
-//! Albums page - Grid view of all albums
+//! 专辑页面 - 所有专辑的网格视图
 //!
-//! Displays albums with various sorting options like newest, recently played, etc.
+//! 显示带有各种排序选项的专辑，如最新、最近播放等。
 
 #![allow(unused)]
 
@@ -9,7 +9,7 @@ use crate::components::{AlbumCard, EmptyState, LoadingSpinner, PageHeader, TabBa
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Album list type (matching Navidrome's album views)
+/// 专辑列表类型（匹配 Navidrome 的专辑视图）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlbumListType {
     RecentlyAdded,
@@ -25,19 +25,19 @@ pub enum AlbumListType {
 impl AlbumListType {
     fn label(&self) -> &'static str {
         match self {
-            Self::RecentlyAdded => "Recently Added",
-            Self::RecentlyPlayed => "Recently Played",
-            Self::MostPlayed => "Most Played",
-            Self::Random => "Random",
-            Self::Starred => "Starred",
-            Self::ByArtist => "By Artist",
-            Self::ByYear => "By Year",
-            Self::ByGenre => "By Genre",
+            Self::RecentlyAdded => "最近添加",
+            Self::RecentlyPlayed => "最近播放",
+            Self::MostPlayed => "最多播放",
+            Self::Random => "随机",
+            Self::Starred => "已收藏",
+            Self::ByArtist => "按艺术家",
+            Self::ByYear => "按年份",
+            Self::ByGenre => "按流派",
         }
     }
 }
 
-/// Albums page component
+/// 专辑页面组件
 #[component]
 pub fn AlbumsPage() -> Element {
     let mut list_type = use_signal(|| AlbumListType::RecentlyAdded);
@@ -46,13 +46,13 @@ pub fn AlbumsPage() -> Element {
     let mut error = use_signal(|| None::<String>);
     let navigator = use_navigator();
 
-    // Tab options
+    // Tab 选项
     let tabs = vec![
-        "Recently Added".to_string(),
-        "Recently Played".to_string(),
-        "Most Played".to_string(),
-        "Random".to_string(),
-        "Starred".to_string(),
+        "最近添加".to_string(),
+        "最近播放".to_string(),
+        "最多播放".to_string(),
+        "随机".to_string(),
+        "已收藏".to_string(),
     ];
 
     let active_tab = match list_type() {
@@ -91,8 +91,8 @@ pub fn AlbumsPage() -> Element {
             class: "space-y-6",
 
             PageHeader {
-                title: "Albums".to_string(),
-                subtitle: Some(format!("{} albums", albums.read().len()))
+                title: "专辑".to_string(),
+                subtitle: Some(format!("{} 张专辑", albums.read().len()))
             }
 
             TabBar {
@@ -102,16 +102,16 @@ pub fn AlbumsPage() -> Element {
             }
 
             if loading() {
-                LoadingSpinner { message: "Loading albums..." }
+                LoadingSpinner { message: "正在加载专辑..." }
             } else if let Some(err) = error() {
                 div {
                     class: "text-red-500 text-center py-8",
-                    "Error: {err}"
+                    "错误: {err}"
                 }
             } else if albums.read().is_empty() {
                 EmptyState {
-                    title: "No albums found".to_string(),
-                    message: Some("Your music library is empty. Add some music to get started.".to_string())
+                    title: "未找到专辑".to_string(),
+                    message: Some("您的音乐库是空的。添加一些音乐开始使用。".to_string())
                 }
             } else {
                 div {

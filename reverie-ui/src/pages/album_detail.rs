@@ -1,4 +1,4 @@
-//! Album detail page
+//! 专辑详情页
 
 use crate::api::{Album, Song};
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
@@ -11,7 +11,7 @@ pub struct AlbumDetailProps {
     pub id: String,
 }
 
-/// Album detail page component
+/// 专辑详情页组件
 #[component]
 pub fn AlbumDetailPage(id: String) -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
@@ -19,11 +19,11 @@ pub fn AlbumDetailPage(id: String) -> Element {
     let mut tracks = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
 
-    // Load album details
+    // 加载专辑详情
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
+        // 演示数据
         let (mock_album, mock_tracks) = mock::album_detail(&id);
         album.set(Some(mock_album));
         tracks.set(mock_tracks);
@@ -32,13 +32,13 @@ pub fn AlbumDetailPage(id: String) -> Element {
 
     if loading() {
         return rsx! {
-            LoadingSpinner { message: "Loading album..." }
+            LoadingSpinner { message: "正在加载专辑..." }
         };
     }
 
     let Some(album_data) = album.read().clone() else {
         return rsx! {
-            div { class: "text-center py-12 text-gray-400", "Album not found" }
+            div { class: "text-center py-12 text-gray-400", "专辑不存在" }
         };
     };
 
@@ -50,11 +50,11 @@ pub fn AlbumDetailPage(id: String) -> Element {
         div {
             class: "space-y-6",
 
-            // Album header
+            // 专辑头部
             div {
                 class: "flex flex-col md:flex-row gap-6",
 
-                // Cover art
+                // 封面图片
                 div {
                     class: "w-48 h-48 md:w-64 md:h-64 flex-shrink-0 rounded-lg overflow-hidden bg-gray-800 shadow-xl",
                     if let Some(ref cover_id) = album_data.cover_art {
@@ -78,24 +78,24 @@ pub fn AlbumDetailPage(id: String) -> Element {
                     }
                 }
 
-                // Album info
+                // 专辑信息
                 div {
                     class: "flex flex-col justify-end",
-                    p { class: "text-sm text-gray-400 uppercase tracking-wider", "Album" }
+                    p { class: "text-sm text-gray-400 uppercase tracking-wider", "专辑" }
                     h1 { class: "text-4xl md:text-5xl font-bold mt-2", "{album_data.name}" }
 
                     div {
                         class: "flex items-center gap-2 mt-4 text-gray-300",
-                        span { class: "font-medium", "{album_data.artist.as_deref().unwrap_or(\"Unknown Artist\")}" }
+                        span { class: "font-medium", "{album_data.artist.as_deref().unwrap_or(\"未知艺术家\")}" }
                         span { class: "text-gray-500", "•" }
                         if let Some(year) = album_data.year {
                             span { "{year}" }
                             span { class: "text-gray-500", "•" }
                         }
-                        span { "{album_data.song_count.unwrap_or(0)} songs, {total_duration}" }
+                        span { "{album_data.song_count.unwrap_or(0)} 首歌曲, {total_duration}" }
                     }
 
-                    // Action buttons
+                    // 操作按钮
                     div {
                         class: "flex items-center gap-4 mt-6",
                         button {
@@ -115,7 +115,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
-                            title: "Shuffle",
+                            title: "随机播放",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "currentColor",
@@ -128,7 +128,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-red-500",
-                            title: "Add to favorites",
+                            title: "添加到收藏",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "none",
@@ -145,7 +145,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
-                            title: "More options",
+                            title: "更多选项",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "currentColor",
@@ -159,7 +159,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
                 }
             }
 
-            // Track list
+            // 曲目列表
             TrackList {
                 tracks: track_list,
                 show_number: true,

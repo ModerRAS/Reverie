@@ -1,22 +1,22 @@
-//! Artists page - Grid view of all artists
+//! 艺术家页面 - 所有艺术家的网格视图
 
 use crate::api::Artist;
 use crate::components::{ArtistCard, EmptyState, LoadingSpinner, PageHeader};
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Artists page component
+/// 艺术家页面组件
 #[component]
 pub fn ArtistsPage() -> Element {
     let mut artists = use_signal(Vec::<Artist>::new);
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
-    // Load artists
+    // 加载艺术家
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
+        // 演示数据
         artists.set(mock::artists(20));
         loading.set(false);
     });
@@ -30,16 +30,16 @@ pub fn ArtistsPage() -> Element {
             class: "space-y-6",
 
             PageHeader {
-                title: "Artists".to_string(),
-                subtitle: Some(format!("{} artists", artists.read().len()))
+                title: "艺术家".to_string(),
+                subtitle: Some(format!("{} 位艺术家", artists.read().len()))
             }
 
             if loading() {
-                LoadingSpinner { message: "Loading artists..." }
+                LoadingSpinner { message: "正在加载艺术家..." }
             } else if artists.read().is_empty() {
                 EmptyState {
-                    title: "No artists found".to_string(),
-                    message: Some("Your music library is empty.".to_string())
+                    title: "未找到艺术家".to_string(),
+                    message: Some("您的音乐库是空的。".to_string())
                 }
             } else {
                 div {

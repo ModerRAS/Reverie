@@ -1,22 +1,22 @@
-//! Playlists page - Grid view of all playlists
+//! 歌单页面 - 所有歌单的网格视图
 
 use crate::api::Playlist;
 use crate::components::{EmptyState, LoadingSpinner, PageHeader, PlaylistCard};
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Playlists page component
+/// 歌单页面组件
 #[component]
 pub fn PlaylistsPage() -> Element {
     let mut playlists = use_signal(Vec::<Playlist>::new);
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
-    // Load playlists
+    // 加载歌单
     use_effect(move || {
         loading.set(true);
 
-        // Demo data
+        // 演示数据
 
         playlists.set(mock::playlists(8));
         loading.set(false);
@@ -31,10 +31,10 @@ pub fn PlaylistsPage() -> Element {
             class: "space-y-6",
 
             PageHeader {
-                title: "Playlists".to_string(),
-                subtitle: Some(format!("{} playlists", playlists.read().len())),
+                title: "歌单".to_string(),
+                subtitle: Some(format!("{} 个歌单", playlists.read().len())),
 
-                // Create playlist button
+                // 创建歌单按钮
                 button {
                     class: "btn-primary flex items-center gap-2",
                     svg {
@@ -49,16 +49,16 @@ pub fn PlaylistsPage() -> Element {
                             d: "M12 4v16m8-8H4"
                         }
                     }
-                    "New Playlist"
+                    "新建歌单"
                 }
             }
 
             if loading() {
-                LoadingSpinner { message: "Loading playlists..." }
+                LoadingSpinner { message: "正在加载歌单..." }
             } else if playlists.read().is_empty() {
                 EmptyState {
-                    title: "No playlists yet".to_string(),
-                    message: Some("Create a playlist to organize your favorite music.".to_string())
+                    title: "还没有歌单".to_string(),
+                    message: Some("创建一个歌单来整理您喜欢的音乐。".to_string())
                 }
             } else {
                 div {

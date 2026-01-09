@@ -1,11 +1,11 @@
-//! Artist detail page
+//! 艺术家详情页
 
 use crate::api::{Album, Artist, Song};
 use crate::components::{AlbumCard, CompactSongList, LoadingSpinner};
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Artist detail page component
+/// 艺术家详情页组件
 #[component]
 pub fn ArtistDetailPage(id: String) -> Element {
     let mut artist = use_signal(|| None::<Artist>);
@@ -14,7 +14,7 @@ pub fn ArtistDetailPage(id: String) -> Element {
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
-    // Load artist details
+    // 加载艺术家详情
     use_effect(move || {
         loading.set(true);
 
@@ -27,13 +27,13 @@ pub fn ArtistDetailPage(id: String) -> Element {
 
     if loading() {
         return rsx! {
-            LoadingSpinner { message: "Loading artist..." }
+            LoadingSpinner { message: "正在加载艺术家..." }
         };
     }
 
     let Some(artist_data) = artist.read().clone() else {
         return rsx! {
-            div { class: "text-center py-12 text-gray-400", "Artist not found" }
+            div { class: "text-center py-12 text-gray-400", "艺术家不存在" }
         };
     };
 
@@ -45,11 +45,11 @@ pub fn ArtistDetailPage(id: String) -> Element {
         div {
             class: "space-y-8",
 
-            // Artist header
+            // 艺术家头部
             div {
                 class: "relative",
 
-                // Background gradient
+                // 背景渐变
                 div {
                     class: "absolute inset-0 h-80 bg-gradient-to-b from-blue-900/50 to-transparent -z-10"
                 }
@@ -57,7 +57,7 @@ pub fn ArtistDetailPage(id: String) -> Element {
                 div {
                     class: "flex flex-col md:flex-row items-center md:items-end gap-6 pt-12",
 
-                    // Artist image
+                    // 艺术家图片
                     div {
                         class: "w-48 h-48 rounded-full overflow-hidden bg-gray-800 shadow-2xl",
                         if let Some(ref cover_id) = artist_data.cover_art {
@@ -81,14 +81,14 @@ pub fn ArtistDetailPage(id: String) -> Element {
                         }
                     }
 
-                    // Artist info
+                    // 艺术家信息
                     div {
                         class: "text-center md:text-left",
-                        p { class: "text-sm text-gray-400 uppercase tracking-wider", "Artist" }
+                        p { class: "text-sm text-gray-400 uppercase tracking-wider", "艺术家" }
                         h1 { class: "text-5xl md:text-6xl font-bold mt-2", "{artist_data.name}" }
-                        p { class: "text-gray-400 mt-2", "{artist_data.album_count} albums" }
+                        p { class: "text-gray-400 mt-2", "{artist_data.album_count} 张专辑" }
 
-                        // Action buttons
+                        // 操作按钮
                         div {
                             class: "flex items-center justify-center md:justify-start gap-4 mt-6",
                             button {
@@ -101,7 +101,7 @@ pub fn ArtistDetailPage(id: String) -> Element {
                                         d: "M8 5v14l11-7z"
                                     }
                                 }
-                                "Play All"
+                                "播放全部"
                             }
                             button {
                                 class: "btn-secondary flex items-center gap-2",
@@ -113,11 +113,11 @@ pub fn ArtistDetailPage(id: String) -> Element {
                                         d: "M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"
                                     }
                                 }
-                                "Shuffle"
+                                "随机播放"
                             }
                             button {
                                 class: "btn-icon text-gray-400 hover:text-red-500",
-                                title: "Add to favorites",
+                                title: "添加到收藏",
                                 svg {
                                     class: "w-6 h-6",
                                     fill: "none",
@@ -136,17 +136,17 @@ pub fn ArtistDetailPage(id: String) -> Element {
                 }
             }
 
-            // Top songs
+            // 热门歌曲
             section {
                 class: "space-y-4",
-                h2 { class: "text-2xl font-bold", "Top Songs" }
+                h2 { class: "text-2xl font-bold", "热门歌曲" }
                 CompactSongList { songs: top_songs.read().clone() }
             }
 
-            // Albums
+            // 专辑
             section {
                 class: "space-y-4",
-                h2 { class: "text-2xl font-bold", "Albums" }
+                h2 { class: "text-2xl font-bold", "专辑" }
                 div {
                     class: "album-grid",
                     for album in albums.read().iter() {

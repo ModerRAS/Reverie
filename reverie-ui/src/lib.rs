@@ -1,6 +1,6 @@
-//! Reverie UI Library
+//! Reverie UI 库
 //!
-//! This module exports all the UI components and state management for Reverie.
+//! 此模块导出所有 UI 组件和状态管理。
 
 pub mod api;
 pub mod components;

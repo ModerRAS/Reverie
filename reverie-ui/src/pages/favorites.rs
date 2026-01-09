@@ -1,4 +1,4 @@
-//! Favorites page - Starred content
+//! 收藏页面 - 收藏的内容
 
 use crate::api::{Album, Artist, Song};
 use crate::components::{
@@ -7,7 +7,7 @@ use crate::components::{
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Favorites page component
+/// 收藏页面组件
 #[component]
 pub fn FavoritesPage() -> Element {
     let mut active_tab = use_signal(|| 0usize);
@@ -18,12 +18,12 @@ pub fn FavoritesPage() -> Element {
     let navigator = use_navigator();
 
     let tabs = vec![
-        "Songs".to_string(),
-        "Albums".to_string(),
-        "Artists".to_string(),
+        "歌曲".to_string(),
+        "专辑".to_string(),
+        "艺术家".to_string(),
     ];
 
-    // Load starred content
+    // 加载收藏内容
     use_effect(move || {
         loading.set(true);
 
@@ -47,8 +47,8 @@ pub fn FavoritesPage() -> Element {
             class: "space-y-6",
 
             PageHeader {
-                title: "Favorites".to_string(),
-                subtitle: Some("Your starred music".to_string())
+                title: "收藏".to_string(),
+                subtitle: Some("您收藏的音乐".to_string())
             }
 
             TabBar {
@@ -58,14 +58,14 @@ pub fn FavoritesPage() -> Element {
             }
 
             if loading() {
-                LoadingSpinner { message: "Loading favorites..." }
+                LoadingSpinner { message: "正在加载收藏..." }
             } else {
                 match active_tab() {
                     0 => rsx! {
                         if starred_songs.read().is_empty() {
                             EmptyState {
-                                title: "No starred songs".to_string(),
-                                message: Some("Star your favorite songs to see them here.".to_string())
+                                title: "还没有收藏的歌曲".to_string(),
+                                message: Some("收藏您喜欢的歌曲，它们会显示在这里。".to_string())
                             }
                         } else {
                             TrackList {
@@ -79,8 +79,8 @@ pub fn FavoritesPage() -> Element {
                     1 => rsx! {
                         if starred_albums.read().is_empty() {
                             EmptyState {
-                                title: "No starred albums".to_string(),
-                                message: Some("Star your favorite albums to see them here.".to_string())
+                                title: "还没有收藏的专辑".to_string(),
+                                message: Some("收藏您喜欢的专辑，它们会显示在这里。".to_string())
                             }
                         } else {
                             div {
@@ -98,8 +98,8 @@ pub fn FavoritesPage() -> Element {
                     2 => rsx! {
                         if starred_artists.read().is_empty() {
                             EmptyState {
-                                title: "No starred artists".to_string(),
-                                message: Some("Star your favorite artists to see them here.".to_string())
+                                title: "还没有收藏的艺术家".to_string(),
+                                message: Some("收藏您喜欢的艺术家，他们的名字会显示在这里。".to_string())
                             }
                         } else {
                             div {
