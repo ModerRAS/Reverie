@@ -30,112 +30,111 @@ pub trait TrackStorage: Send + Sync {
     async fn get_tracks_by_album(&self, album_id: Uuid) -> Result<Vec<Track>>;
 
     //! 按艺术家获取曲目
-    async fn get_tracks_by_artist(&self, artist_id: Uuid
     async fn get_tracks_by_artist(&self, artist_id: Uuid) -> Result<Vec<Track>>;
 }
 
-/// Trait for managing album storage
+//! 用于管理专辑存储的 trait
 #[async_trait]
 pub trait AlbumStorage: Send + Sync {
-    /// Get an album by ID
+    //! 通过 ID 获取专辑
     async fn get_album(&self, id: Uuid) -> Result<Option<Album>>;
 
-    /// Get all albums
+    //! 获取所有专辑
     async fn list_albums(&self, limit: usize, offset: usize) -> Result<Vec<Album>>;
 
-    /// Save an album
+    //! 保存专辑
     async fn save_album(&self, album: &Album) -> Result<()>;
 
-    /// Delete an album
+    //! 删除专辑
     async fn delete_album(&self, id: Uuid) -> Result<()>;
 
-    /// Get albums by artist
+    //! 按艺术家获取专辑
     async fn get_albums_by_artist(&self, artist_id: Uuid) -> Result<Vec<Album>>;
 }
 
-/// Trait for managing artist storage
+//! 用于管理艺术家存储的 trait
 #[async_trait]
 pub trait ArtistStorage: Send + Sync {
-    /// Get an artist by ID
+    //! 通过 ID 获取艺术家
     async fn get_artist(&self, id: Uuid) -> Result<Option<Artist>>;
 
-    /// Get all artists
+    //! 获取所有艺术家
     async fn list_artists(&self, limit: usize, offset: usize) -> Result<Vec<Artist>>;
 
-    /// Save an artist
+    //! 保存艺术家
     async fn save_artist(&self, artist: &Artist) -> Result<()>;
 
-    /// Delete an artist
+    //! 删除艺术家
     async fn delete_artist(&self, id: Uuid) -> Result<()>;
 }
 
-/// Trait for managing user storage
+//! 用于管理用户存储的 trait
 #[async_trait]
 pub trait UserStorage: Send + Sync {
-    /// Get a user by ID
+    //! 通过 ID 获取用户
     async fn get_user(&self, id: Uuid) -> Result<Option<User>>;
 
-    /// Get a user by username
+    //! 通过用户名获取用户
     async fn get_user_by_username(&self, username: &str) -> Result<Option<User>>;
 
-    /// Get all users
+    //! 获取所有用户
     async fn list_users(&self, limit: usize, offset: usize) -> Result<Vec<User>>;
 
-    /// Save a user
+    //! 保存用户
     async fn save_user(&self, user: &User) -> Result<()>;
 
-    /// Delete a user
+    //! 删除用户
     async fn delete_user(&self, id: Uuid) -> Result<()>;
 }
 
-/// Trait for managing playlist storage
+//! 用于管理播放列表存储的 trait
 #[async_trait]
 pub trait PlaylistStorage: Send + Sync {
-    /// Get a playlist by ID
+    //! 通过 ID 获取播放列表
     async fn get_playlist(&self, id: Uuid) -> Result<Option<Playlist>>;
 
-    /// Get playlists by user
+    //! 按用户获取播放列表
     async fn get_playlists_by_user(&self, user_id: Uuid) -> Result<Vec<Playlist>>;
 
-    /// Save a playlist
+    //! 保存播放列表
     async fn save_playlist(&self, playlist: &Playlist) -> Result<()>;
 
-    /// Delete a playlist
+    //! 删除播放列表
     async fn delete_playlist(&self, id: Uuid) -> Result<()>;
 
-    /// Add track to playlist
+    //! 向播放列表添加曲目
     async fn add_track_to_playlist(&self, playlist_track: &PlaylistTrack) -> Result<()>;
 
-    /// Remove track from playlist
+    //! 从播放列表移除曲目
     async fn remove_track_from_playlist(&self, playlist_id: Uuid, track_id: Uuid) -> Result<()>;
 
-    /// Get tracks in a playlist
+    //! 获取播放列表中的曲目
     async fn get_playlist_tracks(&self, playlist_id: Uuid) -> Result<Vec<PlaylistTrack>>;
 }
 
-/// Trait for file storage operations (audio files, cover art, etc.)
+//! 用于文件存储操作的 trait（音频文件、封面图片等）
 #[async_trait]
 pub trait FileStorage: Send + Sync {
-    /// Read a file by path
+    //! 按路径读取文件
     async fn read_file(&self, path: &str) -> Result<Vec<u8>>;
 
-    /// Write a file
+    //! 写入文件
     async fn write_file(&self, path: &str, data: &[u8]) -> Result<()>;
 
-    /// Check if a file exists
+    //! 检查文件是否存在
     async fn file_exists(&self, path: &str) -> Result<bool>;
 
-    /// Delete a file
+    //! 删除文件
     async fn delete_file(&self, path: &str) -> Result<()>;
 
-    /// List files in a directory
+    //! 列出目录中的文件
     async fn list_files(&self, path: &str) -> Result<Vec<String>>;
 
-    /// Get file metadata (size, modified time, etc.)
+    //! 获取文件元数据（大小、修改时间等）
     async fn get_file_metadata(&self, path: &str) -> Result<FileMetadata>;
 }
 
-/// File metadata information
+//! 文件元数据信息
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub size: u64,
@@ -144,18 +143,18 @@ pub struct FileMetadata {
     pub is_dir: bool,
 }
 
-/// Combined storage trait that includes all storage operations
+//! 组合存储 trait，包含所有存储操作
 #[async_trait]
 pub trait Storage:
     TrackStorage + AlbumStorage + ArtistStorage + UserStorage + PlaylistStorage + FileStorage
 {
-    /// Initialize the storage backend
+    //! 初始化存储后端
     async fn initialize(&self) -> Result<()>;
 
-    /// Close the storage backend
+    //! 关闭存储后端
     async fn close(&self) -> Result<()>;
 
-    /// Check if the storage is healthy
+    //! 检查存储是否健康
     async fn health_check(&self) -> Result<bool>;
 }
 
@@ -168,8 +167,8 @@ use reverie_core::{
     SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
 };
 
-/// Complete Subsonic API storage trait
-/// Implements all methods needed for navidrome-compatible Subsonic API
+/// 完整的 Subsonic API 存储 trait
+/// 实现 navidrome 兼容的 Subsonic API 所需的所有方法
 #[allow(clippy::too_many_arguments)]
 #[async_trait]
 pub trait SubsonicStorage: Send + Sync {
