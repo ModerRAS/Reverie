@@ -74,14 +74,14 @@ where
         let wasm_dir = ui_dir.join("wasm");
 
         // Serve static assets and WASM without falling back to index.html.
-        // For SPA routes, serve index.html.
         Some(
-            Router::new()
+            Router::<subsonic::SubsonicState<S>>::new()
                 .route("/", get_service(ServeFile::new(index.clone())))
                 .route("/favicon.ico", get_service(ServeFile::new(ui_dir.join("favicon.ico"))))
                 .nest_service("/assets", ServeDir::new(assets_dir))
                 .nest_service("/wasm", ServeDir::new(wasm_dir))
                 .route("/*path", get_service(ServeFile::new(index))),
+        )
         )
     }
 
@@ -132,7 +132,7 @@ where
 impl<S> HttpServer for AxumServer<S>
 where
     S: TrackStorage
-        + AlbumStorage
+    State(state): State<subsonic::SubsonicState<S>>,
         + ArtistStorage
         + PlaylistStorage
         + SubsonicStorage
@@ -183,7 +183,7 @@ struct AppState<S> {
 }
 
 // Query parameters for pagination
-#[derive(Deserialize)]
+    State(state): State<subsonic::SubsonicState<S>>,
 struct PaginationQuery {
     #[serde(default = "default_limit")]
     limit: usize,
@@ -225,7 +225,7 @@ where
         Ok(tracks) => {
             let responses: Vec<TrackResponse> = tracks
                 .into_iter()
-                .map(|t| TrackResponse {
+    State(state): State<subsonic::SubsonicState<S>>,
                     id: t.id,
                     title: t.title,
                     album_id: t.album_id,
@@ -262,7 +262,7 @@ where
 }
 
 async fn get_track_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse
 where
@@ -309,7 +309,7 @@ async fn search_tracks_handler<S>(
 ) -> impl IntoResponse
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
-{
+    State(state): State<subsonic::SubsonicState<S>>,
     match state.storage.search_tracks(&search.q).await {
         Ok(tracks) => {
             let responses: Vec<TrackResponse> = tracks
@@ -347,7 +347,7 @@ async fn list_albums_handler<S>(
 ) -> impl IntoResponse
 where
     S: AlbumStorage + Clone + Send + Sync + 'static,
-{
+    State(state): State<subsonic::SubsonicState<S>>,
     match state
         .storage
         .list_albums(pagination.limit, pagination.offset)
@@ -384,7 +384,7 @@ where
                 message: e.to_string(),
             }),
         )
-            .into_response(),
+    State(state): State<subsonic::SubsonicState<S>>,
     }
 }
 
@@ -429,7 +429,7 @@ where
 async fn get_album_tracks_handler<S>(
     State(state): State<AppState<S>>,
     Path(id): Path<Uuid>,
-) -> impl IntoResponse
+    State(state): State<subsonic::SubsonicState<S>>,
 where
     S: TrackStorage + Clone + Send + Sync + 'static,
 {
@@ -465,7 +465,7 @@ where
 
 // Artist handlers
 async fn list_artists_handler<S>(
-    State(state): State<AppState<S>>,
+    State(state): State<subsonic::SubsonicState<S>>,
     Query(pagination): Query<PaginationQuery>,
 ) -> impl IntoResponse
 where
@@ -498,7 +498,7 @@ where
             )
                 .into_response()
         }
-        Err(e) => (
+    State(state): State<subsonic::SubsonicState<S>>,
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
                 error: "storage_error".to_string(),
