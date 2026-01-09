@@ -145,9 +145,11 @@ async fn test_endpoint() {
 - Subsonic API 响应格式为 XML，版本号 `1.16.1`
 - VFS 路径使用 Unix 风格 (正斜杠)，无论底层操作系统
 - 数据库使用 SQLite，表名使用复数形式 (tracks, albums, artists)
+- 工具调用修改代码时要分步骤多次调用工具修改，而不是一次修改几千行
 
 ## 参考项目
 
 - `temp/navidrome/` - Go 实现的 Subsonic 服务器，功能参考
 - `temp/opendal/` - Rust 存储抽象层，VFS 实现参考
+- `temp/docsite/` - Reverie 文档站点，架构和设计文档参考
 
