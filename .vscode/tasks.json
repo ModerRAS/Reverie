@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "reverie-ui: dx serve (18080)",
+      "type": "shell",
+      "command": "dx",
+      "args": ["serve", "--package", "reverie-ui", "--port", "18080"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "reverie-ui",
+        "pattern": [
+          {
+            "regexp": ".*"
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Serving your app: reverie-ui",
+          "endsPattern": "Status:\\s+Serving reverie-ui"
+        }
+      }
+    },
+    {
+      "label": "reverie: dev (server + ui)",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "reverie-ui: dx serve (18080)",
+        "reverie-server: run"
+      ]
+    },
+    {
+      "label": "reverie-server: run",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["run", "-p", "reverie-server"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "reverie-server",
+        "pattern": [
+          {
+            "regexp": ".*"
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting Reverie Music Server",
+          "endsPattern": "Starting HTTP server on"
+        }
+      }
+    }
+  ]
+}

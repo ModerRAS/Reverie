@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug reverie-server",
+      "type": "lldb",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "cargo": {
+        "args": ["run", "-p", "reverie-server"],
+        "filter": {
+          "name": "reverie-server",
+          "kind": "bin"
+        }
+      }
+    },
+    {
+      "name": "Debug reverie-server (+ UI on :18080)",
+      "type": "lldb",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "reverie-ui: dx serve (18080)",
+      "cargo": {
+        "args": ["run", "-p", "reverie-server"],
+        "filter": {
+          "name": "reverie-server",
+          "kind": "bin"
+        }
+      }
+    }
+  ]
+}
