@@ -17,5 +17,7 @@ mod tests;
 
 pub use dto::*;
 pub use error::*;
-pub use subsonic::*;
 pub use traits::*;
+
+// Note: subsonic module is pub(crate) - not re-exported
+// Use reverie_server to access the Subsonic API endpoints
