@@ -312,6 +312,19 @@ impl From<ArtistData> for ResponseData {
         ResponseData::Artist(v)
     }
 }
+impl From<&SubsonicArtist> for ArtistWithAlbums {
+    fn from(a: &SubsonicArtist) -> Self {
+        Self {
+            id: a.id.clone(),
+            name: a.name.clone(),
+            cover_art: a.cover_art.clone(),
+            album_count: a.album_count,
+            starred: a.starred.map(|d| d.to_rfc3339()),
+            // Note: albums need to be populated separately via get_artist storage call
+            album: Vec::new(),
+        }
+    }
+}
 
 // === Album ID3 ===
 #[derive(Debug, Clone, Serialize)]
@@ -391,6 +404,26 @@ pub struct AlbumWithSongs {
 impl From<AlbumData> for ResponseData {
     fn from(v: AlbumData) -> Self {
         ResponseData::Album(v)
+    }
+}
+impl From<&SubsonicAlbum> for AlbumWithSongs {
+    fn from(a: &SubsonicAlbum) -> Self {
+        Self {
+            id: a.id.clone(),
+            name: a.name.clone(),
+            artist: a.artist.clone(),
+            artist_id: a.artist_id.clone(),
+            cover_art: a.cover_art.clone(),
+            song_count: a.song_count,
+            duration: a.duration as i32,
+            play_count: a.play_count,
+            created: a.created.map(|d| d.to_rfc3339()),
+            starred: a.starred.map(|d| d.to_rfc3339()),
+            year: a.year,
+            genre: a.genre.clone(),
+            // Note: songs need to be populated separately via get_album storage call
+            song: Vec::new(),
+        }
     }
 }
 
