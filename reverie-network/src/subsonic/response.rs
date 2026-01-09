@@ -96,7 +96,7 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
-/// Response data - each variant serializes with its own key
+/// 响应数据 - 每个变体使用自己的键进行序列化
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum ResponseData {
