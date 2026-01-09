@@ -1,4 +1,4 @@
-//! In-memory storage implementation for testing and development
+//! 用于测试和开发的内存存储实现
 
 use crate::error::{Result, StorageError};
 use crate::traits::*;
@@ -18,7 +18,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-/// In-memory storage implementation using HashMaps
+/// 使用 HashMap 的内存存储实现
 #[derive(Clone)]
 pub struct MemoryStorage {
     tracks: Arc<RwLock<HashMap<Uuid, Track>>>,
