@@ -1,9 +1,8 @@
-//! Data Transfer Objects (DTOs) for API requests and responses
-
+//! 用于 API 请求和响应的数据传输对象 (DTOs)
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Response for track information
+/// 曲目信息响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TrackResponse {
     pub id: Uuid,
@@ -17,7 +16,7 @@ pub struct TrackResponse {
     pub genre: Option<String>,
 }
 
-/// Response for album information
+/// 专辑信息响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AlbumResponse {
     pub id: Uuid,
@@ -27,7 +26,7 @@ pub struct AlbumResponse {
     pub genre: Option<String>,
 }
 
-/// Response for artist information
+/// 艺术家信息响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArtistResponse {
     pub id: Uuid,
@@ -35,7 +34,7 @@ pub struct ArtistResponse {
     pub bio: Option<String>,
 }
 
-/// Response for playlist information
+/// 播放列表信息响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PlaylistResponse {
     pub id: Uuid,
@@ -45,7 +44,7 @@ pub struct PlaylistResponse {
     pub is_public: bool,
 }
 
-/// Request to create a new playlist
+/// 创建新播放列表的请求
 #[derive(Debug, Deserialize)]
 pub struct CreatePlaylistRequest {
     pub name: String,
@@ -53,13 +52,13 @@ pub struct CreatePlaylistRequest {
     pub is_public: bool,
 }
 
-/// Request to add tracks to a playlist
+/// 向播放列表添加曲目的请求
 #[derive(Debug, Deserialize)]
 pub struct AddTrackToPlaylistRequest {
     pub track_id: Uuid,
 }
 
-/// Generic list response with pagination
+/// 带分页的通用列表响应
 #[derive(Debug, Serialize)]
 pub struct ListResponse<T> {
     pub items: Vec<T>,
@@ -68,14 +67,14 @@ pub struct ListResponse<T> {
     pub offset: usize,
 }
 
-/// Error response
+/// 错误响应
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
     pub error: String,
     pub message: String,
 }
 
-/// Health check response
+/// 健康检查响应
 #[derive(Debug, Serialize)]
 pub struct HealthResponse {
     pub status: String,
