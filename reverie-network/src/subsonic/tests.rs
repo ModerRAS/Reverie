@@ -347,4 +347,24 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn scrobble(&self, _id: &str, _time: Option<i64>, _submission: bool) -> Result<()> {
         Ok(())
     }
+
+    async fn get_bookmarks(&self) -> Result<Vec<reverie_core::SubsonicBookmark>> {
+        Ok(vec![])
+    }
+
+    async fn create_bookmark(&self, _id: &str, _position: i64, _comment: Option<&str>) -> Result<()> {
+        Ok(())
+    }
+
+    async fn delete_bookmark(&self, _id: &str) -> Result<()> {
+        Ok(())
+    }
+
+    async fn get_play_queue(&self) -> Result<Option<reverie_core::SubsonicPlayQueue>> {
+        Ok(None)
+    }
+
+    async fn save_play_queue(&self, _ids: &[&str], _current: Option<&str>, _position: Option<i64>) -> Result<()> {
+        Ok(())
+    }
 }
