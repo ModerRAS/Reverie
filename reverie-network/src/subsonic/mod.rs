@@ -7,15 +7,13 @@ mod auth;
 mod response;
 
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Query, State},
     http::{header, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
     Router,
 };
-use reverie_core::SUBSONIC_API_VERSION;
 use reverie_storage::SubsonicStorage;
-use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
 
 use response::*;
