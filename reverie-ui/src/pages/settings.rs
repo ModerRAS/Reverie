@@ -1,9 +1,9 @@
-//! Settings page
+//! 设置页面
 
 use crate::components::PageHeader;
 use dioxus::prelude::*;
 
-/// Settings page component
+/// 设置页面组件
 #[component]
 pub fn SettingsPage() -> Element {
     rsx! {
@@ -11,35 +11,35 @@ pub fn SettingsPage() -> Element {
             class: "space-y-6 max-w-2xl",
 
             PageHeader {
-                title: "Settings".to_string()
+                title: "设置".to_string()
             }
 
-            // General settings
+            // 通用设置
             section {
                 class: "card p-6 space-y-4",
-                h2 { class: "text-lg font-bold mb-4", "General" }
+                h2 { class: "text-lg font-bold mb-4", "通用" }
 
-                // Theme
+                // 主题
                 div {
                     class: "flex items-center justify-between",
                     div {
-                        p { class: "font-medium", "Theme" }
-                        p { class: "text-sm text-gray-400", "Choose your preferred color scheme" }
+                        p { class: "font-medium", "主题" }
+                        p { class: "text-sm text-gray-400", "选择您偏好的颜色方案" }
                     }
                     select {
                         class: "bg-gray-700 border border-gray-600 rounded-lg px-3 py-2",
-                        option { value: "dark", "Dark" }
-                        option { value: "light", "Light" }
-                        option { value: "system", "System" }
+                        option { value: "dark", "深色" }
+                        option { value: "light", "浅色" }
+                        option { value: "system", "跟随系统" }
                     }
                 }
 
-                // Language
+                // 语言
                 div {
                     class: "flex items-center justify-between",
                     div {
-                        p { class: "font-medium", "Language" }
-                        p { class: "text-sm text-gray-400", "Select your preferred language" }
+                        p { class: "font-medium", "语言" }
+                        p { class: "text-sm text-gray-400", "选择您偏好的语言" }
                     }
                     select {
                         class: "bg-gray-700 border border-gray-600 rounded-lg px-3 py-2",
@@ -50,17 +50,17 @@ pub fn SettingsPage() -> Element {
                 }
             }
 
-            // Playback settings
+            // 播放设置
             section {
                 class: "card p-6 space-y-4",
-                h2 { class: "text-lg font-bold mb-4", "Playback" }
+                h2 { class: "text-lg font-bold mb-4", "播放" }
 
-                // Crossfade
+                // 淡入淡出
                 div {
                     class: "flex items-center justify-between",
                     div {
-                        p { class: "font-medium", "Crossfade" }
-                        p { class: "text-sm text-gray-400", "Smooth transition between tracks" }
+                        p { class: "font-medium", "淡入淡出" }
+                        p { class: "text-sm text-gray-400", "歌曲之间的平滑过渡" }
                     }
                     input {
                         r#type: "checkbox",
@@ -68,12 +68,12 @@ pub fn SettingsPage() -> Element {
                     }
                 }
 
-                // Gapless playback
+                // 无缝播放
                 div {
                     class: "flex items-center justify-between",
                     div {
-                        p { class: "font-medium", "Gapless Playback" }
-                        p { class: "text-sm text-gray-400", "Play albums without gaps" }
+                        p { class: "font-medium", "无缝播放" }
+                        p { class: "text-sm text-gray-400", "播放专辑时无间隔" }
                     }
                     input {
                         r#type: "checkbox",
@@ -82,32 +82,32 @@ pub fn SettingsPage() -> Element {
                     }
                 }
 
-                // Replay Gain
+                // 响度增益
                 div {
                     class: "flex items-center justify-between",
                     div {
-                        p { class: "font-medium", "Replay Gain" }
-                        p { class: "text-sm text-gray-400", "Normalize volume across tracks" }
+                        p { class: "font-medium", "响度增益" }
+                        p { class: "text-sm text-gray-400", "跨曲目标准化音量" }
                     }
                     select {
                         class: "bg-gray-700 border border-gray-600 rounded-lg px-3 py-2",
-                        option { value: "none", "None" }
-                        option { value: "track", "Track" }
-                        option { value: "album", "Album" }
+                        option { value: "none", "关闭" }
+                        option { value: "track", "曲目" }
+                        option { value: "album", "专辑" }
                     }
                 }
             }
 
-            // About section
+            // 关于部分
             section {
                 class: "card p-6",
-                h2 { class: "text-lg font-bold mb-4", "About" }
+                h2 { class: "text-lg font-bold mb-4", "关于" }
 
                 div {
                     class: "space-y-2 text-gray-400",
-                    p { "Reverie Music Server" }
-                    p { "Version: 0.1.0" }
-                    p { "Built with Dioxus & Rust" }
+                    p { "Reverie 音乐服务器" }
+                    p { "版本: 0.1.0" }
+                    p { "基于 Dioxus & Rust 构建" }
 
                     div {
                         class: "mt-4 pt-4 border-t border-gray-700",
@@ -115,7 +115,7 @@ pub fn SettingsPage() -> Element {
                             class: "text-blue-400 hover:underline",
                             href: "https://github.com/your-repo/reverie",
                             target: "_blank",
-                            "GitHub Repository"
+                            "GitHub 仓库"
                         }
                     }
                 }

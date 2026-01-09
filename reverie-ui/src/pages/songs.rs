@@ -1,17 +1,17 @@
-//! Songs page - Table view of all songs
+//! 歌曲页面 - 所有歌曲的表格视图
 
 use crate::api::Song;
 use crate::components::{EmptyState, LoadingSpinner, PageHeader, TrackList};
 use crate::mock;
 use dioxus::prelude::*;
 
-/// Songs page component
+/// 歌曲页面组件
 #[component]
 pub fn SongsPage() -> Element {
     let mut songs = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
 
-    // Load songs
+    // 加载歌曲
     use_effect(move || {
         loading.set(true);
 
@@ -24,16 +24,16 @@ pub fn SongsPage() -> Element {
             class: "space-y-6",
 
             PageHeader {
-                title: "Songs".to_string(),
-                subtitle: Some(format!("{} songs", songs.read().len()))
+                title: "歌曲".to_string(),
+                subtitle: Some(format!("{} 首歌曲", songs.read().len()))
             }
 
             if loading() {
-                LoadingSpinner { message: "Loading songs..." }
+                LoadingSpinner { message: "正在加载歌曲..." }
             } else if songs.read().is_empty() {
                 EmptyState {
-                    title: "No songs found".to_string(),
-                    message: Some("Your music library is empty.".to_string())
+                    title: "没有找到歌曲".to_string(),
+                    message: Some("您的音乐库是空的。".to_string())
                 }
             } else {
                 TrackList {

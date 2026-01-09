@@ -1,4 +1,4 @@
-//! Playlist detail page
+//! 歌单详情页面
 
 use crate::api::Playlist;
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
@@ -6,14 +6,14 @@ use crate::mock;
 use crate::state::{apply_player_action, PlayerAction, PlayerState};
 use dioxus::prelude::*;
 
-/// Playlist detail page component
+/// 歌单详情页面组件
 #[component]
 pub fn PlaylistDetailPage(id: String) -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
     let mut playlist = use_signal(|| None::<Playlist>);
     let mut loading = use_signal(|| true);
 
-    // Load playlist details
+    // 加载歌单详情
     use_effect(move || {
         loading.set(true);
 
@@ -23,13 +23,13 @@ pub fn PlaylistDetailPage(id: String) -> Element {
 
     if loading() {
         return rsx! {
-            LoadingSpinner { message: "Loading playlist..." }
+            LoadingSpinner { message: "正在加载歌单..." }
         };
     }
 
     let Some(playlist_data) = playlist.read().clone() else {
         return rsx! {
-            div { class: "text-center py-12 text-gray-400", "Playlist not found" }
+            div { class: "text-center py-12 text-gray-400", "歌单不存在" }
         };
     };
 
@@ -41,11 +41,11 @@ pub fn PlaylistDetailPage(id: String) -> Element {
         div {
             class: "space-y-6",
 
-            // Playlist header
+            // 歌单头部
             div {
                 class: "flex flex-col md:flex-row gap-6",
 
-                // Cover art
+                // 封面图片
                 div {
                     class: "w-48 h-48 md:w-64 md:h-64 flex-shrink-0 rounded-lg overflow-hidden shadow-xl bg-gradient-to-br from-purple-600 to-blue-600",
                     if let Some(ref cover_id) = playlist_data.cover_art {
@@ -69,10 +69,10 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                     }
                 }
 
-                // Playlist info
+                // 歌单信息
                 div {
                     class: "flex flex-col justify-end",
-                    p { class: "text-sm text-gray-400 uppercase tracking-wider", "Playlist" }
+                    p { class: "text-sm text-gray-400 uppercase tracking-wider", "歌单" }
                     h1 { class: "text-4xl md:text-5xl font-bold mt-2", "{playlist_data.name}" }
 
                     div {
@@ -81,10 +81,10 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                             span { class: "font-medium", "{owner}" }
                             span { class: "text-gray-500", "•" }
                         }
-                        span { "{playlist_data.song_count} songs, {total_duration}" }
+                        span { "{playlist_data.song_count} 首歌曲, {total_duration}" }
                     }
 
-                    // Action buttons
+                    // 操作按钮
                     div {
                         class: "flex items-center gap-4 mt-6",
                         button {
@@ -104,7 +104,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
-                            title: "Shuffle",
+                            title: "随机播放",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "currentColor",
@@ -117,7 +117,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
-                            title: "Edit playlist",
+                            title: "编辑歌单",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "none",
@@ -134,7 +134,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
 
                         button {
                             class: "btn-icon text-gray-400 hover:text-white",
-                            title: "More options",
+                            title: "更多选项",
                             svg {
                                 class: "w-6 h-6",
                                 fill: "currentColor",
@@ -148,7 +148,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
                 }
             }
 
-            // Track list
+            // 歌曲列表
             TrackList {
                 tracks: songs,
                 show_number: true,
