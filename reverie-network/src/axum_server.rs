@@ -23,7 +23,9 @@ use crate::{
     subsonic,
     traits::{HttpServer, NetworkConfig},
 };
-use reverie_storage::{AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage};
+use reverie_storage::{
+    AlbumStorage, ArtistStorage, PlaylistStorage, SubsonicStorage, TrackStorage,
+};
 
 /// 基于 Axum 的 HTTP 服务器。
 pub struct AxumServer<S> {

@@ -4,9 +4,9 @@ use crate::api::{Album, Artist, Song};
 use crate::components::{
     AlbumCard, ArtistCard, CompactSongList, EmptyState, LoadingSpinner, PageHeader,
 };
+use crate::mock;
 use crate::state::UiState;
 use dioxus::prelude::*;
-use crate::mock;
 
 /// Search page component
 #[component]

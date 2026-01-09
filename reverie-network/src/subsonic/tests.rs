@@ -48,11 +48,17 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(vec![])
     }
 
-    async fn get_music_directory(&self, _id: &str) -> Result<Option<reverie_core::SubsonicDirectory>> {
+    async fn get_music_directory(
+        &self,
+        _id: &str,
+    ) -> Result<Option<reverie_core::SubsonicDirectory>> {
         Ok(None)
     }
 
-    async fn get_artists(&self, _music_folder_id: Option<i32>) -> Result<reverie_core::SubsonicArtistIndexes> {
+    async fn get_artists(
+        &self,
+        _music_folder_id: Option<i32>,
+    ) -> Result<reverie_core::SubsonicArtistIndexes> {
         Ok(vec![reverie_core::SubsonicArtistIndex {
             id: "A".to_string(),
             artists: vec![reverie_core::SubsonicArtist {
@@ -124,7 +130,8 @@ impl SubsonicStorage for MockSubsonicStorage {
         _count: Option<i32>,
         _include_not_present: Option<bool>,
     ) -> Result<reverie_core::SubsonicArtistInfo> {
-        self.get_artist_info(_id, _count, _include_not_present).await
+        self.get_artist_info(_id, _count, _include_not_present)
+            .await
     }
 
     async fn get_album_info(&self, _id: &str) -> Result<reverie_core::SubsonicAlbumInfo> {
@@ -142,15 +149,27 @@ impl SubsonicStorage for MockSubsonicStorage {
         self.get_album_info(_id).await
     }
 
-    async fn get_similar_songs(&self, _id: &str, _count: Option<i32>) -> Result<Vec<reverie_core::MediaFile>> {
+    async fn get_similar_songs(
+        &self,
+        _id: &str,
+        _count: Option<i32>,
+    ) -> Result<Vec<reverie_core::MediaFile>> {
         Ok(vec![])
     }
 
-    async fn get_similar_songs2(&self, _id: &str, _count: Option<i32>) -> Result<Vec<reverie_core::MediaFile>> {
+    async fn get_similar_songs2(
+        &self,
+        _id: &str,
+        _count: Option<i32>,
+    ) -> Result<Vec<reverie_core::MediaFile>> {
         Ok(vec![])
     }
 
-    async fn get_top_songs(&self, _artist: &str, _count: Option<i32>) -> Result<reverie_core::SubsonicTopSongs> {
+    async fn get_top_songs(
+        &self,
+        _artist: &str,
+        _count: Option<i32>,
+    ) -> Result<reverie_core::SubsonicTopSongs> {
         Ok(reverie_core::SubsonicTopSongs { songs: vec![] })
     }
 
@@ -221,7 +240,10 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(vec![])
     }
 
-    async fn get_starred(&self, _music_folder_id: Option<i32>) -> Result<reverie_core::SubsonicStarred> {
+    async fn get_starred(
+        &self,
+        _music_folder_id: Option<i32>,
+    ) -> Result<reverie_core::SubsonicStarred> {
         Ok(reverie_core::SubsonicStarred {
             artists: vec![],
             albums: vec![],
@@ -229,7 +251,10 @@ impl SubsonicStorage for MockSubsonicStorage {
         })
     }
 
-    async fn get_starred2(&self, _music_folder_id: Option<i32>) -> Result<reverie_core::SubsonicStarred> {
+    async fn get_starred2(
+        &self,
+        _music_folder_id: Option<i32>,
+    ) -> Result<reverie_core::SubsonicStarred> {
         self.get_starred(_music_folder_id).await
     }
 
@@ -267,11 +292,17 @@ impl SubsonicStorage for MockSubsonicStorage {
         })
     }
 
-    async fn get_playlists(&self, _username: Option<&str>) -> Result<Vec<reverie_core::SubsonicPlaylist>> {
+    async fn get_playlists(
+        &self,
+        _username: Option<&str>,
+    ) -> Result<Vec<reverie_core::SubsonicPlaylist>> {
         Ok(vec![])
     }
 
-    async fn get_playlist(&self, _id: &str) -> Result<Option<reverie_core::SubsonicPlaylistWithSongs>> {
+    async fn get_playlist(
+        &self,
+        _id: &str,
+    ) -> Result<Option<reverie_core::SubsonicPlaylistWithSongs>> {
         Ok(None)
     }
 
@@ -320,11 +351,18 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(Some("/covers/test.jpg".to_string()))
     }
 
-    async fn get_lyrics(&self, _artist: Option<&str>, _title: Option<&str>) -> Result<Option<reverie_core::SubsonicLyrics>> {
+    async fn get_lyrics(
+        &self,
+        _artist: Option<&str>,
+        _title: Option<&str>,
+    ) -> Result<Option<reverie_core::SubsonicLyrics>> {
         Ok(None)
     }
 
-    async fn get_lyrics_by_song_id(&self, _id: &str) -> Result<Vec<reverie_core::SubsonicStructuredLyrics>> {
+    async fn get_lyrics_by_song_id(
+        &self,
+        _id: &str,
+    ) -> Result<Vec<reverie_core::SubsonicStructuredLyrics>> {
         Ok(vec![])
     }
 
@@ -352,7 +390,12 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(vec![])
     }
 
-    async fn create_bookmark(&self, _id: &str, _position: i64, _comment: Option<&str>) -> Result<()> {
+    async fn create_bookmark(
+        &self,
+        _id: &str,
+        _position: i64,
+        _comment: Option<&str>,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -364,7 +407,12 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(None)
     }
 
-    async fn save_play_queue(&self, _ids: &[&str], _current: Option<&str>, _position: Option<i64>) -> Result<()> {
+    async fn save_play_queue(
+        &self,
+        _ids: &[&str],
+        _current: Option<&str>,
+        _position: Option<i64>,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -372,7 +420,12 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(vec![])
     }
 
-    async fn create_share(&self, _ids: &[&str], _description: Option<&str>, _expires: Option<i64>) -> Result<reverie_core::SubsonicShare> {
+    async fn create_share(
+        &self,
+        _ids: &[&str],
+        _description: Option<&str>,
+        _expires: Option<i64>,
+    ) -> Result<reverie_core::SubsonicShare> {
         Ok(reverie_core::SubsonicShare {
             id: "share-1".to_string(),
             url: "http://example.com/share/1".to_string(),
@@ -386,7 +439,12 @@ impl SubsonicStorage for MockSubsonicStorage {
         })
     }
 
-    async fn update_share(&self, _id: &str, _description: Option<&str>, _expires: Option<i64>) -> Result<()> {
+    async fn update_share(
+        &self,
+        _id: &str,
+        _description: Option<&str>,
+        _expires: Option<i64>,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -394,15 +452,28 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_internet_radio_stations(&self) -> Result<Vec<reverie_core::SubsonicInternetRadioStation>> {
+    async fn get_internet_radio_stations(
+        &self,
+    ) -> Result<Vec<reverie_core::SubsonicInternetRadioStation>> {
         Ok(vec![])
     }
 
-    async fn create_internet_radio_station(&self, _stream_url: &str, _name: &str, _homepage_url: Option<&str>) -> Result<()> {
+    async fn create_internet_radio_station(
+        &self,
+        _stream_url: &str,
+        _name: &str,
+        _homepage_url: Option<&str>,
+    ) -> Result<()> {
         Ok(())
     }
 
-    async fn update_internet_radio_station(&self, _id: &str, _stream_url: &str, _name: &str, _homepage_url: Option<&str>) -> Result<()> {
+    async fn update_internet_radio_station(
+        &self,
+        _id: &str,
+        _stream_url: &str,
+        _name: &str,
+        _homepage_url: Option<&str>,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -520,10 +591,12 @@ async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value
         .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
         .await
         .unwrap();
-    
+
     assert_eq!(response.status(), StatusCode::OK);
-    
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     serde_json::from_slice(&body).unwrap()
 }
 
@@ -533,7 +606,7 @@ async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value
 async fn test_ping_returns_ok() {
     let router = create_test_router();
     let json = get_json_response(router, "/ping?f=json").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -541,7 +614,7 @@ async fn test_ping_returns_ok() {
 async fn test_get_license_returns_valid() {
     let router = create_test_router();
     let json = get_json_response(router, "/getLicense?f=json").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
     assert_eq!(json["subsonic-response"]["license"]["valid"], true);
 }
@@ -550,7 +623,7 @@ async fn test_get_license_returns_valid() {
 async fn test_get_music_folders() {
     let router = create_test_router();
     let json = get_json_response(router, "/getMusicFolders?f=json").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
     let folders = &json["subsonic-response"]["musicFolders"]["musicFolder"];
     assert!(folders.is_array());
@@ -560,7 +633,7 @@ async fn test_get_music_folders() {
 async fn test_get_artists() {
     let router = create_test_router();
     let json = get_json_response(router, "/getArtists?f=json").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -568,7 +641,7 @@ async fn test_get_artists() {
 async fn test_get_album_list2() {
     let router = create_test_router();
     let json = get_json_response(router, "/getAlbumList2?f=json&type=recent").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -576,7 +649,7 @@ async fn test_get_album_list2() {
 async fn test_search3() {
     let router = create_test_router();
     let json = get_json_response(router, "/search3?f=json&query=test").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -584,6 +657,6 @@ async fn test_search3() {
 async fn test_get_scan_status() {
     let router = create_test_router();
     let json = get_json_response(router, "/getScanStatus?f=json").await;
-    
+
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }

@@ -43,7 +43,11 @@ fn main() {
     println!("cargo:rerun-if-changed=reverie-ui/Cargo.toml");
 
     let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string());
-    let dx_profile = if profile == "release" { "release" } else { "debug" };
+    let dx_profile = if profile == "release" {
+        "release"
+    } else {
+        "debug"
+    };
 
     // Build the UI with dioxus CLI
     let mut cmd = Command::new("dx");
@@ -64,7 +68,10 @@ fn main() {
     };
 
     if !status.success() {
-        println!("cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.", profile);
+        println!(
+            "cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.",
+            profile
+        );
         return;
     }
 
@@ -86,12 +93,18 @@ fn main() {
     // Replace output dir
     let _ = fs::remove_dir_all(&ui_out);
     if let Err(e) = fs::create_dir_all(&ui_out) {
-        println!("cargo:warning=failed to create ui output dir {:?}: {}", ui_out, e);
+        println!(
+            "cargo:warning=failed to create ui output dir {:?}: {}",
+            ui_out, e
+        );
         return;
     }
 
     if let Err(e) = copy_dir_recursive(&ui_src, &ui_out) {
-        println!("cargo:warning=failed to copy ui from {:?} to {:?}: {}", ui_src, ui_out, e);
+        println!(
+            "cargo:warning=failed to copy ui from {:?} to {:?}: {}",
+            ui_src, ui_out, e
+        );
         return;
     }
 }

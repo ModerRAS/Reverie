@@ -7,8 +7,8 @@ use anyhow::Result;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use reverie_storage::memory::MemoryStorage;
 use reverie_server::{run_with_storage, ServerRunConfig};
+use reverie_storage::memory::MemoryStorage;
 
 #[tokio::main]
 async fn main() -> Result<()> {

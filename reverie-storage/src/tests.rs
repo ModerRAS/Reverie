@@ -8,10 +8,7 @@ mod error_tests {
     #[test]
     fn test_storage_error_not_found() {
         let error = StorageError::NotFound("test/path".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "File not found: test/path"
-        );
+        assert_eq!(format!("{}", error), "File not found: test/path");
     }
 
     #[test]
@@ -24,10 +21,7 @@ mod error_tests {
     #[test]
     fn test_storage_error_database() {
         let error = StorageError::DatabaseError("Connection refused".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "Database error: Connection refused"
-        );
+        assert_eq!(format!("{}", error), "Database error: Connection refused");
     }
 
     #[test]
@@ -48,10 +42,7 @@ mod error_tests {
     #[test]
     fn test_storage_error_permission_denied() {
         let error = StorageError::PermissionDenied("Access denied".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "Permission denied: Access denied"
-        );
+        assert_eq!(format!("{}", error), "Permission denied: Access denied");
     }
 
     #[test]
@@ -63,7 +54,8 @@ mod error_tests {
 
     #[test]
     fn test_storage_error_serialization() {
-        let json_error = serde_json::Error::new(serde_json::error::ErrorCode::EOF, "unexpected end");
+        let json_error =
+            serde_json::Error::new(serde_json::error::ErrorCode::EOF, "unexpected end");
         let error: StorageError = json_error.into();
         assert!(format!("{}", error).contains("Serialization error"));
     }

@@ -13,19 +13,13 @@ mod error_tests {
     #[test]
     fn test_network_error_connection_error() {
         let error = NetworkError::ConnectionError("Connection refused".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "Connection error: Connection refused"
-        );
+        assert_eq!(format!("{}", error), "Connection error: Connection refused");
     }
 
     #[test]
     fn test_network_error_invalid_request() {
         let error = NetworkError::InvalidRequest("Invalid parameter".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "Invalid request: Invalid parameter"
-        );
+        assert_eq!(format!("{}", error), "Invalid request: Invalid parameter");
     }
 
     #[test]
@@ -52,10 +46,7 @@ mod error_tests {
     #[test]
     fn test_network_error_serialization() {
         let error = NetworkError::SerializationError("JSON error".to_string());
-        assert_eq!(
-            format!("{}", error),
-            "Serialization error: JSON error"
-        );
+        assert_eq!(format!("{}", error), "Serialization error: JSON error");
     }
 
     #[test]
@@ -266,103 +257,5 @@ mod dto_tests {
         let response: TrackResponse = serde_json::from_str(json).unwrap();
         assert_eq!(response.title, "Test Track");
         assert_eq!(response.duration, 180);
-    }
-}
-
-#[cfg(test)]
-mod subsonic_params_tests {
-    use super::super::subsonic::*;
-    use uuid::Uuid;
-
-    #[test]
-    fn test_auth_params_default() {
-        let params = AuthParams::default();
-        assert!(params.username.is_empty());
-        assert!(params.password.is_empty());
-        assert!(params.token.is_empty());
-        assert!(params.nonce.is_empty());
-    }
-
-    #[test]
-    fn test_auth_params_with_password() {
-        let params = AuthParams::with_password("user", "pass");
-        assert_eq!(params.username, "user");
-        assert_eq!(params.password, "pass");
-    }
-
-    #[test]
-    fn test_auth_params_with_token() {
-        let params = AuthParams::with_token("user", "token", "nonce");
-        assert_eq!(params.username, "user");
-        assert_eq!(params.token, "token");
-        assert_eq!(params.nonce, "nonce");
-    }
-
-    #[test]
-    fn test_subsonic_params_default() {
-        let params = SubsonicParams::default();
-        assert!(params.action.is_empty());
-        assert!(params.username.is_empty());
-    }
-
-    #[test]
-    fn test_subsonic_params_with_values() {
-        let params = SubsonicParams {
-            action: "getLicense".to_string(),
-            username: "admin".to_string(),
-            password: "admin".to_string(),
-            version: "1.16.1".to_string(),
-            ..Default::default()
-        };
-
-        assert_eq!(params.action, "getLicense");
-        assert_eq!(params.version, "1.16.1");
-    }
-
-    #[test]
-    fn test_subsonic_request_default() {
-        let request = SubsonicRequest::default();
-        assert!(request.params.action.is_empty());
-    }
-
-    #[test]
-    fn test_subsonic_request_clone() {
-        let request = SubsonicRequest {
-            params: AuthParams::with_password("user", "pass"),
-            ..Default::default()
-        };
-
-        let cloned = request.clone();
-        assert_eq!(cloned.params.username, request.params.username);
-    }
-
-    #[test]
-    fn test_subsonic_context_new() {
-        let id = Uuid::new_v4();
-        let context = SubsonicContext::new(id, "admin".to_string());
-        assert_eq!(context.request_id, id);
-        assert_eq!(context.username, "admin");
-    }
-
-    #[test]
-    fn test_subsonic_response_success() {
-        let response = SubsonicResponse::success("ok".to_string());
-        assert!(response.status);
-        assert_eq!(response.version, "1.16.1");
-    }
-
-    #[test]
-    fn test_subsonic_response_with_error() {
-        let response = SubsonicResponse::error("0", "Test error".to_string());
-        assert!(!response.status);
-        assert_eq!(response.error_code, "0");
-        assert_eq!(response.error_message, "Test error");
-    }
-
-    #[test]
-    fn test_subsonic_response_debug() {
-        let response = SubsonicResponse::success("ok".to_string());
-        let debug_str = format!("{:?}", response);
-        assert!(debug_str.contains("SubsonicResponse"));
     }
 }

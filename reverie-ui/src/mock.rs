@@ -76,7 +76,12 @@ pub fn songs(count: usize) -> Vec<Song> {
             bit_rate: Some(320),
             suffix: Some("mp3".to_string()),
             content_type: Some("audio/mpeg".to_string()),
-            path: Some(format!("/music/Artist {}/Album {}/Song {}.mp3", (i % 8) + 1, (i % 12) + 1, i)),
+            path: Some(format!(
+                "/music/Artist {}/Album {}/Song {}.mp3",
+                (i % 8) + 1,
+                (i % 12) + 1,
+                i
+            )),
             starred: None,
             play_count: (i as i32) * 3,
         })

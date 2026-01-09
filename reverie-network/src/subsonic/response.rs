@@ -3,11 +3,11 @@
 //! Supports both JSON and XML output formats as per Subsonic API spec.
 
 use reverie_core::{
-    MediaFile, SubsonicAlbum, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistInfo,
-    SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics,
-    SubsonicMusicFolder, SubsonicNowPlaying, SubsonicOpenSubsonicExtension, SubsonicPlayQueue,
-    SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicShare, SubsonicUser,
-    SubsonicAlbumInfo, SubsonicStructuredLyrics, SUBSONIC_API_VERSION,
+    MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex,
+    SubsonicArtistInfo, SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation,
+    SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicOpenSubsonicExtension,
+    SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus,
+    SubsonicShare, SubsonicStructuredLyrics, SubsonicUser, SUBSONIC_API_VERSION,
 };
 use serde::Serialize;
 
@@ -172,7 +172,10 @@ pub struct MusicFolderItem {
 }
 impl From<&SubsonicMusicFolder> for MusicFolderItem {
     fn from(f: &SubsonicMusicFolder) -> Self {
-        Self { id: f.id, name: f.name.clone() }
+        Self {
+            id: f.id,
+            name: f.name.clone(),
+        }
     }
 }
 impl From<MusicFoldersData> for ResponseData {
@@ -504,7 +507,11 @@ impl From<&MediaFile> for Child {
             artist_id: m.artist_id.clone(),
             starred: m.starred.map(|d| d.to_rfc3339()),
             user_rating: m.user_rating,
-            media_type: if m.r#type.is_empty() { Some("music".to_string()) } else { Some(m.r#type.clone()) },
+            media_type: if m.r#type.is_empty() {
+                Some("music".to_string())
+            } else {
+                Some(m.r#type.clone())
+            },
             is_video: false,
         }
     }
@@ -567,7 +574,11 @@ pub struct GenreItem {
 }
 impl From<&SubsonicGenre> for GenreItem {
     fn from(g: &SubsonicGenre) -> Self {
-        Self { value: g.name.clone(), song_count: g.song_count, album_count: g.album_count }
+        Self {
+            value: g.name.clone(),
+            song_count: g.song_count,
+            album_count: g.album_count,
+        }
     }
 }
 impl From<GenresData> for ResponseData {
@@ -1104,7 +1115,11 @@ pub struct LyricsInner {
 }
 impl From<&SubsonicLyrics> for LyricsInner {
     fn from(l: &SubsonicLyrics) -> Self {
-        Self { artist: l.artist.clone(), title: l.title.clone(), value: l.value.clone() }
+        Self {
+            artist: l.artist.clone(),
+            title: l.title.clone(),
+            value: l.value.clone(),
+        }
     }
 }
 impl From<LyricsData> for ResponseData {
@@ -1152,7 +1167,14 @@ impl From<&SubsonicStructuredLyrics> for StructuredLyricsItem {
             lang: l.lang.clone(),
             offset: l.offset,
             synced: l.synced,
-            line: l.lines.iter().map(|line| LyricLine { start: line.start, value: line.value.clone() }).collect(),
+            line: l
+                .lines
+                .iter()
+                .map(|line| LyricLine {
+                    start: line.start,
+                    value: line.value.clone(),
+                })
+                .collect(),
         }
     }
 }
@@ -1346,7 +1368,10 @@ pub struct OpenSubsonicExtensionItem {
 }
 impl From<&SubsonicOpenSubsonicExtension> for OpenSubsonicExtensionItem {
     fn from(e: &SubsonicOpenSubsonicExtension) -> Self {
-        Self { name: e.name.clone(), versions: e.versions.clone() }
+        Self {
+            name: e.name.clone(),
+            versions: e.versions.clone(),
+        }
     }
 }
 impl From<OpenSubsonicExtensionsData> for ResponseData {
@@ -1362,10 +1387,13 @@ pub fn build_indexes(indexes: &[SubsonicArtistIndex], last_modified: i64) -> Ind
         indexes: IndexesList {
             last_modified,
             ignored_articles: "The El La Los Las Le Les".to_string(),
-            index: indexes.iter().map(|idx| IndexItem {
-                name: idx.id.clone(),
-                artist: idx.artists.iter().map(ArtistItem::from).collect(),
-            }).collect(),
+            index: indexes
+                .iter()
+                .map(|idx| IndexItem {
+                    name: idx.id.clone(),
+                    artist: idx.artists.iter().map(ArtistItem::from).collect(),
+                })
+                .collect(),
         },
     }
 }
@@ -1375,10 +1403,13 @@ pub fn build_artists(indexes: &[SubsonicArtistIndex], last_modified: i64) -> Art
         artists: ArtistsList {
             last_modified,
             ignored_articles: "The El La Los Las Le Les".to_string(),
-            index: indexes.iter().map(|idx| ArtistIndexItem {
-                name: idx.id.clone(),
-                artist: idx.artists.iter().map(ArtistID3Item::from).collect(),
-            }).collect(),
+            index: indexes
+                .iter()
+                .map(|idx| ArtistIndexItem {
+                    name: idx.id.clone(),
+                    artist: idx.artists.iter().map(ArtistID3Item::from).collect(),
+                })
+                .collect(),
         },
     }
 }

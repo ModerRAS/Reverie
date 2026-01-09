@@ -2,8 +2,8 @@
 
 use crate::api::{Album, Song};
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
-use crate::state::{apply_player_action, PlayerAction, PlayerState};
 use crate::mock;
+use crate::state::{apply_player_action, PlayerAction, PlayerState};
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]

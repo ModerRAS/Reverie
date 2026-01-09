@@ -17,7 +17,10 @@ async fn test_filesystem_storage_config_defaults() {
     assert_eq!(config.supported_extensions.len(), 7);
     assert_eq!(config.music_root, std::path::PathBuf::from("./music"));
     assert_eq!(config.metadata_dir, std::path::PathBuf::from("./metadata"));
-    assert_eq!(config.cover_cache_dir, std::path::PathBuf::from("./cache/covers"));
+    assert_eq!(
+        config.cover_cache_dir,
+        std::path::PathBuf::from("./cache/covers")
+    );
 }
 
 #[tokio::test]
@@ -294,14 +297,20 @@ async fn test_filesystem_storage_playlist_operations() {
         position: 1,
         added_at: Utc::now(),
     };
-    storage.add_track_to_playlist(&playlist_track).await.unwrap();
+    storage
+        .add_track_to_playlist(&playlist_track)
+        .await
+        .unwrap();
 
     // Get playlist tracks
     let tracks = storage.get_playlist_tracks(playlist.id).await.unwrap();
     assert_eq!(tracks.len(), 1);
 
     // Remove track from playlist
-    storage.remove_track_from_playlist(playlist.id, track_id).await.unwrap();
+    storage
+        .remove_track_from_playlist(playlist.id, track_id)
+        .await
+        .unwrap();
     let tracks = storage.get_playlist_tracks(playlist.id).await.unwrap();
     assert_eq!(tracks.len(), 0);
 
@@ -328,24 +337,42 @@ async fn test_filesystem_storage_file_operations() {
     let file_data = b"Test file content";
 
     // Write file
-    storage.write_file(file_path.to_str().unwrap(), file_data).await.unwrap();
+    storage
+        .write_file(file_path.to_str().unwrap(), file_data)
+        .await
+        .unwrap();
 
     // Check file exists
-    let exists = storage.file_exists(file_path.to_str().unwrap()).await.unwrap();
+    let exists = storage
+        .file_exists(file_path.to_str().unwrap())
+        .await
+        .unwrap();
     assert!(exists);
 
     // Read file
-    let read_data = storage.read_file(file_path.to_str().unwrap()).await.unwrap();
+    let read_data = storage
+        .read_file(file_path.to_str().unwrap())
+        .await
+        .unwrap();
     assert_eq!(read_data, file_data);
 
     // Get file metadata
-    let metadata = storage.get_file_metadata(file_path.to_str().unwrap()).await.unwrap();
+    let metadata = storage
+        .get_file_metadata(file_path.to_str().unwrap())
+        .await
+        .unwrap();
     assert_eq!(metadata.size, file_data.len() as u64);
     assert!(metadata.is_file);
 
     // Delete file
-    storage.delete_file(file_path.to_str().unwrap()).await.unwrap();
-    let exists = storage.file_exists(file_path.to_str().unwrap()).await.unwrap();
+    storage
+        .delete_file(file_path.to_str().unwrap())
+        .await
+        .unwrap();
+    let exists = storage
+        .file_exists(file_path.to_str().unwrap())
+        .await
+        .unwrap();
     assert!(!exists);
 }
 

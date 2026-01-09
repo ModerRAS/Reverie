@@ -37,20 +37,22 @@ impl<S: Clone> SubsonicState<S> {
 /// Return JSON or XML based on format parameter
 fn format_response(params: &HashMap<String, String>, response: SubsonicResponse) -> Response {
     let format = params.get("f").map(|s| s.as_str()).unwrap_or("xml");
-    
+
     if format == "json" {
         (
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/json")],
             serde_json::to_string(&response).unwrap_or_default(),
-        ).into_response()
+        )
+            .into_response()
     } else {
         // For now, return JSON even for XML requests (proper XML support TODO)
         (
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/json")],
             serde_json::to_string(&response).unwrap_or_default(),
-        ).into_response()
+        )
+            .into_response()
     }
 }
 
@@ -163,11 +165,12 @@ async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
     match state.storage.get_music_folders().await {
         Ok(folders) => {
             let items: Vec<MusicFolderItem> = folders.iter().map(MusicFolderItem::from).collect();
-            let response = SubsonicResponse::ok_with(ResponseData::MusicFolders(MusicFoldersData {
-                music_folders: MusicFoldersList {
-                    music_folder: items,
-                },
-            }));
+            let response =
+                SubsonicResponse::ok_with(ResponseData::MusicFolders(MusicFoldersData {
+                    music_folders: MusicFoldersList {
+                        music_folder: items,
+                    },
+                }));
             format_response(&params, response)
         }
         Err(e) => error_response(&params, 0, &e.to_string()),
@@ -290,9 +293,19 @@ async fn get_album_list2_handler<S: SubsonicStorage + Clone>(
     let genre = params.get("genre").map(|s| s.as_str());
     let music_folder_id = params.get("musicFolderId").and_then(|s| s.parse().ok());
 
-    match state.storage.get_album_list2(
-        list_type, size, offset, from_year, to_year, genre, music_folder_id
-    ).await {
+    match state
+        .storage
+        .get_album_list2(
+            list_type,
+            size,
+            offset,
+            from_year,
+            to_year,
+            genre,
+            music_folder_id,
+        )
+        .await
+    {
         Ok(albums) => {
             let items: Vec<AlbumID3Item> = albums.iter().map(AlbumID3Item::from).collect();
             let data = AlbumList2Data {
@@ -325,14 +338,25 @@ async fn search3_handler<S: SubsonicStorage + Clone>(
     let song_offset = params.get("songOffset").and_then(|s| s.parse().ok());
     let _music_folder_id: Option<i32> = params.get("musicFolderId").and_then(|s| s.parse().ok());
 
-    match state.storage.search3(
-        query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset
-    ).await {
+    match state
+        .storage
+        .search3(
+            query,
+            artist_count,
+            artist_offset,
+            album_count,
+            album_offset,
+            song_count,
+            song_offset,
+        )
+        .await
+    {
         Ok(result) => {
-            let artists: Vec<ArtistID3Item> = result.artists.iter().map(ArtistID3Item::from).collect();
+            let artists: Vec<ArtistID3Item> =
+                result.artists.iter().map(ArtistID3Item::from).collect();
             let albums: Vec<AlbumID3Item> = result.albums.iter().map(AlbumID3Item::from).collect();
             let songs: Vec<Child> = result.songs.iter().map(Child::from).collect();
-            
+
             let data = SearchResult3Data {
                 search_result3: SearchResult3Inner {
                     artist: artists,
