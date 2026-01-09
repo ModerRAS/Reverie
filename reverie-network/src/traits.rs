@@ -1,37 +1,36 @@
-//! Network abstraction traits
+//! 网络抽象 traits
 //!
-//! These traits define the interface for network operations,
-//! allowing different HTTP server implementations to be swapped
-//! without changing the core application logic.
-
+//! 这些 traits 定义了网络操作的接口，
+//! 允许在不改变核心应用程序逻辑的情况下切换
+//! 不同的 HTTP 服务器实现。
 use crate::error::Result;
 use async_trait::async_trait;
 use std::net::SocketAddr;
 
-/// Trait for HTTP server implementation
+/// HTTP 服务器实现的 trait
 #[async_trait]
 pub trait HttpServer: Send + Sync {
-    /// Start the HTTP server
+    /// 启动 HTTP 服务器
     async fn start(&self, addr: SocketAddr) -> Result<()>;
 
-    /// Stop the HTTP server
+    /// 停止 HTTP 服务器
     async fn stop(&self) -> Result<()>;
 
-    /// Check if the server is running
+    /// 检查服务器是否正在运行
     fn is_running(&self) -> bool;
 
-    /// Get the address the server is listening on
+    /// 获取服务器正在监听的地址
     fn address(&self) -> Option<SocketAddr>;
 }
 
-/// Trait for handling HTTP requests
+/// 处理 HTTP 请求的 trait
 #[async_trait]
 pub trait RequestHandler: Send + Sync {
-    /// Handle an incoming request
+    /// 处理传入的请求
     async fn handle_request(&self, request: Request) -> Result<Response>;
 }
 
-/// Simplified HTTP request representation
+/// 简化的 HTTP 请求表示
 #[derive(Debug, Clone)]
 pub struct Request {
     pub method: Method,
@@ -40,7 +39,7 @@ pub struct Request {
     pub body: Vec<u8>,
 }
 
-/// HTTP methods
+/// HTTP 方法
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Method {
     Get,
@@ -52,7 +51,7 @@ pub enum Method {
     Head,
 }
 
-/// Simplified HTTP response representation
+/// 简化的 HTTP 响应表示
 #[derive(Debug, Clone)]
 pub struct Response {
     pub status: u16,
@@ -91,16 +90,16 @@ impl Response {
     }
 }
 
-/// Trait for streaming media files
+/// 流媒体文件的 trait
 #[async_trait]
 pub trait MediaStreamer: Send + Sync {
-    /// Stream a file to the client
+    /// 将文件流式传输到客户端
     async fn stream_file(&self, path: &str) -> Result<Vec<u8>>;
 
-    /// Check if transcoding is supported
+    /// 检查是否支持转码
     fn supports_transcoding(&self) -> bool;
 
-    /// Transcode a file to a different format
+    /// 将文件转码为不同格式
     async fn transcode_file(
         &self,
         path: &str,
@@ -109,26 +108,26 @@ pub trait MediaStreamer: Send + Sync {
     ) -> Result<Vec<u8>>;
 }
 
-/// Trait for external network connections (e.g., for federation, cloud sync)
+/// 外部网络连接的 trait（例如，用于联合、云同步）
 #[async_trait]
 pub trait ExternalConnection: Send + Sync {
-    /// Connect to an external service
+    /// 连接到外部服务
     async fn connect(&self, endpoint: &str) -> Result<()>;
 
-    /// Disconnect from the external service
+    /// 断开与外部服务的连接
     async fn disconnect(&self) -> Result<()>;
 
-    /// Check if connected
+    /// 检查是否已连接
     fn is_connected(&self) -> bool;
 
-    /// Send data to the external service
+    /// 向外部服务发送数据
     async fn send_data(&self, data: &[u8]) -> Result<()>;
 
-    /// Receive data from the external service
+    /// 从外部服务接收数据
     async fn receive_data(&self) -> Result<Vec<u8>>;
 }
 
-/// Configuration for the network layer
+/// 网络层配置
 #[derive(Debug, Clone)]
 pub struct NetworkConfig {
     pub host: String,
