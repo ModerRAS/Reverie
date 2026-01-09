@@ -243,8 +243,8 @@ pub trait SubsonicStorage: Send + Sync {
     /// 获取艺术家的热门歌曲
     async fn get_top_songs(&self, artist: &str, count: Option<i32>) -> Result<SubsonicTopSongs>;
 
-    // === Album/Song Lists ===
-    /// Get album list (various sort types)
+    // === 专辑/歌曲列表 ===
+    /// 获取专辑列表（多种排序类型）
     async fn get_album_list(
         &self,
         list_type: &str,
@@ -256,7 +256,7 @@ pub trait SubsonicStorage: Send + Sync {
         music_folder_id: Option<i32>,
     ) -> Result<Vec<SubsonicAlbum>>;
 
-    /// Get album list (ID3 version)
+    /// 获取专辑列表（ID3 版本）
     async fn get_album_list2(
         &self,
         list_type: &str,
@@ -268,7 +268,7 @@ pub trait SubsonicStorage: Send + Sync {
         music_folder_id: Option<i32>,
     ) -> Result<Vec<SubsonicAlbum>>;
 
-    /// Get random songs
+    /// 获取随机歌曲
     async fn get_random_songs(
         &self,
         size: Option<i32>,
@@ -278,7 +278,7 @@ pub trait SubsonicStorage: Send + Sync {
         music_folder_id: Option<i32>,
     ) -> Result<Vec<MediaFile>>;
 
-    /// Get songs by genre
+    /// 获取按流派的歌曲
     async fn get_songs_by_genre(
         &self,
         genre: &str,
@@ -287,17 +287,17 @@ pub trait SubsonicStorage: Send + Sync {
         music_folder_id: Option<i32>,
     ) -> Result<Vec<MediaFile>>;
 
-    /// Get now playing entries
+    /// 获取正在播放的条目
     async fn get_now_playing(&self) -> Result<Vec<SubsonicNowPlaying>>;
 
-    /// Get starred items
+    /// 获取收藏的项目
     async fn get_starred(&self, music_folder_id: Option<i32>) -> Result<SubsonicStarred>;
 
-    /// Get starred items (ID3 version)
+    /// 获取收藏的项目（ID3 版本）
     async fn get_starred2(&self, music_folder_id: Option<i32>) -> Result<SubsonicStarred>;
 
-    // === Searching ===
-    /// Search (deprecated, use search2/search3)
+    // === 搜索 ===
+    /// 搜索（已废弃，使用 search2/search3）
     async fn search(
         &self,
         artist: Option<&str>,
@@ -308,13 +308,13 @@ pub trait SubsonicStorage: Send + Sync {
         _offset: Option<i32>,
         _newer_than: Option<i64>,
     ) -> Result<SubsonicSearchResult2> {
-        // Default implementation using search2
+        // 使用 search2 的默认实现
         let query = any.or(title).or(album).or(artist).unwrap_or("");
         self.search2(query, None, None, None, None, None, None)
             .await
     }
 
-    /// Search2 (folder-based)
+    /// Search2（基于文件夹）
     async fn search2(
         &self,
         query: &str,
@@ -326,7 +326,7 @@ pub trait SubsonicStorage: Send + Sync {
         song_offset: Option<i32>,
     ) -> Result<SubsonicSearchResult2>;
 
-    /// Search3 (ID3-based)
+    /// Search3（基于 ID3）
     async fn search3(
         &self,
         query: &str,
@@ -338,14 +338,14 @@ pub trait SubsonicStorage: Send + Sync {
         song_offset: Option<i32>,
     ) -> Result<SubsonicSearchResult3>;
 
-    // === Playlists ===
-    /// Get all playlists
+    // === 播放列表 ===
+    /// 获取所有播放列表
     async fn get_playlists(&self, username: Option<&str>) -> Result<Vec<SubsonicPlaylist>>;
 
-    /// Get single playlist with songs
+    /// 获取包含歌曲的单个播放列表
     async fn get_playlist(&self, id: &str) -> Result<Option<SubsonicPlaylistWithSongs>>;
 
-    /// Create playlist
+    /// 创建播放列表
     async fn create_playlist(
         &self,
         name: Option<&str>,
@@ -353,7 +353,7 @@ pub trait SubsonicStorage: Send + Sync {
         song_ids: &[&str],
     ) -> Result<SubsonicPlaylistWithSongs>;
 
-    /// Update playlist
+    /// 更新播放列表
     async fn update_playlist(
         &self,
         playlist_id: &str,
@@ -364,56 +364,56 @@ pub trait SubsonicStorage: Send + Sync {
         song_indexes_to_remove: &[i32],
     ) -> Result<()>;
 
-    /// Delete playlist
+    /// 删除播放列表
     async fn delete_playlist(&self, id: &str) -> Result<()>;
 
-    // === Media Retrieval (paths only, actual streaming handled by network layer) ===
-    /// Get file path for streaming
+    // === 媒体检索（仅路径，实际流媒体由网络层处理） ===
+    /// 获取流媒体文件路径
     async fn get_stream_path(&self, id: &str) -> Result<Option<String>>;
 
-    /// Get cover art path
+    /// 获取封面图片路径
     async fn get_cover_art_path(&self, id: &str) -> Result<Option<String>>;
 
-    /// Get lyrics
+    /// 获取歌词
     async fn get_lyrics(
         &self,
         artist: Option<&str>,
         title: Option<&str>,
     ) -> Result<Option<SubsonicLyrics>>;
 
-    /// Get lyrics by song ID (OpenSubsonic)
+    /// 通过歌曲 ID 获取歌词（OpenSubsonic）
     async fn get_lyrics_by_song_id(&self, id: &str) -> Result<Vec<SubsonicStructuredLyrics>>;
 
-    /// Get avatar path for user
+    /// 获取用户头像路径
     async fn get_avatar_path(&self, username: &str) -> Result<Option<String>>;
 
-    // === Media Annotation ===
-    /// Star items (add to favorites)
+    // === 媒体标注 ===
+    /// 收藏项目（添加到收藏夹）
     async fn star(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()>;
 
-    /// Unstar items (remove from favorites)
+    /// 取消收藏（从收藏夹移除）
     async fn unstar(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()>;
 
-    /// Set rating (0-5)
+    /// 设置评分（0-5）
     async fn set_rating(&self, id: &str, rating: i32) -> Result<()>;
 
-    /// Scrobble (record play)
+    /// 记录播放（Scrobble）
     async fn scrobble(&self, id: &str, time: Option<i64>, submission: bool) -> Result<()>;
 
-    // === Bookmarks ===
-    /// Get all bookmarks for user
+    // === 书签 ===
+    /// 获取用户的所有书签
     async fn get_bookmarks(&self) -> Result<Vec<SubsonicBookmark>>;
 
-    /// Create/update bookmark
+    /// 创建/更新书签
     async fn create_bookmark(&self, id: &str, position: i64, comment: Option<&str>) -> Result<()>;
 
-    /// Delete bookmark
+    /// 删除书签
     async fn delete_bookmark(&self, id: &str) -> Result<()>;
 
-    /// Get play queue
+    /// 获取播放队列
     async fn get_play_queue(&self) -> Result<Option<SubsonicPlayQueue>>;
 
-    /// Save play queue
+    /// 保存播放队列
     async fn save_play_queue(
         &self,
         ids: &[&str],
@@ -421,11 +421,11 @@ pub trait SubsonicStorage: Send + Sync {
         position: Option<i64>,
     ) -> Result<()>;
 
-    // === Sharing ===
-    /// Get all shares
+    // === 分享 ===
+    /// 获取所有分享
     async fn get_shares(&self) -> Result<Vec<SubsonicShare>>;
 
-    /// Create share
+    /// 创建分享
     async fn create_share(
         &self,
         ids: &[&str],
@@ -433,7 +433,7 @@ pub trait SubsonicStorage: Send + Sync {
         expires: Option<i64>,
     ) -> Result<SubsonicShare>;
 
-    /// Update share
+    /// 更新分享
     async fn update_share(
         &self,
         id: &str,
@@ -441,14 +441,14 @@ pub trait SubsonicStorage: Send + Sync {
         expires: Option<i64>,
     ) -> Result<()>;
 
-    /// Delete share
+    /// 删除分享
     async fn delete_share(&self, id: &str) -> Result<()>;
 
-    // === Internet Radio ===
-    /// Get all internet radio stations
+    // === 网络电台 ===
+    /// 获取所有网络电台
     async fn get_internet_radio_stations(&self) -> Result<Vec<SubsonicInternetRadioStation>>;
 
-    /// Create internet radio station
+    /// 创建网络电台
     async fn create_internet_radio_station(
         &self,
         stream_url: &str,
@@ -456,7 +456,7 @@ pub trait SubsonicStorage: Send + Sync {
         homepage_url: Option<&str>,
     ) -> Result<()>;
 
-    /// Update internet radio station
+    /// 更新网络电台
     async fn update_internet_radio_station(
         &self,
         id: &str,
@@ -465,17 +465,17 @@ pub trait SubsonicStorage: Send + Sync {
         homepage_url: Option<&str>,
     ) -> Result<()>;
 
-    /// Delete internet radio station
+    /// 删除网络电台
     async fn delete_internet_radio_station(&self, id: &str) -> Result<()>;
 
-    // === User Management ===
-    /// Get user by username
+    // === 用户管理 ===
+    /// 通过用户名获取用户
     async fn get_user(&self, username: &str) -> Result<Option<SubsonicUser>>;
 
-    /// Get all users
+    /// 获取所有用户
     async fn get_users(&self) -> Result<Vec<SubsonicUser>>;
 
-    /// Create user
+    /// 创建用户
     async fn create_user(
         &self,
         username: &str,
@@ -496,7 +496,7 @@ pub trait SubsonicStorage: Send + Sync {
         music_folder_ids: &[i32],
     ) -> Result<()>;
 
-    /// Update user
+    /// 更新用户
     async fn update_user(
         &self,
         username: &str,
@@ -518,21 +518,21 @@ pub trait SubsonicStorage: Send + Sync {
         max_bit_rate: Option<i32>,
     ) -> Result<()>;
 
-    /// Delete user
+    /// 删除用户
     async fn delete_user(&self, username: &str) -> Result<()>;
 
-    /// Change password
+    /// 更改密码
     async fn change_password(&self, username: &str, password: &str) -> Result<()>;
 
-    // === Library Scanning ===
-    /// Get scan status
+    // === 库扫描 ===
+    /// 获取扫描状态
     async fn get_scan_status(&self) -> Result<SubsonicScanStatus>;
 
-    /// Start library scan
+    /// 开始扫描库
     async fn start_scan(&self) -> Result<SubsonicScanStatus>;
 
-    // === OpenSubsonic Extensions ===
-    /// Get supported OpenSubsonic extensions
+    // === OpenSubsonic 扩展 ===
+    /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {
         Ok(vec![
             SubsonicOpenSubsonicExtension {
