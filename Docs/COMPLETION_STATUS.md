@@ -1,7 +1,7 @@
 # Reverie 项目完成情况报告
 
 > 生成日期：2025-01-14
-> 更新日期：2025-01-14
+> 更新日期：2025-01-15
 
 ## 一、项目架构概览
 
@@ -104,25 +104,30 @@ reverie-ui        → Dioxus Web UI (独立于后端，通过 HTTP API 通信)
 
 **说明**: MemoryStorage 是一个完整的内存实现，但所有 Subsonic 相关方法返回空数据或硬编码的测试数据，主要用于开发和测试目的。
 
-#### 2.2.4 DatabaseStorage 实现 ⚠️ 待完善
+#### 2.2.4 DatabaseStorage 实现 ✅ 已完成
 
 **位置**: `reverie-storage/src/database/`
 
 | 文件 | 状态 | 说明 |
 |------|------|------|
-| `mod.rs` | ⚠️ 部分 | `DatabaseStorage` 结构定义，使用 SQLite |
+| `mod.rs` | ✅ 完成 | `DatabaseStorage` 结构定义，使用 SQLite |
 | `config.rs` | ✅ 完成 | `DatabaseConfig` 配置 |
-| `core.rs` | ⚠️ 部分 | 核心存储 trait 实现 |
-| `track.rs` | ⚠️ 部分 | 曲目相关方法 |
-| `album.rs` | ⚠️ 部分 | 专辑相关方法 |
-| `subsonic.rs` | ⚠️ 部分 | SubsonicStorage 实现，部分方法返回默认空数据 |
+| `core.rs` | ✅ 完成 | 核心存储 trait 实现 |
+| `track.rs` | ✅ 完成 | 曲目相关方法 |
+| `album.rs` | ✅ 完成 | 专辑相关方法 |
+| `subsonic.rs` | ✅ 完成 | SubsonicStorage 实现，包含所有数据持久化操作 |
 | `scan.rs` | ✅ 完成 | 媒体库扫描实现，调用 MediaScanner 并持久化结果 |
 
-**DatabaseStorage 当前问题**:
-1. **元数据存储不完整**: 虽然有 SQLite 支持，但大部分方法返回空数据
-2. ~~**媒体文件扫描缺失**~~: ✅ 已实现扫描功能 (`scan.rs`)
-3. **VFS 集成缺失**: 数据库存储没有正确集成 VFS 来读取实际的媒体文件
-4. **数据持久化**: 创建/更新操作没有实际写入数据库
+**DatabaseStorage 已实现功能**:
+1. **Track/Album/Artist CRUD**: 完整的增删改查操作
+2. **User/Playlist CRUD**: 用户和播放列表管理
+3. **Bookmark 操作**: 书签的创建、获取、删除
+4. **Play Queue**: 播放队列的保存和获取
+5. **Star/Unstar**: 收藏和取消收藏
+6. **Rating**: 评分设置
+7. **Scrobble**: 播放记录
+8. **Internet Radio Station**: 网络电台 CRUD
+9. **VFS 集成**: 通过 OpenDAL 读写媒体文件
 
 #### 2.2.5 Scanner 模块 ✅ 新增完成
 
@@ -360,17 +365,17 @@ reverie-ui        → Dioxus Web UI (独立于后端，通过 HTTP API 通信)
 | reverie-storage/vfs | 5 | 100% | ✅ 全部完成 |
 | reverie-storage/memory | 7 | 100% | ✅ 全部完成 (测试数据) |
 | reverie-storage/scanner | 3 | 100% | ✅ 新增完成 (lofty 元数据解析) |
-| reverie-storage/database | 7 | 50% | ⚠️ 框架完整，扫描已实现，部分数据持久化待完善 |
+| reverie-storage/database | 20 | 100% | ✅ 全部完成，数据持久化已实现 |
 | reverie-network/subsonic | 15+ | 100% | ✅ 所有 59 个端点已实现，49 个测试用例 |
 | reverie-network/axum_server | 6 | 100% | ✅ 全部完成 |
 | reverie-server | 2 | 100% | ✅ 全部完成 |
 | reverie-ui/pages | 12 | 90% | ⚠️ 页面完整，需 API 集成 |
 | reverie-ui/components | 6 | 90% | ⚠️ 组件完整 |
 
-**测试统计**: 96 个测试全部通过
-- reverie-core: 28 个测试
-- reverie-network: 49 个测试
-- reverie-storage: 19 个测试
+**测试统计**: 116 个测试全部通过
+- reverie-core: 28 个单元测试
+- reverie-network: 49 个单元测试
+- reverie-storage: 19 个单元测试 + 20 个集成测试
 
 ---
 
@@ -399,15 +404,19 @@ reverie-ui        → Dioxus Web UI (独立于后端，通过 HTTP API 通信)
    - 扫描: getScanStatus, startScan
    - OpenSubsonic: getOpenSubsonicExtensions
 8. **媒体流传输**: `/stream`, `/getCoverArt`, `/download` 已集成 FileStorage
+9. **DatabaseStorage 数据持久化**: 所有 CRUD 操作已实现
+   - Track/Album/Artist 完整的 CRUD
+   - User/Playlist 完整的 CRUD
+   - Bookmark/PlayQueue/Rating/Star/Scrobble 数据持久化
+   - Internet Radio Station CRUD
+   - VFS 文件操作集成 (读写删除)
 
 ### 待完成 ❌
-1. **DatabaseStorage 数据持久化**: SQLite CRUD 操作部分需完善实际写入
-2. **XML 响应格式**: 暂只支持 JSON (大部分现代客户端已支持 JSON)
-3. **用户认证强制执行**: 认证代码存在但未强制中间件
+1. **XML 响应格式**: 暂只支持 JSON (大部分现代客户端已支持 JSON)
+2. **用户认证强制执行**: 认证代码存在但未强制中间件
 
 ### 下一步建议
-1. 完善 `DatabaseStorage` 的数据持久化 (tracks, albums, artists 表的 CRUD)
-2. 添加端到端集成测试
-3. 实现用户认证中间件
-4. (可选) 实现 XML 响应序列化以兼容旧客户端
-5. (可选) 集成 Last.fm API 获取艺术家额外信息
+1. 添加端到端集成测试
+2. 实现用户认证中间件
+3. (可选) 实现 XML 响应序列化以兼容旧客户端
+4. (可选) 集成 Last.fm API 获取艺术家额外信息

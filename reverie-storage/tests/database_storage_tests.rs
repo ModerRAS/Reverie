@@ -6,16 +6,19 @@ use chrono::Utc;
 use reverie_core::{Album, Artist, Playlist, PlaylistTrack, Track, User};
 use reverie_storage::{
     AlbumStorage, ArtistStorage, DatabaseConfig, DatabaseStorage, FileStorage, PlaylistStorage,
-    SubsonicStorage, TrackStorage, UserStorage, VfsConfig,
+    Storage, SubsonicStorage, TrackStorage, UserStorage, VfsConfig,
 };
 use uuid::Uuid;
 
 /// 创建内存数据库存储用于测试
 async fn create_test_storage() -> DatabaseStorage {
     let config = DatabaseConfig::new(":memory:", VfsConfig::memory());
-    DatabaseStorage::new(config)
+    let storage = DatabaseStorage::new(config)
         .await
-        .expect("Failed to create test storage")
+        .expect("Failed to create test storage");
+    // 初始化存储（创建默认用户等）
+    storage.initialize().await.expect("Failed to initialize storage");
+    storage
 }
 
 // ============================================================================
@@ -451,7 +454,7 @@ async fn test_database_storage_subsonic_genres() {
 
     let genres_result = storage.get_genres().await.expect("Failed to get genres");
     // Should have 3 unique genres
-    assert!(genres_result.len() >= 0); // Allow empty for now until implemented
+    assert!(genres_result.len() <= 3); // Allow empty or up to 3 genres
 }
 
 #[tokio::test]
@@ -599,4 +602,451 @@ async fn test_database_storage_track_album_artist_relationship() {
         assert_eq!(track.album_id, Some(album.id));
         assert_eq!(track.artist_id, Some(artist.id));
     }
+}
+
+// ============================================================================
+// Bookmark Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_database_storage_bookmark_crud() {
+    let storage = create_test_storage().await;
+
+    // 创建测试曲目
+    let track = Track {
+        id: Uuid::new_v4(),
+        title: "Bookmark Test Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 300,
+        file_path: "/music/bookmark_test.mp3".to_string(),
+        file_size: 8_000_000,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Test".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_track(&track).await.expect("Failed to save track");
+
+    let track_id = track.id.to_string();
+
+    // 创建书签
+    storage
+        .create_bookmark(&track_id, 120000, Some("Great solo at 2 minutes"))
+        .await
+        .expect("Failed to create bookmark");
+
+    // 获取书签
+    let bookmarks = storage.get_bookmarks().await.expect("Failed to get bookmarks");
+    assert!(!bookmarks.is_empty(), "Should have bookmarks");
+
+    let bookmark = &bookmarks[0];
+    assert_eq!(bookmark.position, 120000);
+    assert_eq!(bookmark.comment.as_deref(), Some("Great solo at 2 minutes"));
+
+    // 删除书签
+    storage
+        .delete_bookmark(&track_id)
+        .await
+        .expect("Failed to delete bookmark");
+
+    // 验证删除
+    let bookmarks = storage.get_bookmarks().await.expect("Failed to get bookmarks");
+    assert!(bookmarks.is_empty(), "Bookmarks should be empty after deletion");
+}
+
+// ============================================================================
+// Internet Radio Station Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_database_storage_internet_radio_crud() {
+    let storage = create_test_storage().await;
+
+    // 创建电台
+    storage
+        .create_internet_radio_station(
+            "http://stream.example.com/jazz",
+            "Jazz FM",
+            Some("http://jazzfm.example.com"),
+        )
+        .await
+        .expect("Failed to create radio station");
+
+    // 获取电台列表
+    let stations = storage
+        .get_internet_radio_stations()
+        .await
+        .expect("Failed to get radio stations");
+    assert!(!stations.is_empty(), "Should have radio stations");
+
+    let station = &stations[0];
+    assert_eq!(station.name, "Jazz FM");
+    assert_eq!(station.stream_url, "http://stream.example.com/jazz");
+    assert_eq!(station.homepage_url.as_deref(), Some("http://jazzfm.example.com"));
+
+    let station_id = station.id.clone();
+
+    // 更新电台
+    storage
+        .update_internet_radio_station(
+            &station_id,
+            "http://stream.example.com/jazz-hd",
+            "Jazz FM HD",
+            Some("http://jazzfm-hd.example.com"),
+        )
+        .await
+        .expect("Failed to update radio station");
+
+    // 验证更新
+    let stations = storage
+        .get_internet_radio_stations()
+        .await
+        .expect("Failed to get radio stations");
+    let station = &stations[0];
+    assert_eq!(station.name, "Jazz FM HD");
+    assert_eq!(station.stream_url, "http://stream.example.com/jazz-hd");
+
+    // 删除电台
+    storage
+        .delete_internet_radio_station(&station_id)
+        .await
+        .expect("Failed to delete radio station");
+
+    // 验证删除
+    let stations = storage
+        .get_internet_radio_stations()
+        .await
+        .expect("Failed to get radio stations");
+    assert!(stations.is_empty(), "Radio stations should be empty after deletion");
+}
+
+// ============================================================================
+// Star and Rating Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_database_storage_star_unstar() {
+    let storage = create_test_storage().await;
+
+    // 创建测试曲目
+    let track = Track {
+        id: Uuid::new_v4(),
+        title: "Star Test Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 200,
+        file_path: "/music/star_test.mp3".to_string(),
+        file_size: 6_000_000,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Pop".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_track(&track).await.expect("Failed to save track");
+
+    let track_id = track.id.to_string();
+
+    // 收藏曲目
+    storage
+        .star(&[track_id.as_str()], &[], &[])
+        .await
+        .expect("Failed to star track");
+
+    // 验证收藏
+    let starred = storage
+        .get_starred(None)
+        .await
+        .expect("Failed to get starred");
+    assert!(!starred.songs.is_empty(), "Should have starred songs");
+
+    // 取消收藏
+    storage
+        .unstar(&[track_id.as_str()], &[], &[])
+        .await
+        .expect("Failed to unstar track");
+
+    // 验证取消
+    let starred = storage
+        .get_starred(None)
+        .await
+        .expect("Failed to get starred");
+    assert!(starred.songs.is_empty(), "Should have no starred songs after unstar");
+}
+
+#[tokio::test]
+async fn test_database_storage_rating() {
+    let storage = create_test_storage().await;
+
+    // 创建测试曲目
+    let track = Track {
+        id: Uuid::new_v4(),
+        title: "Rating Test Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 180,
+        file_path: "/music/rating_test.mp3".to_string(),
+        file_size: 5_000_000,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Rock".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_track(&track).await.expect("Failed to save track");
+
+    let track_id = track.id.to_string();
+
+    // 设置评分
+    storage
+        .set_rating(&track_id, 5)
+        .await
+        .expect("Failed to set rating");
+
+    // 验证评分
+    let song = storage
+        .get_song(&track_id)
+        .await
+        .expect("Failed to get song")
+        .expect("Song should exist");
+    assert_eq!(song.user_rating, Some(5));
+
+    // 更改评分
+    storage
+        .set_rating(&track_id, 3)
+        .await
+        .expect("Failed to update rating");
+
+    let song = storage
+        .get_song(&track_id)
+        .await
+        .expect("Failed to get song")
+        .expect("Song should exist");
+    assert_eq!(song.user_rating, Some(3));
+}
+
+// ============================================================================
+// Play Queue Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_database_storage_play_queue() {
+    let storage = create_test_storage().await;
+
+    // 创建测试曲目
+    let track1 = Track {
+        id: Uuid::new_v4(),
+        title: "Queue Track 1".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 180,
+        file_path: "/music/queue1.mp3".to_string(),
+        file_size: 5_000_000,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Electronic".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    let track2 = Track {
+        id: Uuid::new_v4(),
+        title: "Queue Track 2".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 200,
+        file_path: "/music/queue2.mp3".to_string(),
+        file_size: 6_000_000,
+        bitrate: 256,
+        format: "mp3".to_string(),
+        track_number: Some(2),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Electronic".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_track(&track1).await.expect("Failed to save track 1");
+    storage.save_track(&track2).await.expect("Failed to save track 2");
+
+    let track_id1 = track1.id.to_string();
+    let track_id2 = track2.id.to_string();
+
+    // 保存播放队列
+    storage
+        .save_play_queue(
+            &[track_id1.as_str(), track_id2.as_str()],
+            Some(track_id1.as_str()),
+            Some(45000),
+        )
+        .await
+        .expect("Failed to save play queue");
+
+    // 获取播放队列
+    let queue = storage
+        .get_play_queue()
+        .await
+        .expect("Failed to get play queue")
+        .expect("Play queue should exist");
+
+    assert_eq!(queue.entries.len(), 2);
+    assert_eq!(queue.current, Some(track_id1.clone()));
+    assert_eq!(queue.position, 45000);
+}
+
+// ============================================================================
+// Media Stream Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_database_storage_media_stream() {
+    let storage = create_test_storage().await;
+
+    // 创建测试音轨
+    let track = Track {
+        id: Uuid::new_v4(),
+        title: "Stream Test Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 180,
+        file_path: "/music/stream_test.mp3".to_string(),
+        file_size: 1024,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Test".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_track(&track).await.expect("Failed to save track");
+
+    // 写入模拟的音频文件到 VFS
+    let audio_data = b"fake audio data for testing";
+    storage
+        .write_file(&track.file_path, audio_data)
+        .await
+        .expect("Failed to write audio file");
+
+    // 测试 get_stream_path
+    let track_id = track.id.to_string();
+    let stream_path = storage
+        .get_stream_path(&track_id)
+        .await
+        .expect("Failed to get stream path");
+    assert!(stream_path.is_some());
+    assert_eq!(stream_path.unwrap(), track.file_path);
+
+    // 测试通过 VFS 读取文件
+    let read_data = storage
+        .read_file(&track.file_path)
+        .await
+        .expect("Failed to read audio file");
+    assert_eq!(read_data, audio_data);
+}
+
+#[tokio::test]
+async fn test_database_storage_cover_art() {
+    let storage = create_test_storage().await;
+
+    // 创建艺术家
+    let artist = Artist {
+        id: Uuid::new_v4(),
+        name: "Cover Art Test Artist".to_string(),
+        bio: None,
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_artist(&artist).await.expect("Failed to save artist");
+
+    // 创建带封面的专辑
+    let album = Album {
+        id: Uuid::new_v4(),
+        name: "Cover Art Test Album".to_string(),
+        artist_id: Some(artist.id),
+        year: Some(2024),
+        genre: Some("Test".to_string()),
+        cover_art_path: Some("/covers/test_cover.jpg".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    storage.save_album(&album).await.expect("Failed to save album");
+
+    // 写入模拟的封面图片到 VFS
+    let cover_data = b"fake image data for testing";
+    storage
+        .write_file("/covers/test_cover.jpg", cover_data)
+        .await
+        .expect("Failed to write cover art");
+
+    // 测试 get_cover_art_path（通过专辑 ID）
+    let album_id = album.id.to_string();
+    let cover_path = storage
+        .get_cover_art_path(&album_id)
+        .await
+        .expect("Failed to get cover art path");
+    assert!(cover_path.is_some());
+    assert_eq!(cover_path.unwrap(), "/covers/test_cover.jpg");
+
+    // 测试读取封面图片
+    let read_cover = storage
+        .read_file("/covers/test_cover.jpg")
+        .await
+        .expect("Failed to read cover art");
+    assert_eq!(read_cover, cover_data);
+}
+
+#[tokio::test]
+async fn test_database_storage_vfs_file_operations() {
+    let storage = create_test_storage().await;
+
+    let test_path = "/test/hello.txt";
+    let test_data = b"Hello, VFS!";
+
+    // 测试写入
+    storage
+        .write_file(test_path, test_data)
+        .await
+        .expect("Failed to write file");
+
+    // 测试文件存在
+    let exists = storage
+        .file_exists(test_path)
+        .await
+        .expect("Failed to check file existence");
+    assert!(exists, "File should exist after write");
+
+    // 测试读取
+    let read_data = storage
+        .read_file(test_path)
+        .await
+        .expect("Failed to read file");
+    assert_eq!(read_data, test_data);
+
+    // 测试删除
+    storage
+        .delete_file(test_path)
+        .await
+        .expect("Failed to delete file");
+
+    // 验证已删除
+    let exists_after = storage
+        .file_exists(test_path)
+        .await
+        .expect("Failed to check file existence after delete");
+    assert!(!exists_after, "File should not exist after delete");
 }

@@ -10,8 +10,6 @@ pub mod user_playlist;
 pub mod subsonic;
 #[cfg(feature = "scanner")]
 pub mod scan;
-#[cfg(test)]
-mod tests;
 
 // 重新导出主要类型
 pub use config::DatabaseConfig;

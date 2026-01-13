@@ -58,6 +58,19 @@ impl FileStorage for DatabaseStorage {
 }
 
 impl DatabaseStorage {
+    /// 获取默认用户 ID（admin 用户）
+    async fn get_default_user_id(&self) -> Result<String> {
+        let row = sqlx::query("SELECT id FROM users WHERE username = 'admin' LIMIT 1")
+            .fetch_optional(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        match row {
+            Some(r) => Ok(r.get("id")),
+            None => Err(StorageError::NotFound("Default admin user not found".to_string())),
+        }
+    }
+
     /// 将数据库行转换为 MediaFile
     fn row_to_media_file<'r, R: Row>(&self, r: &'r R) -> MediaFile
     where
@@ -85,6 +98,7 @@ impl DatabaseStorage {
             suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
             track_number: r.get::<Option<i64>, _>("track_number").map(|v| v as i32),
             disc_number: r.get::<Option<i64>, _>("disc_number").map(|v| v as i32),
+            user_rating: r.get::<Option<i32>, _>("rating"),
             ..Default::default()
         }
     }
@@ -1096,45 +1110,262 @@ impl SubsonicStorage for DatabaseStorage {
     }
 
     // === Media Annotation ===
-    async fn star(&self, _ids: &[&str], _album_ids: &[&str], _artist_ids: &[&str]) -> Result<()> {
+    async fn star(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        // 收藏曲目
+        for id in ids {
+            sqlx::query("UPDATE tracks SET starred_at = ? WHERE id = ?")
+                .bind(&now)
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+        // 收藏专辑
+        for id in album_ids {
+            sqlx::query("UPDATE albums SET starred_at = ? WHERE id = ?")
+                .bind(&now)
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+        // 收藏艺术家
+        for id in artist_ids {
+            sqlx::query("UPDATE artists SET starred_at = ? WHERE id = ?")
+                .bind(&now)
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
         Ok(())
     }
 
-    async fn unstar(&self, _ids: &[&str], _album_ids: &[&str], _artist_ids: &[&str]) -> Result<()> {
+    async fn unstar(&self, ids: &[&str], album_ids: &[&str], artist_ids: &[&str]) -> Result<()> {
+        // 取消收藏曲目
+        for id in ids {
+            sqlx::query("UPDATE tracks SET starred_at = NULL WHERE id = ?")
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+        // 取消收藏专辑
+        for id in album_ids {
+            sqlx::query("UPDATE albums SET starred_at = NULL WHERE id = ?")
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+        // 取消收藏艺术家
+        for id in artist_ids {
+            sqlx::query("UPDATE artists SET starred_at = NULL WHERE id = ?")
+                .bind(id)
+                .execute(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
         Ok(())
     }
 
-    async fn set_rating(&self, _id: &str, _rating: i32) -> Result<()> {
+    async fn set_rating(&self, id: &str, rating: i32) -> Result<()> {
+        sqlx::query("UPDATE tracks SET rating = ? WHERE id = ?")
+            .bind(rating)
+            .bind(id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
-    async fn scrobble(&self, _id: &str, _time: Option<i64>, _submission: bool) -> Result<()> {
+    async fn scrobble(&self, id: &str, time: Option<i64>, _submission: bool) -> Result<()> {
+        let played_at = time
+            .map(|t| DateTime::from_timestamp(t / 1000, 0).unwrap_or_else(Utc::now))
+            .unwrap_or_else(Utc::now);
+        
+        // 增加播放次数
+        sqlx::query("UPDATE tracks SET play_count = COALESCE(play_count, 0) + 1 WHERE id = ?")
+            .bind(id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        // 记录 scrobble
+        // TODO: 需要用户 ID，暂时使用默认值
+        sqlx::query("INSERT INTO scrobbles (track_id, user_id, played_at) VALUES (?, 'admin', ?)")
+            .bind(id)
+            .bind(played_at.to_rfc3339())
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
         Ok(())
     }
 
     // === Bookmarks ===
     async fn get_bookmarks(&self) -> Result<Vec<SubsonicBookmark>> {
-        Ok(vec![])
+        let rows = sqlx::query(
+            r#"SELECT b.*, t.title, t.album_id, t.artist_id, t.duration, t.file_path, t.file_size,
+                      t.bitrate, t.format, t.track_number, t.disc_number, t.year, t.genre, t.cover_art_path,
+                      a.name as album_name, ar.name as artist_name
+               FROM bookmarks b
+               LEFT JOIN tracks t ON b.track_id = t.id
+               LEFT JOIN albums a ON t.album_id = a.id
+               LEFT JOIN artists ar ON t.artist_id = ar.id
+               ORDER BY b.created_at DESC"#,
+        )
+        .fetch_all(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| {
+                let entry = MediaFile {
+                    id: r.get("track_id"),
+                    parent: r.get::<Option<String>, _>("album_id"),
+                    is_dir: false,
+                    title: r.get("title"),
+                    album: r.get("album_name"),
+                    artist: r.get("artist_name"),
+                    year: r.get::<Option<i32>, _>("year"),
+                    genre: r.get("genre"),
+                    cover_art: r.get::<Option<String>, _>("cover_art_path"),
+                    duration: r.get::<Option<i64>, _>("duration").map(|v| v as f32).unwrap_or(0.0),
+                    bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32).unwrap_or(0),
+                    path: r.get("file_path"),
+                    size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
+                    suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
+                    track_number: r.get::<Option<i64>, _>("track_number").map(|v| v as i32),
+                    disc_number: r.get::<Option<i64>, _>("disc_number").map(|v| v as i32),
+                    ..Default::default()
+                };
+
+                SubsonicBookmark {
+                    position: r.get::<i64, _>("position"),
+                    username: r.get::<String, _>("user_id"),
+                    comment: r.get("comment"),
+                    created: r
+                        .get::<Option<String>, _>("created_at")
+                        .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(Utc::now),
+                    changed: r
+                        .get::<Option<String>, _>("updated_at")
+                        .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(Utc::now),
+                    entry,
+                }
+            })
+            .collect())
     }
 
-    async fn create_bookmark(&self, _id: &str, _position: i64, _comment: Option<&str>) -> Result<()> {
+    async fn create_bookmark(&self, id: &str, position: i64, comment: Option<&str>) -> Result<()> {
+        let user_id = self.get_default_user_id().await?;
+        let now = Utc::now().to_rfc3339();
+        sqlx::query(
+            r#"INSERT INTO bookmarks (user_id, track_id, position, comment, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(user_id, track_id) DO UPDATE SET
+                   position = excluded.position,
+                   comment = excluded.comment,
+                   updated_at = excluded.updated_at"#,
+        )
+        .bind(&user_id)
+        .bind(id)
+        .bind(position)
+        .bind(comment)
+        .bind(&now)
+        .bind(&now)
+        .execute(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
         Ok(())
     }
 
-    async fn delete_bookmark(&self, _id: &str) -> Result<()> {
+    async fn delete_bookmark(&self, id: &str) -> Result<()> {
+        let user_id = self.get_default_user_id().await?;
+        sqlx::query("DELETE FROM bookmarks WHERE track_id = ? AND user_id = ?")
+            .bind(id)
+            .bind(&user_id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
     async fn get_play_queue(&self) -> Result<Option<SubsonicPlayQueue>> {
-        Ok(None)
+        let user_id = self.get_default_user_id().await?;
+        let row = sqlx::query(
+            "SELECT track_ids, current_track_id, position, changed_at, changed_by FROM play_queue WHERE user_id = ?",
+        )
+        .bind(&user_id)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        match row {
+            Some(r) => {
+                let track_ids_json: String = r.get("track_ids");
+                let track_ids: Vec<String> = serde_json::from_str(&track_ids_json).unwrap_or_default();
+
+                // 获取每个曲目的详细信息
+                let mut entries = Vec::new();
+                for track_id in &track_ids {
+                    if let Some(song) = self.get_song(track_id).await? {
+                        entries.push(song);
+                    }
+                }
+
+                Ok(Some(SubsonicPlayQueue {
+                    entries,
+                    current: r.get("current_track_id"),
+                    position: r.get::<i64, _>("position"),
+                    username: "admin".to_string(),
+                    changed: r
+                        .get::<Option<String>, _>("changed_at")
+                        .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(Utc::now),
+                    changed_by: r.get::<String, _>("changed_by"),
+                }))
+            }
+            None => Ok(None),
+        }
     }
 
     async fn save_play_queue(
         &self,
-        _ids: &[&str],
-        _current: Option<&str>,
-        _position: Option<i64>,
+        ids: &[&str],
+        current: Option<&str>,
+        position: Option<i64>,
     ) -> Result<()> {
+        let user_id = self.get_default_user_id().await?;
+        let now = Utc::now().to_rfc3339();
+        let track_ids_json = serde_json::to_string(&ids).unwrap_or_default();
+        sqlx::query(
+            r#"INSERT INTO play_queue (user_id, track_ids, current_track_id, position, changed_at, changed_by)
+               VALUES (?, ?, ?, ?, ?, 'reverie')
+               ON CONFLICT(user_id) DO UPDATE SET
+                   track_ids = excluded.track_ids,
+                   current_track_id = excluded.current_track_id,
+                   position = excluded.position,
+                   changed_at = excluded.changed_at,
+                   changed_by = excluded.changed_by"#,
+        )
+        .bind(&user_id)
+        .bind(&track_ids_json)
+        .bind(current)
+        .bind(position.unwrap_or(0))
+        .bind(&now)
+        .execute(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
         Ok(())
     }
 
@@ -1177,29 +1408,73 @@ impl SubsonicStorage for DatabaseStorage {
 
     // === Internet Radio ===
     async fn get_internet_radio_stations(&self) -> Result<Vec<SubsonicInternetRadioStation>> {
-        Ok(vec![])
+        let rows = sqlx::query(
+            "SELECT id, name, stream_url, homepage_url FROM internet_radio_stations ORDER BY name",
+        )
+        .fetch_all(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| SubsonicInternetRadioStation {
+                id: r.get::<i64, _>("id").to_string(),
+                name: r.get("name"),
+                stream_url: r.get("stream_url"),
+                homepage_url: r.get("homepage_url"),
+            })
+            .collect())
     }
 
     async fn create_internet_radio_station(
         &self,
-        _stream_url: &str,
-        _name: &str,
-        _homepage_url: Option<&str>,
+        stream_url: &str,
+        name: &str,
+        homepage_url: Option<&str>,
     ) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        sqlx::query(
+            "INSERT INTO internet_radio_stations (name, stream_url, homepage_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind(name)
+        .bind(stream_url)
+        .bind(homepage_url)
+        .bind(&now)
+        .bind(&now)
+        .execute(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
     async fn update_internet_radio_station(
         &self,
-        _id: &str,
-        _stream_url: &str,
-        _name: &str,
-        _homepage_url: Option<&str>,
+        id: &str,
+        stream_url: &str,
+        name: &str,
+        homepage_url: Option<&str>,
     ) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        sqlx::query(
+            "UPDATE internet_radio_stations SET name = ?, stream_url = ?, homepage_url = ?, updated_at = ? WHERE id = ?",
+        )
+        .bind(name)
+        .bind(stream_url)
+        .bind(homepage_url)
+        .bind(&now)
+        .bind(id)
+        .execute(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
-    async fn delete_internet_radio_station(&self, _id: &str) -> Result<()> {
+    async fn delete_internet_radio_station(&self, id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM internet_radio_stations WHERE id = ?")
+            .bind(id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
