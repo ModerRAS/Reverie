@@ -4,7 +4,6 @@ use axum::{
     routing::{get, get_service},
     Router,
 };
-use serde::Deserialize;
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 use tower_http::{

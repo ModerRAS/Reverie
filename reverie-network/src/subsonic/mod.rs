@@ -19,6 +19,7 @@ use axum::{
     routing::get,
     Router,
 };
+use chrono::Utc;
 use reverie_storage::{FileStorage, SubsonicStorage};
 use std::{collections::HashMap, sync::Arc};
 
@@ -91,13 +92,13 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/getArtist", get(get_artist_handler::<S>))
         .route("/getAlbum", get(get_album_handler::<S>))
         .route("/getSong", get(get_song_handler::<S>))
-        .route("/getArtistInfo", get(stub_handler::<S>))
-        .route("/getArtistInfo2", get(stub_handler::<S>))
-        .route("/getAlbumInfo", get(stub_handler::<S>))
-        .route("/getAlbumInfo2", get(stub_handler::<S>))
-        .route("/getSimilarSongs", get(stub_handler::<S>))
-        .route("/getSimilarSongs2", get(stub_handler::<S>))
-        .route("/getTopSongs", get(stub_handler::<S>))
+        .route("/getArtistInfo", get(get_artist_info_handler::<S>))
+        .route("/getArtistInfo2", get(get_artist_info2_handler::<S>))
+        .route("/getAlbumInfo", get(get_album_info_handler::<S>))
+        .route("/getAlbumInfo2", get(get_album_info2_handler::<S>))
+        .route("/getSimilarSongs", get(get_similar_songs_handler::<S>))
+        .route("/getSimilarSongs2", get(get_similar_songs2_handler::<S>))
+        .route("/getTopSongs", get(get_top_songs_handler::<S>))
         // Album list endpoints
         .route("/getAlbumList", get(get_album_list_handler::<S>))
         .route("/getAlbumList2", get(get_album_list2_handler::<S>))
@@ -119,30 +120,30 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/stream", get(stream_handler::<S>))
         .route("/download", get(download_handler::<S>))
         .route("/getCoverArt", get(get_cover_art_handler::<S>))
-        .route("/getLyrics", get(stub_handler::<S>))
-        .route("/getLyricsBySongId", get(stub_handler::<S>))
-        .route("/getAvatar", get(stub_handler::<S>))
+        .route("/getLyrics", get(get_lyrics_handler::<S>))
+        .route("/getLyricsBySongId", get(get_lyrics_by_song_id_handler::<S>))
+        .route("/getAvatar", get(get_avatar_handler::<S>))
         // Annotation endpoints
         .route("/star", get(star_handler::<S>))
         .route("/unstar", get(unstar_handler::<S>))
         .route("/setRating", get(set_rating_handler::<S>))
         .route("/scrobble", get(scrobble_handler::<S>))
         // Bookmark endpoints
-        .route("/getBookmarks", get(stub_handler::<S>))
-        .route("/createBookmark", get(stub_handler::<S>))
-        .route("/deleteBookmark", get(stub_handler::<S>))
-        .route("/getPlayQueue", get(stub_handler::<S>))
-        .route("/savePlayQueue", get(stub_handler::<S>))
+        .route("/getBookmarks", get(get_bookmarks_handler::<S>))
+        .route("/createBookmark", get(create_bookmark_handler::<S>))
+        .route("/deleteBookmark", get(delete_bookmark_handler::<S>))
+        .route("/getPlayQueue", get(get_play_queue_handler::<S>))
+        .route("/savePlayQueue", get(save_play_queue_handler::<S>))
         // Share endpoints
-        .route("/getShares", get(stub_handler::<S>))
-        .route("/createShare", get(stub_handler::<S>))
-        .route("/updateShare", get(stub_handler::<S>))
-        .route("/deleteShare", get(stub_handler::<S>))
+        .route("/getShares", get(get_shares_handler::<S>))
+        .route("/createShare", get(create_share_handler::<S>))
+        .route("/updateShare", get(update_share_handler::<S>))
+        .route("/deleteShare", get(delete_share_handler::<S>))
         // Internet radio endpoints
-        .route("/getInternetRadioStations", get(stub_handler::<S>))
-        .route("/createInternetRadioStation", get(stub_handler::<S>))
-        .route("/updateInternetRadioStation", get(stub_handler::<S>))
-        .route("/deleteInternetRadioStation", get(stub_handler::<S>))
+        .route("/getInternetRadioStations", get(get_internet_radio_stations_handler::<S>))
+        .route("/createInternetRadioStation", get(create_internet_radio_station_handler::<S>))
+        .route("/updateInternetRadioStation", get(update_internet_radio_station_handler::<S>))
+        .route("/deleteInternetRadioStation", get(delete_internet_radio_station_handler::<S>))
         // User management endpoints
         .route("/getUser", get(get_user_handler::<S>))
         .route("/getUsers", get(get_users_handler::<S>))
@@ -150,7 +151,7 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/getScanStatus", get(get_scan_status_handler::<S>))
         .route("/startScan", get(start_scan_handler::<S>))
         // OpenSubsonic extensions
-        .route("/getOpenSubsonicExtensions", get(stub_handler::<S>))
+        .route("/getOpenSubsonicExtensions", get(get_open_subsonic_extensions_handler::<S>))
 }
 
 // ===== 系统处理器 =====
@@ -192,13 +193,580 @@ async fn get_music_folders_handler<S: SubsonicStorage + Clone>(
     }
 }
 
-// ===== 未实现端点的存根处理器 =====
+// ===== 艺术家/专辑信息处理器 =====
 
-/// 未实现端点的存根处理器 - 返回空的 OK 响应
-async fn stub_handler<S: SubsonicStorage + Clone>(
+/// GET /rest/getArtistInfo - 获取艺术家信息（简介、图片、相似艺术家）
+async fn get_artist_info_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
-    ok_response(&params)
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let count = params.get("count").and_then(|s| s.parse().ok());
+    let include_not_present = params.get("includeNotPresent").and_then(|s| s.parse().ok());
+
+    match state.storage.get_artist_info(id, count, include_not_present).await {
+        Ok(info) => {
+            let data = ArtistInfoData {
+                artist_info: ArtistInfo::from(&info),
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::ArtistInfo(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getArtistInfo2 - 获取艺术家信息（ID3 版本）
+async fn get_artist_info2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let count = params.get("count").and_then(|s| s.parse().ok());
+    let include_not_present = params.get("includeNotPresent").and_then(|s| s.parse().ok());
+
+    match state.storage.get_artist_info2(id, count, include_not_present).await {
+        Ok(info) => {
+            let data = ArtistInfo2Data {
+                artist_info2: ArtistInfo2::from(&info),
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::ArtistInfo2(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getAlbumInfo - 获取专辑信息（备注、图片）
+async fn get_album_info_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.get_album_info(id).await {
+        Ok(info) => {
+            let data = AlbumInfoData {
+                album_info: AlbumInfo::from(&info),
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::AlbumInfo(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getAlbumInfo2 - 获取专辑信息（ID3 版本）
+async fn get_album_info2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.get_album_info2(id).await {
+        Ok(info) => {
+            // AlbumInfo2 使用相同的响应格式
+            let data = AlbumInfoData {
+                album_info: AlbumInfo::from(&info),
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::AlbumInfo(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getSimilarSongs - 获取相似歌曲
+async fn get_similar_songs_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let count = params.get("count").and_then(|s| s.parse().ok());
+
+    match state.storage.get_similar_songs(id, count).await {
+        Ok(songs) => {
+            let items: Vec<Child> = songs.iter().map(Child::from).collect();
+            let data = SimilarSongsData {
+                similar_songs: SimilarSongsInner { song: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::SimilarSongs(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getSimilarSongs2 - 获取相似歌曲（ID3 版本）
+async fn get_similar_songs2_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let count = params.get("count").and_then(|s| s.parse().ok());
+
+    match state.storage.get_similar_songs2(id, count).await {
+        Ok(songs) => {
+            let items: Vec<Child> = songs.iter().map(Child::from).collect();
+            let data = SimilarSongs2Data {
+                similar_songs2: SimilarSongs2Inner { song: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::SimilarSongs2(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getTopSongs - 获取艺术家的热门歌曲
+async fn get_top_songs_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let artist = match params.get("artist") {
+        Some(a) => a,
+        None => return error_response(&params, 10, "Missing required parameter: artist"),
+    };
+
+    let count = params.get("count").and_then(|s| s.parse().ok());
+
+    match state.storage.get_top_songs(artist, count).await {
+        Ok(top_songs) => {
+            let items: Vec<Child> = top_songs.songs.iter().map(Child::from).collect();
+            let data = TopSongsData {
+                top_songs: TopSongsInner { song: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::TopSongs(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getLyrics - 获取歌词
+async fn get_lyrics_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let artist = params.get("artist").map(|s| s.as_str());
+    let title = params.get("title").map(|s| s.as_str());
+
+    match state.storage.get_lyrics(artist, title).await {
+        Ok(Some(lyrics)) => {
+            let data = LyricsData {
+                lyrics: LyricsItem::from(&lyrics),
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::Lyrics(data));
+            format_response(&params, response)
+        }
+        Ok(None) => {
+            // 没有找到歌词，返回空的歌词对象
+            let data = LyricsData {
+                lyrics: LyricsItem {
+                    artist: artist.map(|s| s.to_string()),
+                    title: title.map(|s| s.to_string()),
+                    value: String::new(),
+                },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::Lyrics(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+// ===== Bookmark 处理器 =====
+
+/// GET /rest/getBookmarks - 获取用户的所有书签
+async fn get_bookmarks_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    match state.storage.get_bookmarks().await {
+        Ok(bookmarks) => {
+            let items: Vec<BookmarkItem> = bookmarks.iter().map(BookmarkItem::from).collect();
+            let data = BookmarksData {
+                bookmarks: BookmarksList { bookmark: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::Bookmarks(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/createBookmark - 创建/更新书签
+async fn create_bookmark_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let position = match params.get("position").and_then(|s| s.parse().ok()) {
+        Some(p) => p,
+        None => return error_response(&params, 10, "Missing required parameter: position"),
+    };
+
+    let comment = params.get("comment").map(|s| s.as_str());
+
+    match state.storage.create_bookmark(id, position, comment).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/deleteBookmark - 删除书签
+async fn delete_bookmark_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.delete_bookmark(id).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getPlayQueue - 获取播放队列
+async fn get_play_queue_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    match state.storage.get_play_queue().await {
+        Ok(Some(queue)) => {
+            let entries: Vec<Child> = queue.entries.iter().map(Child::from).collect();
+            let data = PlayQueueData {
+                play_queue: PlayQueueInner {
+                    entry: entries,
+                    current: queue.current,
+                    position: queue.position,
+                    username: queue.username,
+                    changed: queue.changed.to_rfc3339(),
+                    changed_by: queue.changed_by,
+                },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::PlayQueue(data));
+            format_response(&params, response)
+        }
+        Ok(None) => {
+            // 没有播放队列，返回空队列
+            let data = PlayQueueData {
+                play_queue: PlayQueueInner {
+                    entry: vec![],
+                    current: None,
+                    position: 0,
+                    username: String::new(),
+                    changed: Utc::now().to_rfc3339(),
+                    changed_by: String::new(),
+                },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::PlayQueue(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/savePlayQueue - 保存播放队列
+async fn save_play_queue_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    // 获取多个 id 参数
+    let ids: Vec<&str> = params
+        .iter()
+        .filter(|(k, _)| k.as_str() == "id")
+        .map(|(_, v)| v.as_str())
+        .collect();
+
+    let current = params.get("current").map(|s| s.as_str());
+    let position = params.get("position").and_then(|s| s.parse().ok());
+
+    match state.storage.save_play_queue(&ids, current, position).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+// ===== Share 处理器 =====
+
+/// GET /rest/getShares - 获取所有分享
+async fn get_shares_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    match state.storage.get_shares().await {
+        Ok(shares) => {
+            let items: Vec<ShareItem> = shares.iter().map(ShareItem::from).collect();
+            let data = SharesData {
+                shares: SharesList { share: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::Shares(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/createShare - 创建分享
+async fn create_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    // 获取多个 id 参数
+    let ids: Vec<&str> = params
+        .iter()
+        .filter(|(k, _)| k.as_str() == "id")
+        .map(|(_, v)| v.as_str())
+        .collect();
+
+    if ids.is_empty() {
+        return error_response(&params, 10, "Missing required parameter: id");
+    }
+
+    let description = params.get("description").map(|s| s.as_str());
+    let expires = params.get("expires").and_then(|s| s.parse().ok());
+
+    match state.storage.create_share(&ids, description, expires).await {
+        Ok(share) => {
+            let items = vec![ShareItem::from(&share)];
+            let data = SharesData {
+                shares: SharesList { share: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::Shares(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/updateShare - 更新分享
+async fn update_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let description = params.get("description").map(|s| s.as_str());
+    let expires = params.get("expires").and_then(|s| s.parse().ok());
+
+    match state.storage.update_share(id, description, expires).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/deleteShare - 删除分享
+async fn delete_share_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.delete_share(id).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+// ===== Internet Radio 处理器 =====
+
+/// GET /rest/getInternetRadioStations - 获取所有网络电台
+async fn get_internet_radio_stations_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    match state.storage.get_internet_radio_stations().await {
+        Ok(stations) => {
+            let items: Vec<InternetRadioStationItem> = stations.iter().map(InternetRadioStationItem::from).collect();
+            let data = InternetRadioStationsData {
+                internet_radio_stations: InternetRadioStationsList { internet_radio_station: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::InternetRadioStations(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/createInternetRadioStation - 创建网络电台
+async fn create_internet_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let stream_url = match params.get("streamUrl") {
+        Some(url) => url,
+        None => return error_response(&params, 10, "Missing required parameter: streamUrl"),
+    };
+
+    let name = match params.get("name") {
+        Some(n) => n,
+        None => return error_response(&params, 10, "Missing required parameter: name"),
+    };
+
+    let homepage_url = params.get("homepageUrl").map(|s| s.as_str());
+
+    match state.storage.create_internet_radio_station(stream_url, name, homepage_url).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/updateInternetRadioStation - 更新网络电台
+async fn update_internet_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    let stream_url = match params.get("streamUrl") {
+        Some(url) => url,
+        None => return error_response(&params, 10, "Missing required parameter: streamUrl"),
+    };
+
+    let name = match params.get("name") {
+        Some(n) => n,
+        None => return error_response(&params, 10, "Missing required parameter: name"),
+    };
+
+    let homepage_url = params.get("homepageUrl").map(|s| s.as_str());
+
+    match state.storage.update_internet_radio_station(id, stream_url, name, homepage_url).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/deleteInternetRadioStation - 删除网络电台
+async fn delete_internet_radio_station_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.delete_internet_radio_station(id).await {
+        Ok(()) => ok_response(&params),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getOpenSubsonicExtensions - 获取 OpenSubsonic 扩展列表
+async fn get_open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    // 目前返回空的扩展列表
+    let data = OpenSubsonicExtensionsData {
+        open_subsonic_extensions: OpenSubsonicExtensionsList {
+            extension: vec![],
+        },
+    };
+    let response = SubsonicResponse::ok_with(ResponseData::OpenSubsonicExtensions(data));
+    format_response(&params, response)
+}
+
+/// GET /rest/getLyricsBySongId - 通过歌曲 ID 获取歌词（OpenSubsonic 扩展）
+async fn get_lyrics_by_song_id_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id,
+        None => return error_response(&params, 10, "Missing required parameter: id"),
+    };
+
+    match state.storage.get_lyrics_by_song_id(id).await {
+        Ok(lyrics_list) => {
+            let items: Vec<StructuredLyricsItem> = lyrics_list.iter().map(StructuredLyricsItem::from).collect();
+            let data = LyricsListData {
+                lyrics_list: LyricsListInner { lyrics: items },
+            };
+            let response = SubsonicResponse::ok_with(ResponseData::LyricsList(data));
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getAvatar - 获取用户头像
+async fn get_avatar_handler<S: SubsonicStorage + FileStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let username = match params.get("username") {
+        Some(u) => u,
+        None => return error_response(&params, 10, "Missing required parameter: username"),
+    };
+
+    match state.storage.get_avatar_path(username).await {
+        Ok(Some(path)) => {
+            // 读取头像文件并返回
+            match state.storage.read_file(&path).await {
+                Ok(data) => {
+                    // 根据文件扩展名确定 MIME 类型
+                    let content_type = if path.ends_with(".png") {
+                        "image/png"
+                    } else if path.ends_with(".gif") {
+                        "image/gif"
+                    } else {
+                        "image/jpeg"
+                    };
+                    (
+                        StatusCode::OK,
+                        [(header::CONTENT_TYPE, content_type)],
+                        data,
+                    )
+                        .into_response()
+                }
+                Err(_) => {
+                    // 文件读取失败，返回默认头像或 404
+                    (StatusCode::NOT_FOUND, "Avatar not found").into_response()
+                }
+            }
+        }
+        Ok(None) => (StatusCode::NOT_FOUND, "Avatar not found").into_response(),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
 }
 
 // ===== 浏览处理器 =====

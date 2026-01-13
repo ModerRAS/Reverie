@@ -16,9 +16,11 @@ use axum::{
 use reverie_storage::SubsonicStorage;
 use std::sync::Arc;
 
+#[allow(dead_code)]
 pub const SUBSONIC_API_VERSION: &str = "1.16.1";
 
 /// 从请求中提取的身份验证上下文
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AuthContext {
     pub username: String,
@@ -26,6 +28,7 @@ pub struct AuthContext {
 }
 
 /// Subsonic API 请求的身份验证中间件
+#[allow(dead_code)]
 pub async fn auth_middleware<S: SubsonicStorage>(
     State(storage): State<Arc<S>>,
     mut req: Request<Body>,
@@ -37,6 +40,7 @@ pub async fn auth_middleware<S: SubsonicStorage>(
 }
 
 /// 从请求查询参数中提取身份验证信息
+#[allow(dead_code)]
 async fn extract_auth<S: SubsonicStorage>(
     storage: &Arc<S>,
     req: &Request<Body>,
@@ -84,6 +88,7 @@ async fn extract_auth<S: SubsonicStorage>(
 }
 
 /// 简单的 URL 参数百分号解码
+#[allow(dead_code)]
 fn percent_decode(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     let mut chars = s.chars().peekable();

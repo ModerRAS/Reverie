@@ -50,7 +50,6 @@ impl AudioMetadata {
     /// 从文件路径提取元数据
     #[cfg(feature = "scanner")]
     pub fn from_path(path: &Path) -> Result<Self> {
-        use lofty::prelude::*;
         use lofty::probe::Probe;
 
         let tagged_file = Probe::open(path)
@@ -64,7 +63,6 @@ impl AudioMetadata {
     /// 从内存数据提取元数据
     #[cfg(feature = "scanner")]
     pub fn from_bytes(data: &[u8], file_type_hint: Option<&str>) -> Result<Self> {
-        use lofty::prelude::*;
         use lofty::probe::Probe;
 
         let cursor = Cursor::new(data);

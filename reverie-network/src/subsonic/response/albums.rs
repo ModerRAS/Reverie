@@ -149,6 +149,7 @@ impl From<AlbumList2Data> for super::ResponseData {
 
 // === 专辑信息 ===
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AlbumInfoData {
     pub album_info: AlbumInfo,
 }

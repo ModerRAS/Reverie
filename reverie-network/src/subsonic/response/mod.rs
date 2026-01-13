@@ -36,7 +36,7 @@ pub use misc::{
     InternetRadioStationItem, InternetRadioStationsData, InternetRadioStationsList,
     License, LicenseData, LyricsData, LyricsItem, LyricsListData, LyricsListInner,
     OpenSubsonicExtensionItem, OpenSubsonicExtensionsData, OpenSubsonicExtensionsList,
-    PlayQueueData, PlayQueueInner, ScanStatusData, ScanStatusItem,
+    PlayQueueData, PlayQueueInner, ScanStatusData, ScanStatusItem, StructuredLyricsItem,
 };
 
 pub use playlists::{

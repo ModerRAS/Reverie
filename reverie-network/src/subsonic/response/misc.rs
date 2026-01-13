@@ -146,6 +146,7 @@ impl From<PlayQueueData> for super::ResponseData {
 
 // === 互联网广播 ===
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InternetRadioStationsData {
     pub internet_radio_stations: InternetRadioStationsList,
 }

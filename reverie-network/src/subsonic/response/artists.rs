@@ -198,6 +198,7 @@ impl From<&SubsonicArtist> for ArtistWithAlbums {
 
 // === 艺术家信息 ===
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ArtistInfoData {
     pub artist_info: ArtistInfo,
 }
@@ -221,6 +222,7 @@ impl From<ArtistInfoData> for super::ResponseData {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ArtistInfo2Data {
     pub artist_info2: ArtistInfo2,
 }
@@ -262,6 +264,40 @@ impl From<&SubsonicArtistInfo> for ArtistInfo {
             small_url: a.small_image_url.clone(),
             medium_url: a.medium_image_url.clone(),
             large_url: a.large_image_url.clone(),
+            similar_artist: a
+                .similar_artists
+                .iter()
+                .map(ArtistID3Item::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<&SubsonicArtistInfo> for ArtistInfo2 {
+    fn from(a: &SubsonicArtistInfo) -> Self {
+        let mut links = vec![];
+        if let Some(url) = &a.last_fm_url {
+            links.push(LinkItem {
+                name: "Last.fm".to_string(),
+                url: url.clone(),
+            });
+        }
+
+        let mut images = vec![];
+        if let Some(url) = &a.large_image_url {
+            images.push(ImageItem { url: url.clone() });
+        }
+        if let Some(url) = &a.medium_image_url {
+            images.push(ImageItem { url: url.clone() });
+        }
+        if let Some(url) = &a.small_image_url {
+            images.push(ImageItem { url: url.clone() });
+        }
+
+        Self {
+            biography: a.biography.clone(),
+            links,
+            image: images,
             similar_artist: a
                 .similar_artists
                 .iter()
