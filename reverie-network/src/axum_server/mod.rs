@@ -1,6 +1,7 @@
 //! 基于 Axum 的 HTTP 服务器实现
 use async_trait::async_trait;
 use axum::{
+    response::Html,
     routing::{get, get_service},
     Router,
 };
@@ -117,6 +118,27 @@ where
 
         if let Some(ui_router) = self.create_ui_router() {
             router = router.merge(ui_router);
+        } else {
+            // Provide a helpful landing page instead of a bare 404 when UI isn't bundled.
+            router = router.route(
+                "/",
+                get(|| async {
+                    Html(
+                        "<!doctype html><meta charset=\"utf-8\" />\
+<title>Reverie</title>\
+<h2>Reverie UI 未打包</h2>\
+<p>当前后端已启动，但没有找到可用的 Web UI 静态文件。</p>\
+<p>解决办法：</p>\
+<ol>\
+  <li>安装 Dioxus CLI：<code>cargo install dioxus-cli</code></li>\
+  <li>重新运行后端：<code>cargo run -p reverie-server</code></li>\
+  <li>或设置环境变量 <code>REVERIE_UI_DIR</code> 指向已构建的 UI 目录（包含 index.html）</li>\
+</ol>\
+<p>API 仍可用：<code>/rest/ping</code>、<code>/health</code></p>\
+",
+                    )
+                }),
+            );
         }
 
         router
