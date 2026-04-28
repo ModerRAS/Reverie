@@ -448,3 +448,25 @@ pub async fn delete_user_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/changePassword - 修改密码
+pub async fn change_password_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let username = match params.get("username") {
+        Some(u) if !u.is_empty() => u.as_str(),
+        _ => return error_response(&params, 10, "Missing required parameter: username"),
+    };
+    let password = match params.get("password") {
+        Some(p) if !p.is_empty() => p.as_str(),
+        _ => return error_response(&params, 10, "Missing required parameter: password"),
+    };
+
+    // TODO: Add authentication check (requires admin role or self)
+    match state.storage.change_password(username, password).await {
+        Ok(()) => ok_response(&params),
+        Err(StorageError::NotFound(_)) => error_response(&params, 70, &format!("User {} not found", username)),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
