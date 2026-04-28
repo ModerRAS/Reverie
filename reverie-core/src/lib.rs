@@ -6,6 +6,7 @@
 pub mod crypto;
 pub mod error;
 pub mod models;
+pub mod podcast;
 
 #[cfg(test)]
 mod tests;
@@ -13,3 +14,4 @@ mod tests;
 pub use crypto::*;
 pub use error::*;
 pub use models::*;
+pub use podcast::{PodcastChannel, PodcastEpisode};
