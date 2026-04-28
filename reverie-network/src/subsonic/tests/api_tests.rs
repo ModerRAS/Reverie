@@ -475,3 +475,16 @@ async fn test_get_video_info_missing_id() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
+
+// === HLS Endpoint Tests ===
+
+#[tokio::test]
+async fn test_hls_returns_not_implemented() {
+    let router = create_test_router();
+    // hls endpoint returns HTTP 501, not a JSON error
+    let response = router
+        .oneshot(Request::builder().uri("/hls?f=json&id=1").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+}

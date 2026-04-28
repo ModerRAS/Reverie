@@ -109,6 +109,7 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/getStarred2", get(get_starred2_handler::<S>))
         .route("/getVideos", get(get_videos_handler::<S>))
         .route("/getVideoInfo", get(get_video_info_handler::<S>))
+        .route("/hls", get(hls_handler::<S>))
         // Search endpoints
         .route("/search2", get(search2_handler::<S>))
         .route("/search3", get(search3_handler::<S>))
@@ -709,6 +710,17 @@ async fn get_open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(
     };
     let response = SubsonicResponse::ok_with(ResponseData::OpenSubsonicExtensions(data));
     format_response(&params, response)
+}
+
+/// GET /rest/hls - HLS 自适应流 (NOT IMPLEMENTED)
+/// 
+/// 此端点用于自适应比特率流式传输，需要转码基础设施。
+/// 当前实现返回 HTTP 501 Not Implemented。
+async fn hls_handler<S: SubsonicStorage + Clone>(
+    State(_state): State<SubsonicState<S>>,
+    Query(_params): Query<HashMap<String, String>>,
+) -> Response {
+    (StatusCode::NOT_IMPLEMENTED, "501 Not Implemented").into_response()
 }
 
 /// GET /rest/getLyricsBySongId - 通过歌曲 ID 获取歌词（OpenSubsonic 扩展）
