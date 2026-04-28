@@ -136,6 +136,7 @@ pub enum ResponseData {
     JukeboxStatus(JukeboxStatusData),
     ChatMessages(ChatMessagesData),
     Podcasts(PodcastsData),
+    NewestPodcasts(NewestPodcastsData),
 }
 
 // Re-export types from other modules
@@ -145,7 +146,7 @@ pub use super::{
     ArtistsData, BookmarkItem, BookmarksData, CaptionItem, CaptionsData, ChatMessagesData, Child, DirectoryData,
     DirectoryItem, GenreItem, GenresData, IndexesData, InternetRadioStationItem,
     InternetRadioStationsData, JukeboxStatusData, LicenseData, LyricsData, LyricsListData, MusicFolderItem,
-    MusicFoldersData, NowPlayingData, OpenSubsonicExtensionItem, OpenSubsonicExtensionsData,
+    MusicFoldersData, NewestPodcastsData, NowPlayingData, OpenSubsonicExtensionItem, OpenSubsonicExtensionsData,
     PlayQueueData, PlaylistData, PlaylistItem, PlaylistWithEntries, PlaylistsData,
     PodcastsData, RandomSongsData, ScanStatusData, SearchResult2Data, SearchResult3Data, ShareItem,
     SharesData, SimilarSongs2Data, SimilarSongsData, SongData, SongsByGenreData, Starred2Data,

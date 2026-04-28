@@ -573,3 +573,21 @@ async fn test_get_podcasts_with_channels() {
     assert_eq!(json["subsonic-response"]["status"], "ok");
     assert!(json["subsonic-response"]["podcasts"]["channel"].is_array());
 }
+
+// === getNewestPodcasts Tests ===
+
+#[tokio::test]
+async fn test_get_newest_podcasts() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getNewestPodcasts?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["newestPodcasts"]["episode"].is_array());
+}
+
+#[tokio::test]
+async fn test_get_newest_podcasts_with_count() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getNewestPodcasts?f=json&count=5").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["newestPodcasts"]["episode"].is_array());
+}

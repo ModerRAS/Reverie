@@ -64,4 +64,4 @@ pub use jukebox::{JukeboxStatusData, JukeboxStatusItem};
 
 pub use chat::{ChatMessagesData, ChatMessageItem};
 
-pub use podcasts::{PodcastsData, PodcastChannelItem, PodcastEpisodesInner, PodcastEpisodeItem, PodcastsInner};
+pub use podcasts::{NewestPodcastsData, NewestPodcastsInner, PodcastsData, PodcastChannelItem, PodcastEpisodesInner, PodcastEpisodeItem, PodcastsInner};

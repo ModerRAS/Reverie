@@ -88,3 +88,22 @@ impl From<PodcastsData> for super::ResponseData {
         super::ResponseData::Podcasts(v)
     }
 }
+
+/// Newest podcasts wrapper
+#[derive(Debug, Clone, Serialize)]
+pub struct NewestPodcastsData {
+    #[serde(rename = "newestPodcasts")]
+    pub newest_podcasts: NewestPodcastsInner,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct NewestPodcastsInner {
+    #[serde(rename = "episode")]
+    pub episodes: Vec<PodcastEpisodeItem>,
+}
+
+impl From<NewestPodcastsData> for super::ResponseData {
+    fn from(v: NewestPodcastsData) -> Self {
+        super::ResponseData::NewestPodcasts(v)
+    }
+}

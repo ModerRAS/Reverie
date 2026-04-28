@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use super::{error_response, format_response, SubsonicState};
 use super::response::*;
 use super::response::chat::{ChatMessageItem, ChatMessagesData, ChatMessagesInner};
-use super::response::podcasts::{PodcastChannelItem, PodcastsData, PodcastsInner};
+use super::response::podcasts::{NewestPodcastsData, NewestPodcastsInner, PodcastChannelItem, PodcastsData, PodcastsInner};
 
 /// GET /rest/getIndexes - 获取艺术家索引
 pub async fn get_indexes_handler<S: SubsonicStorage + Clone>(
@@ -444,6 +444,27 @@ pub async fn get_podcasts_handler<S: SubsonicStorage + Clone>(
             let data = PodcastsData {
                 podcasts: PodcastsInner {
                     channel: channels.iter().map(PodcastChannelItem::from).collect(),
+                },
+            };
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getNewestPodcasts - 获取最新播客单集
+pub async fn get_newest_podcasts_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let count = params.get("count").and_then(|s| s.parse().ok());
+
+    match state.storage.get_newest_podcasts(count).await {
+        Ok(episodes) => {
+            let data = NewestPodcastsData {
+                newest_podcasts: NewestPodcastsInner {
+                    episodes: episodes.iter().map(PodcastEpisodeItem::from).collect(),
                 },
             };
             let response = SubsonicResponse::ok_with(data);

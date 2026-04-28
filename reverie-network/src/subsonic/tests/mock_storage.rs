@@ -1,6 +1,6 @@
 //! Mock Subsonic Storage 实现
 
-use reverie_core::{Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
+use reverie_core::{Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, PodcastEpisode, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
 use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
 use std::collections::HashMap;
 use std::fmt;
@@ -761,6 +761,10 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     // === Podcasts ===
     async fn get_podcasts(&self, _include_episodes: bool) -> Result<Vec<PodcastChannel>> {
+        Ok(vec![])
+    }
+
+    async fn get_newest_podcasts(&self, _count: Option<i32>) -> Result<Vec<PodcastEpisode>> {
         Ok(vec![])
     }
 }
