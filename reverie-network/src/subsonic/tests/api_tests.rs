@@ -537,3 +537,20 @@ async fn test_get_chat_messages_with_since() {
     assert_eq!(json["subsonic-response"]["status"], "ok");
     assert!(json["subsonic-response"]["chatMessages"]["chatMessage"].is_array());
 }
+
+// === Add Chat Message Tests ===
+
+#[tokio::test]
+async fn test_add_chat_message_success() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/addChatMessage?f=json&message=Hello").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_add_chat_message_missing() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/addChatMessage?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
+}

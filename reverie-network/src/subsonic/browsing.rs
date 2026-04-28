@@ -408,3 +408,22 @@ pub async fn get_chat_messages_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/addChatMessage - 发送聊天室消息
+pub async fn add_chat_message_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let message = match params.get("message") {
+        Some(msg) if !msg.is_empty() => msg.clone(),
+        _ => return error_response(&params, 10, "message is required"),
+    };
+
+    match state.storage.add_chat_message(&message).await {
+        Ok(()) => {
+            let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

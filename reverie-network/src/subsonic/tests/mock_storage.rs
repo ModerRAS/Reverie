@@ -748,6 +748,16 @@ impl SubsonicStorage for MockSubsonicStorage {
             .collect();
         Ok(filtered)
     }
+
+    async fn add_chat_message(&self, message: &str) -> Result<()> {
+        let chat_msg = ChatMessage {
+            username: "admin".to_string(),
+            message: message.to_string(),
+            time: chrono::Utc::now().timestamp_millis(),
+        };
+        self.chat_messages.write().await.push(chat_msg);
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]

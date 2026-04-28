@@ -405,6 +405,11 @@ pub trait SubsonicStorage: Send + Sync {
         Ok(vec![])
     }
 
+    /// 添加聊天室消息
+    async fn add_chat_message(&self, _message: &str) -> Result<()> {
+        Ok(())
+    }
+
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {
