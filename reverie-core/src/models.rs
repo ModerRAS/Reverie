@@ -487,3 +487,25 @@ pub struct Caption {
     pub language: Option<String>,
     pub format: String, // "srt", "vtt"
 }
+
+/// 点唱机状态（占位符实现）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JukeboxStatus {
+    pub current_index: i32,
+    pub playing: bool,
+    pub gain: f32,
+    pub position: i32,
+    pub volume: i32,
+}
+
+impl Default for JukeboxStatus {
+    fn default() -> Self {
+        Self {
+            current_index: -1,
+            playing: false,
+            gain: 0.0,
+            position: 0,
+            volume: 100,
+        }
+    }
+}

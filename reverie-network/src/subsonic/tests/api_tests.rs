@@ -507,3 +507,13 @@ async fn test_hls_returns_not_implemented() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
 }
+
+// === Jukebox Tests ===
+
+#[tokio::test]
+async fn test_jukebox_control_placeholder() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/jukeboxControl?f=json&action=status").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["jukeboxStatus"].is_object());
+}

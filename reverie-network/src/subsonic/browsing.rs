@@ -364,3 +364,25 @@ pub async fn get_captions_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/jukeboxControl - 点唱机控制（占位符实现）
+pub async fn jukebox_control_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let action = params.get("action").map(|s| s.as_str()).unwrap_or("status");
+    let index = params.get("index").and_then(|s| s.parse().ok());
+    let offset = params.get("offset").and_then(|s| s.parse().ok());
+    let timeout = params.get("timeout").and_then(|s| s.parse().ok());
+
+    match state.storage.jukebox_control(action, index, offset, timeout).await {
+        Ok(status) => {
+            let data = JukeboxStatusData {
+                jukebox_status: JukeboxStatusItem::from(&status),
+            };
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

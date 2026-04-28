@@ -5,7 +5,7 @@
 use crate::error::Result;
 use async_trait::async_trait;
 use reverie_core::{
-    Caption, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
+    Caption, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
     SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
     SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
     SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
@@ -386,6 +386,18 @@ pub trait SubsonicStorage: Send + Sync {
 
     /// 开始扫描库
     async fn start_scan(&self) -> Result<SubsonicScanStatus>;
+
+    // === 点唱机 ===
+    /// 点唱机控制（占位符实现）
+    async fn jukebox_control(
+        &self,
+        _action: &str,
+        _index: Option<i32>,
+        _offset: Option<i32>,
+        _timeout: Option<i32>,
+    ) -> Result<JukeboxStatus> {
+        Ok(JukeboxStatus::default())
+    }
 
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展

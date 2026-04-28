@@ -133,6 +133,7 @@ pub enum ResponseData {
     Videos(VideosData),
     VideoInfo(VideoInfoData),
     Captions(CaptionsData),
+    JukeboxStatus(JukeboxStatusData),
 }
 
 // Re-export types from other modules
@@ -141,7 +142,7 @@ pub use super::{
     ArtistData, ArtistID3Item, ArtistInfo2Data, ArtistInfoData, ArtistItem, ArtistWithAlbums,
     ArtistsData, BookmarkItem, BookmarksData, CaptionItem, CaptionsData, Child, DirectoryData,
     DirectoryItem, GenreItem, GenresData, IndexesData, InternetRadioStationItem,
-    InternetRadioStationsData, LicenseData, LyricsData, LyricsListData, MusicFolderItem,
+    InternetRadioStationsData, JukeboxStatusData, LicenseData, LyricsData, LyricsListData, MusicFolderItem,
     MusicFoldersData, NowPlayingData, OpenSubsonicExtensionItem, OpenSubsonicExtensionsData,
     PlayQueueData, PlaylistData, PlaylistItem, PlaylistWithEntries, PlaylistsData,
     RandomSongsData, ScanStatusData, SearchResult2Data, SearchResult3Data, ShareItem,

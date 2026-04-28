@@ -8,6 +8,7 @@ pub mod core;
 // DTO modules
 pub mod albums;
 pub mod artists;
+pub mod jukebox;
 pub mod misc;
 pub mod playlists;
 pub mod songs;
@@ -56,3 +57,5 @@ pub use users::{
 };
 
 pub use videos::{CaptionItem, CaptionsData, CaptionsInner, VideoInfoData, VideoInfoItem, VideosData};
+
+pub use jukebox::{JukeboxStatusData, JukeboxStatusItem};

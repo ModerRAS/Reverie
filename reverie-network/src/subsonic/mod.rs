@@ -110,6 +110,7 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/getVideos", get(get_videos_handler::<S>))
         .route("/getVideoInfo", get(get_video_info_handler::<S>))
         .route("/getCaptions", get(get_captions_handler::<S>))
+        .route("/jukeboxControl", get(jukebox_control_handler::<S>))
         .route("/hls", get(hls_handler::<S>))
         // Search endpoints
         .route("/search2", get(search2_handler::<S>))

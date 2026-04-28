@@ -1,6 +1,6 @@
 //! Mock Subsonic Storage 实现
 
-use reverie_core::{Caption, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
+use reverie_core::{Caption, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
 use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
 use std::collections::HashMap;
 use std::fmt;
@@ -713,6 +713,16 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn start_scan(&self) -> Result<SubsonicScanStatus> {
         self.get_scan_status().await
+    }
+
+    async fn jukebox_control(
+        &self,
+        _action: &str,
+        _index: Option<i32>,
+        _offset: Option<i32>,
+        _timeout: Option<i32>,
+    ) -> Result<JukeboxStatus> {
+        Ok(JukeboxStatus::default())
     }
 }
 
