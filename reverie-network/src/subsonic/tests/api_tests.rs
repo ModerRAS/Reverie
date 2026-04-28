@@ -615,3 +615,26 @@ async fn test_create_podcast_channel_missing_url() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
+
+// === deletePodcastChannel Tests ===
+
+#[tokio::test]
+async fn test_delete_podcast_channel_success() {
+    let router = create_test_router();
+    // First create a channel
+    let create_json = get_json_response(router.clone(), "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast").await;
+    assert_eq!(create_json["subsonic-response"]["status"], "ok");
+
+    // Now delete the channel we just created (channel-1)
+    let json = get_json_response(router, "/deletePodcastChannel?f=json&id=channel-1").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_delete_podcast_channel_not_found() {
+    let router = create_test_router();
+    // Deleting a non-existent channel should return error 70
+    let json = get_json_response_error(router, "/deletePodcastChannel?f=json&id=nonexistent").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 70);
+}

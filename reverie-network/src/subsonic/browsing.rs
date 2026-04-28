@@ -509,3 +509,22 @@ pub async fn create_podcast_channel_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/deletePodcastChannel - 删除播客频道订阅
+pub async fn delete_podcast_channel_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) if !id.is_empty() => id.clone(),
+        _ => return error_response(&params, 10, "id is required"),
+    };
+
+    match state.storage.delete_podcast_channel(&id).await {
+        Ok(()) => {
+            let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 70, &e.to_string()),
+    }
+}

@@ -431,6 +431,12 @@ pub trait SubsonicStorage: Send + Sync {
         Err(StorageError::Unavailable("Not implemented".to_string()))
     }
 
+    /// 删除播客频道订阅
+    /// TODO: 不级联删除 episodes（episodes 由其他端点管理）
+    async fn delete_podcast_channel(&self, _id: &str) -> Result<()> {
+        Err(StorageError::NotFound("Podcast channel not found".to_string()))
+    }
+
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {

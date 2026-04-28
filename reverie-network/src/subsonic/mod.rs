@@ -117,6 +117,7 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         .route("/getNewestPodcasts", get(get_newest_podcasts_handler::<S>))
         .route("/refreshPodcasts", get(refresh_podcasts_handler::<S>))
         .route("/createPodcastChannel", get(create_podcast_channel_handler::<S>))
+        .route("/deletePodcastChannel", get(delete_podcast_channel_handler::<S>))
         .route("/hls", get(hls_handler::<S>))
         // Search endpoints
         .route("/search2", get(search2_handler::<S>))

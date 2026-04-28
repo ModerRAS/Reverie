@@ -783,6 +783,16 @@ impl SubsonicStorage for MockSubsonicStorage {
         self.podcast_channels.write().await.push(channel.clone());
         Ok(channel)
     }
+
+    async fn delete_podcast_channel(&self, id: &str) -> Result<()> {
+        let mut channels = self.podcast_channels.write().await;
+        let len_before = channels.len();
+        channels.retain(|c| c.id != id);
+        if channels.len() == len_before {
+            return Err(StorageError::NotFound("Podcast channel not found".to_string()));
+        }
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]
