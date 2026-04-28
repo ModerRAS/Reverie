@@ -15,6 +15,7 @@ pub struct MockSubsonicStorage {
     users: Arc<RwLock<HashMap<String, SubsonicUser>>>,
     passwords: Arc<RwLock<HashMap<String, String>>>,
     chat_messages: Arc<TokioRwLock<Vec<ChatMessage>>>,
+    podcast_channels: Arc<TokioRwLock<Vec<PodcastChannel>>>,
 }
 
 impl MockSubsonicStorage {
@@ -34,6 +35,7 @@ impl MockSubsonicStorage {
                     time: 1704067201000,
                 },
             ])),
+            podcast_channels: Arc::new(TokioRwLock::new(vec![])),
         }
     }
 
@@ -770,6 +772,16 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn refresh_podcasts(&self) -> Result<()> {
         Ok(())
+    }
+
+    async fn create_podcast_channel(&self, url: &str, title: Option<&str>) -> Result<PodcastChannel> {
+        let channel = PodcastChannel::new(
+            format!("channel-{}", self.podcast_channels.read().await.len() + 1),
+            url.to_string(),
+            title.unwrap_or("New Podcast").to_string(),
+        );
+        self.podcast_channels.write().await.push(channel.clone());
+        Ok(channel)
     }
 }
 

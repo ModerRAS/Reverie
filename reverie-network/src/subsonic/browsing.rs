@@ -488,3 +488,24 @@ pub async fn refresh_podcasts_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/createPodcastChannel - 创建播客频道订阅
+pub async fn create_podcast_channel_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let url = match params.get("url") {
+        Some(url) if !url.is_empty() => url.clone(),
+        _ => return error_response(&params, 10, "url is required"),
+    };
+
+    let title = params.get("title").map(|s| s.as_str());
+
+    match state.storage.create_podcast_channel(&url, title).await {
+        Ok(_channel) => {
+            let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

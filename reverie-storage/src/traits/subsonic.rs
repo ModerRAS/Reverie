@@ -2,7 +2,7 @@
 //!
 //! 完整的 Subsonic API 存储 trait，实现 navidrome 兼容的 Subsonic API 所需的所有方法。
 
-use crate::error::Result;
+use crate::error::{Result, StorageError};
 use async_trait::async_trait;
 use reverie_core::{
     Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, PodcastEpisode, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
@@ -424,6 +424,11 @@ pub trait SubsonicStorage: Send + Sync {
     /// 刷新播客频道
     async fn refresh_podcasts(&self) -> Result<()> {
         Ok(())
+    }
+
+    /// 创建播客频道订阅
+    async fn create_podcast_channel(&self, _url: &str, _title: Option<&str>) -> Result<PodcastChannel> {
+        Err(StorageError::Unavailable("Not implemented".to_string()))
     }
 
     // === OpenSubsonic 扩展 ===

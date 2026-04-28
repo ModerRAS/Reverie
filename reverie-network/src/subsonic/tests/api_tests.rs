@@ -598,3 +598,20 @@ async fn test_refresh_podcasts_placeholder() {
     let json = get_json_response(router, "/refreshPodcasts?f=json").await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
+
+// === createPodcastChannel Tests ===
+
+#[tokio::test]
+async fn test_create_podcast_channel_success() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_create_podcast_channel_missing_url() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/createPodcastChannel?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
+}
