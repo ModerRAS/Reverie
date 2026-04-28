@@ -322,3 +322,41 @@ async fn test_create_user_duplicate() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 40);
 }
+
+#[tokio::test]
+async fn test_update_user_success() {
+    let router = create_test_router();
+    // First create a user
+    let _ = get_json_response(
+        router.clone(),
+        "/createUser?f=json&username=updateme&password=oldpwd&email=old@test.com"
+    ).await;
+    // Then update the user
+    let json = get_json_response(
+        router,
+        "/updateUser?f=json&username=updateme&email=new@test.com"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_update_user_not_found() {
+    let router = create_test_router();
+    let json = get_json_response_error(
+        router,
+        "/updateUser?f=json&username=nonexistent&email=test@test.com"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 70);
+}
+
+#[tokio::test]
+async fn test_update_user_missing_username() {
+    let router = create_test_router();
+    let json = get_json_response_error(
+        router,
+        "/updateUser?f=json&email=test@test.com"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
+}
