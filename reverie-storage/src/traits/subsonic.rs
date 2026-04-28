@@ -442,6 +442,11 @@ pub trait SubsonicStorage: Send + Sync {
         Err(StorageError::NotFound("Podcast episode not found".to_string()))
     }
 
+    /// 获取播客单集文件路径
+    async fn get_podcast_episode_path(&self, _id: &str) -> Result<Option<String>> {
+        Ok(None)
+    }
+
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {

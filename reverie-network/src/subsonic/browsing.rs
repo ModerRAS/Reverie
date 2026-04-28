@@ -547,3 +547,25 @@ pub async fn delete_podcast_episode_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 70, &e.to_string()),
     }
 }
+
+/// GET /rest/downloadPodcastEpisode - 下载播客单集
+pub async fn download_podcast_episode_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) if !id.is_empty() => id.clone(),
+        _ => return error_response(&params, 10, "id is required"),
+    };
+
+    // TODO: 实现真实的文件下载逻辑（需要 FileStorage bound）
+    match state.storage.get_podcast_episode_path(&id).await {
+        Ok(Some(_path)) => {
+            // Return empty success for mock — real implementation would stream file
+            let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Ok(None) => error_response(&params, 70, "Episode not found"),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

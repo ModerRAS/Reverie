@@ -819,6 +819,15 @@ impl SubsonicStorage for MockSubsonicStorage {
         }
         Ok(())
     }
+
+    async fn get_podcast_episode_path(&self, id: &str) -> Result<Option<String>> {
+        // Return a path for known episodes
+        if id == "episode-1" {
+            Ok(Some("/mock/podcasts/episode-1.mp3".to_string()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[async_trait::async_trait]
