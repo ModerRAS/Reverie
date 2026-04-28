@@ -55,4 +55,4 @@ pub use users::{
     ShareItem, SharesData, SharesList, UserData, UserItem, UsersData, UsersInner, UsersList,
 };
 
-pub use videos::{VideoInfoData, VideoInfoItem, VideosData};
+pub use videos::{CaptionItem, CaptionsData, CaptionsInner, VideoInfoData, VideoInfoItem, VideosData};

@@ -476,6 +476,25 @@ async fn test_get_video_info_missing_id() {
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
 
+// === Captions Tests ===
+
+#[tokio::test]
+async fn test_get_captions_empty() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getCaptions?f=json&id=video-1").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    // captions should be present (even if empty)
+    assert!(json["subsonic-response"]["captions"].is_object());
+}
+
+#[tokio::test]
+async fn test_get_captions_missing_id() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/getCaptions?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
+}
+
 // === HLS Endpoint Tests ===
 
 #[tokio::test]

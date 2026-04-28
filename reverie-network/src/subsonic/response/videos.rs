@@ -1,6 +1,6 @@
 //! Video-related response DTOs
 
-use reverie_core::{MediaFile, VideoInfo};
+use reverie_core::{Caption, MediaFile, VideoInfo};
 use serde::Serialize;
 
 use super::Child;
@@ -75,5 +75,46 @@ impl From<&VideoInfo> for VideoInfoItem {
 impl From<VideoInfoData> for super::ResponseData {
     fn from(v: VideoInfoData) -> Self {
         super::ResponseData::VideoInfo(v)
+    }
+}
+
+/// Captions response wrapper (Subsonic API: <captions><caption>...</caption></captions>)
+#[derive(Debug, Clone, Serialize)]
+pub struct CaptionsData {
+    #[serde(rename = "captions")]
+    pub captions: CaptionsInner,
+}
+
+/// Inner wrapper for caption items
+#[derive(Debug, Clone, Serialize)]
+pub struct CaptionsInner {
+    #[serde(rename = "caption")]
+    pub caption: Vec<CaptionItem>,
+}
+
+/// Individual caption track item
+#[derive(Debug, Clone, Serialize)]
+pub struct CaptionItem {
+    pub id: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
+    pub format: String,
+}
+
+impl From<&Caption> for CaptionItem {
+    fn from(c: &Caption) -> Self {
+        Self {
+            id: c.id.clone(),
+            name: c.name.clone(),
+            language: c.language.clone(),
+            format: c.format.clone(),
+        }
+    }
+}
+
+impl From<CaptionsData> for super::ResponseData {
+    fn from(v: CaptionsData) -> Self {
+        super::ResponseData::Captions(v)
     }
 }

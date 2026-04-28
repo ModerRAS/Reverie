@@ -5,7 +5,7 @@
 use crate::error::Result;
 use async_trait::async_trait;
 use reverie_core::{
-    MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
+    Caption, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
     SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
     SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
     SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
@@ -61,6 +61,11 @@ pub trait SubsonicStorage: Send + Sync {
     /// 获取视频信息
     async fn get_video_info(&self, _id: &str) -> Result<Option<VideoInfo>> {
         Ok(None)
+    }
+
+    /// 获取视频字幕轨道列表
+    async fn get_captions(&self, _id: &str, _format: Option<&str>) -> Result<Vec<Caption>> {
+        Ok(vec![])
     }
 
     /// 获取艺术家信息（简介、图片、相似艺术家）

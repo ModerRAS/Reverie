@@ -478,3 +478,12 @@ pub struct VideoInfo {
     pub bit_rate: Option<i32>,
     pub created: Option<DateTime<Utc>>,
 }
+
+/// 视频字幕/标题轨道
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Caption {
+    pub id: String,
+    pub name: String,
+    pub language: Option<String>,
+    pub format: String, // "srt", "vtt"
+}

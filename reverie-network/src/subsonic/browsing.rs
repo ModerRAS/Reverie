@@ -338,3 +338,29 @@ pub async fn get_video_info_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/getCaptions - 获取视频字幕轨道列表
+pub async fn get_captions_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id.clone(),
+        None => return error_response(&params, 10, "id is required"),
+    };
+
+    let format = params.get("format").map(|s| s.as_str());
+
+    match state.storage.get_captions(&id, format).await {
+        Ok(captions) => {
+            let data = CaptionsData {
+                captions: CaptionsInner {
+                    caption: captions.iter().map(CaptionItem::from).collect(),
+                },
+            };
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
