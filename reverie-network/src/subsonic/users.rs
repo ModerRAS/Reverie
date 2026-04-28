@@ -312,3 +312,63 @@ pub async fn download_handler<S: SubsonicStorage + FileStorage + Clone>(
             .unwrap(),
     }
 }
+
+/// GET /rest/createUser - 创建用户
+pub async fn create_user_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let username = match params.get("username") {
+        Some(u) if !u.is_empty() => u.as_str(),
+        _ => return error_response(&params, 10, "Missing required parameter: username"),
+    };
+    let password = match params.get("password") {
+        Some(p) if !p.is_empty() => p.as_str(),
+        _ => return error_response(&params, 10, "Missing required parameter: password"),
+    };
+
+    let email = params.get("email").filter(|s| !s.is_empty()).map(|s| s.as_str());
+    let admin_role = params.get("adminRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let settings_role = params.get("settingsRole").and_then(|s| s.parse().ok()).unwrap_or(true);
+    let stream_role = params.get("streamRole").and_then(|s| s.parse().ok()).unwrap_or(true);
+    let jukebox_role = params.get("jukeboxRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let download_role = params.get("downloadRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let upload_role = params.get("uploadRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let playlist_role = params.get("playlistRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let cover_art_role = params.get("coverArtRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let comment_role = params.get("commentRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let podcast_role = params.get("podcastRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let share_role = params.get("shareRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let video_conversion_role = params.get("videoConversionRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+
+    // Parse music folder IDs (comma-separated)
+    let music_folder_ids: Vec<i32> = params.get("musicFolderId")
+        .map(|s| s.split(',').filter_map(|id| id.trim().parse().ok()).collect())
+        .unwrap_or_default();
+
+    // TODO: Add authentication check (requires admin role)
+    match state.storage.create_user(
+        username,
+        password,
+        email,
+        admin_role,
+        settings_role,
+        stream_role,
+        jukebox_role,
+        download_role,
+        upload_role,
+        playlist_role,
+        cover_art_role,
+        comment_role,
+        podcast_role,
+        share_role,
+        video_conversion_role,
+        &music_folder_ids,
+    ).await {
+        Ok(()) => ok_response(&params),
+        Err(ref e) if e.to_string().contains("already exists") => {
+            error_response(&params, 40, "User already exists")
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

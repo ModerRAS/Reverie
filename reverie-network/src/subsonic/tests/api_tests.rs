@@ -31,6 +31,17 @@ async fn get_json_response(router: axum::Router, uri: &str) -> serde_json::Value
     serde_json::from_slice(&body).unwrap()
 }
 
+/// Helper for error response tests (Subsonic always returns 200, error is in body)
+async fn get_json_response_error(router: axum::Router, uri: &str) -> serde_json::Value {
+    let response = router
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK); // Subsonic always returns 200, error is in body
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    serde_json::from_slice(&body).unwrap()
+}
+
 // === 测试用例 ===
 
 #[tokio::test]
@@ -270,4 +281,44 @@ async fn test_get_lyrics_by_song_id() {
     let json = get_json_response(router, "/getLyricsBySongId?f=json&id=song-1").await;
 
     assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+// === User Management Tests ===
+
+#[tokio::test]
+async fn test_create_user_success() {
+    let router = create_test_router();
+    let json = get_json_response(
+        router,
+        "/createUser?f=json&username=testuser&password=test123&email=test@test.com&adminRole=false"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_create_user_missing_username() {
+    let router = create_test_router();
+    let json = get_json_response_error(
+        router,
+        "/createUser?f=json&password=test123"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
+}
+
+#[tokio::test]
+async fn test_create_user_duplicate() {
+    let router = create_test_router();
+    // Create first user
+    let _ = get_json_response(
+        router.clone(),
+        "/createUser?f=json&username=dupuser&password=test123&email=test@test.com"
+    ).await;
+    // Try to create duplicate
+    let json = get_json_response_error(
+        router,
+        "/createUser?f=json&username=dupuser&password=test456&email=dup@test.com"
+    ).await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 40);
 }

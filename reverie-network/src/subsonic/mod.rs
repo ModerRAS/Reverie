@@ -147,6 +147,7 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>(
         // User management endpoints
         .route("/getUser", get(get_user_handler::<S>))
         .route("/getUsers", get(get_users_handler::<S>))
+        .route("/createUser", get(create_user_handler::<S>))
         // Scanning endpoints
         .route("/getScanStatus", get(get_scan_status_handler::<S>))
         .route("/startScan", get(start_scan_handler::<S>))
