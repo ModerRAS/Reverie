@@ -429,3 +429,22 @@ pub async fn update_user_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/deleteUser - 删除用户
+pub async fn delete_user_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let username = match params.get("username") {
+        Some(u) if !u.is_empty() => u.as_str(),
+        _ => return error_response(&params, 10, "Missing required parameter: username"),
+    };
+
+    // TODO: Add authentication check (requires admin role)
+    // TODO: Prevent deleting self (safety check)
+    match state.storage.delete_user(username).await {
+        Ok(()) => ok_response(&params),
+        Err(StorageError::NotFound(_)) => error_response(&params, 70, &format!("User {} not found", username)),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
