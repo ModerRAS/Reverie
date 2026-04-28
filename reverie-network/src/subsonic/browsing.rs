@@ -473,3 +473,18 @@ pub async fn get_newest_podcasts_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/refreshPodcasts - 刷新播客频道（占位符实现）
+pub async fn refresh_podcasts_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    // TODO: 实现真实的 RSS feed 刷新逻辑
+    match state.storage.refresh_podcasts().await {
+        Ok(()) => {
+            let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

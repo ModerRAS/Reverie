@@ -767,6 +767,10 @@ impl SubsonicStorage for MockSubsonicStorage {
     async fn get_newest_podcasts(&self, _count: Option<i32>) -> Result<Vec<PodcastEpisode>> {
         Ok(vec![])
     }
+
+    async fn refresh_podcasts(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]

@@ -591,3 +591,10 @@ async fn test_get_newest_podcasts_with_count() {
     assert_eq!(json["subsonic-response"]["status"], "ok");
     assert!(json["subsonic-response"]["newestPodcasts"]["episode"].is_array());
 }
+
+#[tokio::test]
+async fn test_refresh_podcasts_placeholder() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/refreshPodcasts?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}

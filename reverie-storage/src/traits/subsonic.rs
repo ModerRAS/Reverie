@@ -421,6 +421,11 @@ pub trait SubsonicStorage: Send + Sync {
         Ok(vec![])
     }
 
+    /// 刷新播客频道
+    async fn refresh_podcasts(&self) -> Result<()> {
+        Ok(())
+    }
+
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {
