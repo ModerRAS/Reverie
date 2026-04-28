@@ -1,6 +1,6 @@
 //! Mock Subsonic Storage 实现
 
-use reverie_core::{SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, MediaFile};
+use reverie_core::{SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, MediaFile, VideoInfo};
 use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
 use std::collections::HashMap;
 use std::fmt;
@@ -146,6 +146,25 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn get_song(&self, _id: &str) -> Result<Option<MediaFile>> {
         Ok(Some(MediaFile::default()))
+    }
+
+    async fn get_video_info(&self, id: &str) -> Result<Option<VideoInfo>> {
+        if id == "video-1" {
+            Ok(Some(VideoInfo {
+                id: "video-1".to_string(),
+                title: "Test Video".to_string(),
+                path: Some("/videos/test.mp4".to_string()),
+                cover_art: Some("cover-1".to_string()),
+                original_width: Some(1920),
+                original_height: Some(1080),
+                audio_track_id: Some("audio-1".to_string()),
+                duration: Some(3600),
+                bit_rate: Some(2000),
+                created: Some(chrono::Utc::now()),
+            }))
+        } else {
+            Ok(None)  // Return None for unknown IDs (for not found test)
+        }
     }
 
     async fn get_artist_info(

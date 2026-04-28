@@ -315,3 +315,26 @@ pub async fn get_videos_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/getVideoInfo - 获取视频详细信息
+pub async fn get_video_info_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let id = match params.get("id") {
+        Some(id) => id.clone(),
+        None => return error_response(&params, 10, "id is required"),
+    };
+
+    match state.storage.get_video_info(&id).await {
+        Ok(Some(info)) => {
+            let data = VideoInfoData {
+                video_info: VideoInfoItem::from(&info),
+            };
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Ok(None) => error_response(&params, 70, "Video not found"),
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}

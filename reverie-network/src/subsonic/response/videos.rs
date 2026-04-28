@@ -1,6 +1,6 @@
 //! Video-related response DTOs
 
-use reverie_core::MediaFile;
+use reverie_core::{MediaFile, VideoInfo};
 use serde::Serialize;
 
 use super::Child;
@@ -22,5 +22,58 @@ impl From<Vec<MediaFile>> for VideosData {
 impl From<VideosData> for super::ResponseData {
     fn from(v: VideosData) -> Self {
         super::ResponseData::Videos(v)
+    }
+}
+
+/// VideoInfo response DTO
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoInfoData {
+    pub video_info: VideoInfoItem,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoInfoItem {
+    pub id: String,
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_art: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub original_width: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub original_height: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio_track_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bit_rate: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+}
+
+impl From<&VideoInfo> for VideoInfoItem {
+    fn from(info: &VideoInfo) -> Self {
+        Self {
+            id: info.id.clone(),
+            title: info.title.clone(),
+            path: info.path.clone(),
+            cover_art: info.cover_art.clone(),
+            original_width: info.original_width,
+            original_height: info.original_height,
+            audio_track_id: info.audio_track_id.clone(),
+            duration: info.duration,
+            bit_rate: info.bit_rate,
+            created: info.created.map(|dt| dt.to_rfc3339()),
+        }
+    }
+}
+
+impl From<VideoInfoData> for super::ResponseData {
+    fn from(v: VideoInfoData) -> Self {
+        super::ResponseData::VideoInfo(v)
     }
 }

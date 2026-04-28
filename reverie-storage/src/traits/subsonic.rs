@@ -10,7 +10,7 @@ use reverie_core::{
     SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
     SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
     SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
-    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
+    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo,
 };
 
 /// 完整的 Subsonic API 存储 trait
@@ -56,6 +56,11 @@ pub trait SubsonicStorage: Send + Sync {
     /// 获取视频（未实现，返回空）
     async fn get_videos(&self) -> Result<Vec<MediaFile>> {
         Ok(vec![])
+    }
+
+    /// 获取视频信息
+    async fn get_video_info(&self, _id: &str) -> Result<Option<VideoInfo>> {
+        Ok(None)
     }
 
     /// 获取艺术家信息（简介、图片、相似艺术家）

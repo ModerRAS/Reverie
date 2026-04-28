@@ -463,3 +463,18 @@ pub struct SubsonicSearchResult3 {
     pub albums: Vec<SubsonicAlbum>,
     pub songs: Vec<MediaFile>,
 }
+
+/// 视频信息元数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VideoInfo {
+    pub id: String,
+    pub title: String,
+    pub path: Option<String>,
+    pub cover_art: Option<String>,
+    pub original_width: Option<i32>,
+    pub original_height: Option<i32>,
+    pub audio_track_id: Option<String>,
+    pub duration: Option<i32>,
+    pub bit_rate: Option<i32>,
+    pub created: Option<DateTime<Utc>>,
+}

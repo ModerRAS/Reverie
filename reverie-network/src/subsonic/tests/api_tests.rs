@@ -449,10 +449,29 @@ async fn test_get_videos_empty() {
     assert!(json["subsonic-response"]["video"].is_array());
 }
 
+// === VideoInfo Tests ===
+
 #[tokio::test]
-async fn test_get_videos_with_data() {
+async fn test_get_video_info_success() {
     let router = create_test_router();
-    let json = get_json_response(router, "/getVideos?f=json").await;
+    // VideoInfo requires a specific video ID - use mock's test data
+    let json = get_json_response(router, "/getVideoInfo?f=json&id=video-1").await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
-    assert!(json["subsonic-response"]["video"].is_array());
+    assert!(json["subsonic-response"]["videoInfo"].is_object());
+}
+
+#[tokio::test]
+async fn test_get_video_info_not_found() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/getVideoInfo?f=json&id=nonexistent").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 70);
+}
+
+#[tokio::test]
+async fn test_get_video_info_missing_id() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/getVideoInfo?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
