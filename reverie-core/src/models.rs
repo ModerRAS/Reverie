@@ -498,6 +498,14 @@ pub struct JukeboxStatus {
     pub volume: i32,
 }
 
+/// 聊天室消息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub username: String,
+    pub message: String,
+    pub time: i64, // Unix timestamp in milliseconds
+}
+
 impl Default for JukeboxStatus {
     fn default() -> Self {
         Self {

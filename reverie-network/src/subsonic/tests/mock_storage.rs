@@ -1,10 +1,11 @@
 //! Mock Subsonic Storage 实现
 
-use reverie_core::{Caption, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
+use reverie_core::{Caption, ChatMessage, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
 use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, RwLock};
+use tokio::sync::RwLock as TokioRwLock;
 
 type Result<T> = std::result::Result<T, StorageError>;
 
@@ -13,6 +14,7 @@ type Result<T> = std::result::Result<T, StorageError>;
 pub struct MockSubsonicStorage {
     users: Arc<RwLock<HashMap<String, SubsonicUser>>>,
     passwords: Arc<RwLock<HashMap<String, String>>>,
+    chat_messages: Arc<TokioRwLock<Vec<ChatMessage>>>,
 }
 
 impl MockSubsonicStorage {
@@ -20,6 +22,18 @@ impl MockSubsonicStorage {
         MockSubsonicStorage {
             users: Arc::new(RwLock::new(HashMap::new())),
             passwords: Arc::new(RwLock::new(HashMap::new())),
+            chat_messages: Arc::new(TokioRwLock::new(vec![
+                ChatMessage {
+                    username: "admin".to_string(),
+                    message: "Welcome to the chat!".to_string(),
+                    time: 1704067200000,
+                },
+                ChatMessage {
+                    username: "user1".to_string(),
+                    message: "Hello everyone!".to_string(),
+                    time: 1704067201000,
+                },
+            ])),
         }
     }
 
@@ -723,6 +737,16 @@ impl SubsonicStorage for MockSubsonicStorage {
         _timeout: Option<i32>,
     ) -> Result<JukeboxStatus> {
         Ok(JukeboxStatus::default())
+    }
+
+    async fn get_chat_messages(&self, since: Option<i64>) -> Result<Vec<ChatMessage>> {
+        let messages = self.chat_messages.read().await;
+        let filtered: Vec<ChatMessage> = messages
+            .iter()
+            .filter(|m| since.map_or(true, |t| m.time > t))
+            .cloned()
+            .collect();
+        Ok(filtered)
     }
 }
 

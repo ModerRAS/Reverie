@@ -517,3 +517,23 @@ async fn test_jukebox_control_placeholder() {
     assert_eq!(json["subsonic-response"]["status"], "ok");
     assert!(json["subsonic-response"]["jukeboxStatus"].is_object());
 }
+
+// === Chat Messages Tests ===
+
+#[tokio::test]
+async fn test_get_chat_messages_empty() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getChatMessages?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    // chatMessages should be an object with chatMessage array
+    assert!(json["subsonic-response"]["chatMessages"]["chatMessage"].is_array());
+}
+
+#[tokio::test]
+async fn test_get_chat_messages_with_since() {
+    let router = create_test_router();
+    // since parameter filters messages by timestamp (milliseconds)
+    let json = get_json_response(router, "/getChatMessages?f=json&since=1000000").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["chatMessages"]["chatMessage"].is_array());
+}

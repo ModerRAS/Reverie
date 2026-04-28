@@ -11,6 +11,7 @@ use std::collections::HashMap;
 
 use super::{error_response, format_response, SubsonicState};
 use super::response::*;
+use super::response::chat::{ChatMessageItem, ChatMessagesData, ChatMessagesInner};
 
 /// GET /rest/getIndexes - 获取艺术家索引
 pub async fn get_indexes_handler<S: SubsonicStorage + Clone>(
@@ -379,6 +380,27 @@ pub async fn jukebox_control_handler<S: SubsonicStorage + Clone>(
         Ok(status) => {
             let data = JukeboxStatusData {
                 jukebox_status: JukeboxStatusItem::from(&status),
+            };
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getChatMessages - 获取聊天室消息（polling 模式）
+pub async fn get_chat_messages_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let since = params.get("since").and_then(|s| s.parse().ok());
+
+    match state.storage.get_chat_messages(since).await {
+        Ok(messages) => {
+            let data = ChatMessagesData {
+                chat_messages: ChatMessagesInner {
+                    chat_message: messages.iter().map(ChatMessageItem::from).collect(),
+                },
             };
             let response = SubsonicResponse::ok_with(data);
             format_response(&params, response)

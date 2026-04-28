@@ -5,7 +5,7 @@
 use crate::error::Result;
 use async_trait::async_trait;
 use reverie_core::{
-    Caption, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
+    Caption, ChatMessage, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
     SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
     SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
     SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
@@ -397,6 +397,12 @@ pub trait SubsonicStorage: Send + Sync {
         _timeout: Option<i32>,
     ) -> Result<JukeboxStatus> {
         Ok(JukeboxStatus::default())
+    }
+
+    // === 聊天室 ===
+    /// 获取聊天室消息（polling 模式）
+    async fn get_chat_messages(&self, _since: Option<i64>) -> Result<Vec<ChatMessage>> {
+        Ok(vec![])
     }
 
     // === OpenSubsonic 扩展 ===
