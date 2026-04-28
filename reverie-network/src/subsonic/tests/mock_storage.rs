@@ -2,17 +2,57 @@
 
 use reverie_core::{SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, MediaFile};
 use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
+use std::collections::HashMap;
 use std::fmt;
+use std::sync::{Arc, RwLock};
 
 type Result<T> = std::result::Result<T, StorageError>;
 
 /// 用于测试的模拟存储
 #[derive(Clone)]
-pub struct MockSubsonicStorage;
+pub struct MockSubsonicStorage {
+    users: Arc<RwLock<HashMap<String, SubsonicUser>>>,
+    passwords: Arc<RwLock<HashMap<String, String>>>,
+}
 
 impl MockSubsonicStorage {
     pub fn new() -> Self {
-        MockSubsonicStorage
+        MockSubsonicStorage {
+            users: Arc::new(RwLock::new(HashMap::new())),
+            passwords: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    fn get_user_internal(&self, username: &str) -> Option<SubsonicUser> {
+        self.users.read().ok()?.get(username).cloned()
+    }
+
+    fn get_password_internal(&self, username: &str) -> Option<String> {
+        self.passwords.read().ok()?.get(username).cloned()
+    }
+
+    fn insert_user(&self, user: &SubsonicUser, password_hash: String) {
+        if let Ok(mut users) = self.users.write() {
+            users.insert(user.username.clone(), user.clone());
+        }
+        if let Ok(mut passwords) = self.passwords.write() {
+            passwords.insert(user.username.clone(), password_hash);
+        }
+    }
+
+    fn remove_user(&self, username: &str) {
+        if let Ok(mut users) = self.users.write() {
+            users.remove(username);
+        }
+        if let Ok(mut passwords) = self.passwords.write() {
+            passwords.remove(username);
+        }
+    }
+}
+
+impl Default for MockSubsonicStorage {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -482,83 +522,157 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_user(&self, _username: &str) -> Result<Option<SubsonicUser>> {
-        Ok(Some(SubsonicUser {
-            username: "admin".to_string(),
-            email: None,
-            scrobbling_enabled: true,
-            max_bit_rate: None,
-            admin_role: true,
-            settings_role: true,
-            download_role: true,
-            upload_role: true,
-            playlist_role: true,
-            cover_art_role: true,
-            comment_role: true,
-            podcast_role: true,
-            stream_role: true,
-            jukebox_role: true,
-            share_role: true,
-            video_conversion_role: false,
-            avatar_last_changed: None,
-            folders: vec![1],
-        }))
+    async fn get_user(&self, username: &str) -> Result<Option<SubsonicUser>> {
+        Ok(self.get_user_internal(username))
     }
 
     async fn get_users(&self) -> Result<Vec<SubsonicUser>> {
-        Ok(vec![])
+        let users = self.users.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        Ok(users.values().cloned().collect())
     }
 
     async fn create_user(
         &self,
-        _username: &str,
-        _password: &str,
-        _email: Option<&str>,
-        _admin_role: bool,
-        _settings_role: bool,
-        _stream_role: bool,
-        _jukebox_role: bool,
-        _download_role: bool,
-        _upload_role: bool,
-        _playlist_role: bool,
-        _cover_art_role: bool,
-        _comment_role: bool,
-        _podcast_role: bool,
-        _share_role: bool,
-        _video_conversion_role: bool,
-        _music_folder_ids: &[i32],
+        username: &str,
+        password: &str,
+        email: Option<&str>,
+        admin_role: bool,
+        settings_role: bool,
+        stream_role: bool,
+        jukebox_role: bool,
+        download_role: bool,
+        upload_role: bool,
+        playlist_role: bool,
+        cover_art_role: bool,
+        comment_role: bool,
+        podcast_role: bool,
+        share_role: bool,
+        video_conversion_role: bool,
+        music_folder_ids: &[i32],
     ) -> Result<()> {
+        // Check for duplicate
+        if self.get_user_internal(username).is_some() {
+            return Err(StorageError::Unavailable("User already exists".to_string()));
+        }
+
+        // Hash the password
+        let hashed_password = reverie_core::hash_password(password)
+            .map_err(|e| StorageError::Unavailable(e.to_string()))?;
+
+        let user = SubsonicUser {
+            username: username.to_string(),
+            email: email.map(|s| s.to_string()),
+            scrobbling_enabled: true,
+            max_bit_rate: None,
+            admin_role,
+            settings_role,
+            download_role,
+            upload_role,
+            playlist_role,
+            cover_art_role,
+            comment_role,
+            podcast_role,
+            stream_role,
+            jukebox_role,
+            share_role,
+            video_conversion_role,
+            avatar_last_changed: None,
+            folders: music_folder_ids.to_vec(),
+        };
+
+        self.insert_user(&user, hashed_password);
         Ok(())
     }
 
     async fn update_user(
         &self,
-        _username: &str,
-        _password: Option<&str>,
-        _email: Option<&str>,
-        _admin_role: Option<bool>,
-        _settings_role: Option<bool>,
-        _stream_role: Option<bool>,
-        _jukebox_role: Option<bool>,
-        _download_role: Option<bool>,
-        _upload_role: Option<bool>,
-        _playlist_role: Option<bool>,
-        _cover_art_role: Option<bool>,
-        _comment_role: Option<bool>,
-        _podcast_role: Option<bool>,
-        _share_role: Option<bool>,
-        _video_conversion_role: Option<bool>,
-        _music_folder_ids: Option<&[i32]>,
-        _max_bit_rate: Option<i32>,
+        username: &str,
+        password: Option<&str>,
+        email: Option<&str>,
+        admin_role: Option<bool>,
+        settings_role: Option<bool>,
+        stream_role: Option<bool>,
+        jukebox_role: Option<bool>,
+        download_role: Option<bool>,
+        upload_role: Option<bool>,
+        playlist_role: Option<bool>,
+        cover_art_role: Option<bool>,
+        comment_role: Option<bool>,
+        podcast_role: Option<bool>,
+        share_role: Option<bool>,
+        video_conversion_role: Option<bool>,
+        music_folder_ids: Option<&[i32]>,
+        max_bit_rate: Option<i32>,
     ) -> Result<()> {
+        let user = self.get_user_internal(username).ok_or(StorageError::NotFound(format!("User {} not found", username)))?;
+
+        let updated_email = email.map(|s| s.to_string()).or(user.email.clone());
+
+        let updated_user = SubsonicUser {
+            username: user.username.clone(),
+            email: updated_email,
+            scrobbling_enabled: user.scrobbling_enabled,
+            max_bit_rate: max_bit_rate.or(user.max_bit_rate),
+            admin_role: admin_role.unwrap_or(user.admin_role),
+            settings_role: settings_role.unwrap_or(user.settings_role),
+            download_role: download_role.unwrap_or(user.download_role),
+            upload_role: upload_role.unwrap_or(user.upload_role),
+            playlist_role: playlist_role.unwrap_or(user.playlist_role),
+            cover_art_role: cover_art_role.unwrap_or(user.cover_art_role),
+            comment_role: comment_role.unwrap_or(user.comment_role),
+            podcast_role: podcast_role.unwrap_or(user.podcast_role),
+            stream_role: stream_role.unwrap_or(user.stream_role),
+            jukebox_role: jukebox_role.unwrap_or(user.jukebox_role),
+            share_role: share_role.unwrap_or(user.share_role),
+            video_conversion_role: video_conversion_role.unwrap_or(user.video_conversion_role),
+            avatar_last_changed: user.avatar_last_changed,
+            folders: music_folder_ids.map(|ids| ids.to_vec()).unwrap_or(user.folders),
+        };
+
+        // Get existing password hash
+        let existing_password = self.get_password_internal(username).unwrap_or_default();
+
+        if let Ok(mut users) = self.users.write() {
+            users.insert(username.to_string(), updated_user);
+        }
+
+        // Update password if provided
+        if let Some(new_password) = password {
+            let hashed_password = reverie_core::hash_password(new_password)
+                .map_err(|e| StorageError::Unavailable(e.to_string()))?;
+            if let Ok(mut passwords) = self.passwords.write() {
+                passwords.insert(username.to_string(), hashed_password);
+            }
+        } else {
+            // Restore existing password hash
+            if let Ok(mut passwords) = self.passwords.write() {
+                passwords.insert(username.to_string(), existing_password);
+            }
+        }
+
         Ok(())
     }
 
-    async fn delete_user(&self, _username: &str) -> Result<()> {
+    async fn delete_user(&self, username: &str) -> Result<()> {
+        if self.get_user_internal(username).is_none() {
+            return Err(StorageError::NotFound(format!("User {} not found", username)));
+        }
+        self.remove_user(username);
         Ok(())
     }
 
-    async fn change_password(&self, _username: &str, _password: &str) -> Result<()> {
+    async fn change_password(&self, username: &str, password: &str) -> Result<()> {
+        if self.get_user_internal(username).is_none() {
+            return Err(StorageError::NotFound(format!("User {} not found", username)));
+        }
+
+        let hashed_password = reverie_core::hash_password(password)
+            .map_err(|e| StorageError::Unavailable(e.to_string()))?;
+
+        if let Ok(mut passwords) = self.passwords.write() {
+            passwords.insert(username.to_string(), hashed_password);
+        }
+
         Ok(())
     }
 
