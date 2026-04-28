@@ -437,6 +437,11 @@ pub trait SubsonicStorage: Send + Sync {
         Err(StorageError::NotFound("Podcast channel not found".to_string()))
     }
 
+    /// 删除播客单集
+    async fn delete_podcast_episode(&self, _id: &str) -> Result<()> {
+        Err(StorageError::NotFound("Podcast episode not found".to_string()))
+    }
+
     // === OpenSubsonic 扩展 ===
     /// 获取支持的 OpenSubsonic 扩展
     async fn get_open_subsonic_extensions(&self) -> Result<Vec<SubsonicOpenSubsonicExtension>> {

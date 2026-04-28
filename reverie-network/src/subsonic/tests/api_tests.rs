@@ -638,3 +638,21 @@ async fn test_delete_podcast_channel_not_found() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
 }
+
+// === deletePodcastEpisode Tests ===
+
+#[tokio::test]
+async fn test_delete_podcast_episode_success() {
+    let router = create_test_router();
+    // Delete an episode by ID (mock returns error 70 for non-existent)
+    let json = get_json_response(router, "/deletePodcastEpisode?f=json&id=episode-1").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+}
+
+#[tokio::test]
+async fn test_delete_podcast_episode_not_found() {
+    let router = create_test_router();
+    let json = get_json_response_error(router, "/deletePodcastEpisode?f=json&id=nonexistent").await;
+    assert_eq!(json["subsonic-response"]["status"], "failed");
+    assert_eq!(json["subsonic-response"]["error"]["code"], 70);
+}

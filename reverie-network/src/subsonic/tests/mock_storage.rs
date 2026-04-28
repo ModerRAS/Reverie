@@ -16,6 +16,7 @@ pub struct MockSubsonicStorage {
     passwords: Arc<RwLock<HashMap<String, String>>>,
     chat_messages: Arc<TokioRwLock<Vec<ChatMessage>>>,
     podcast_channels: Arc<TokioRwLock<Vec<PodcastChannel>>>,
+    podcast_episodes: Arc<TokioRwLock<Vec<PodcastEpisode>>>,
 }
 
 impl MockSubsonicStorage {
@@ -36,6 +37,21 @@ impl MockSubsonicStorage {
                 },
             ])),
             podcast_channels: Arc::new(TokioRwLock::new(vec![])),
+            podcast_episodes: Arc::new(TokioRwLock::new(vec![
+                PodcastEpisode {
+                    id: "episode-1".to_string(),
+                    channel_id: "channel-1".to_string(),
+                    title: "Test Episode 1".to_string(),
+                    description: None,
+                    publish_date: None,
+                    status: "completed".to_string(),
+                    stream_id: None,
+                    duration: None,
+                    size: None,
+                    url: None,
+                    cover_art: None,
+                },
+            ])),
         }
     }
 
@@ -790,6 +806,16 @@ impl SubsonicStorage for MockSubsonicStorage {
         channels.retain(|c| c.id != id);
         if channels.len() == len_before {
             return Err(StorageError::NotFound("Podcast channel not found".to_string()));
+        }
+        Ok(())
+    }
+
+    async fn delete_podcast_episode(&self, id: &str) -> Result<()> {
+        let mut episodes = self.podcast_episodes.write().await;
+        let len_before = episodes.len();
+        episodes.retain(|e| e.id != id);
+        if episodes.len() == len_before {
+            return Err(StorageError::NotFound("Podcast episode not found".to_string()));
         }
         Ok(())
     }
