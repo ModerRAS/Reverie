@@ -12,6 +12,7 @@ pub mod chat;
 pub mod jukebox;
 pub mod misc;
 pub mod playlists;
+pub mod podcasts;
 pub mod songs;
 pub mod users;
 pub mod videos;
@@ -62,3 +63,5 @@ pub use videos::{CaptionItem, CaptionsData, CaptionsInner, VideoInfoData, VideoI
 pub use jukebox::{JukeboxStatusData, JukeboxStatusItem};
 
 pub use chat::{ChatMessagesData, ChatMessageItem};
+
+pub use podcasts::{PodcastsData, PodcastChannelItem, PodcastEpisodesInner, PodcastEpisodeItem, PodcastsInner};

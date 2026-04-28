@@ -5,7 +5,7 @@
 use crate::error::Result;
 use async_trait::async_trait;
 use reverie_core::{
-    Caption, ChatMessage, JukeboxStatus, MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
+    Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
     SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
     SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
     SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
@@ -408,6 +408,12 @@ pub trait SubsonicStorage: Send + Sync {
     /// 添加聊天室消息
     async fn add_chat_message(&self, _message: &str) -> Result<()> {
         Ok(())
+    }
+
+    // === 播客 ===
+    /// 获取播客频道列表
+    async fn get_podcasts(&self, _include_episodes: bool) -> Result<Vec<PodcastChannel>> {
+        Ok(vec![])
     }
 
     // === OpenSubsonic 扩展 ===

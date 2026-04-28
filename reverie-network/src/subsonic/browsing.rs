@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use super::{error_response, format_response, SubsonicState};
 use super::response::*;
 use super::response::chat::{ChatMessageItem, ChatMessagesData, ChatMessagesInner};
+use super::response::podcasts::{PodcastChannelItem, PodcastsData, PodcastsInner};
 
 /// GET /rest/getIndexes - 获取艺术家索引
 pub async fn get_indexes_handler<S: SubsonicStorage + Clone>(
@@ -422,6 +423,30 @@ pub async fn add_chat_message_handler<S: SubsonicStorage + Clone>(
     match state.storage.add_chat_message(&message).await {
         Ok(()) => {
             let response = SubsonicResponse::ok();
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
+
+/// GET /rest/getPodcasts - 获取播客频道列表
+pub async fn get_podcasts_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let include_episodes = params
+        .get("includeEpisodes")
+        .map(|s| s.to_lowercase() == "true")
+        .unwrap_or(true);
+
+    match state.storage.get_podcasts(include_episodes).await {
+        Ok(channels) => {
+            let data = PodcastsData {
+                podcasts: PodcastsInner {
+                    channel: channels.iter().map(PodcastChannelItem::from).collect(),
+                },
+            };
+            let response = SubsonicResponse::ok_with(data);
             format_response(&params, response)
         }
         Err(e) => error_response(&params, 0, &e.to_string()),

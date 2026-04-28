@@ -554,3 +554,22 @@ async fn test_add_chat_message_missing() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
+
+// === Podcast Tests ===
+
+#[tokio::test]
+async fn test_get_podcasts_empty() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getPodcasts?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    // podcasts should be an object with channel array
+    assert!(json["subsonic-response"]["podcasts"]["channel"].is_array());
+}
+
+#[tokio::test]
+async fn test_get_podcasts_with_channels() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getPodcasts?f=json&includeEpisodes=true").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["podcasts"]["channel"].is_array());
+}
