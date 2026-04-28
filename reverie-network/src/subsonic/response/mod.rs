@@ -12,6 +12,7 @@ pub mod misc;
 pub mod playlists;
 pub mod songs;
 pub mod users;
+pub mod videos;
 
 // Re-export all types for convenience
 pub use core::{
@@ -53,3 +54,5 @@ pub use songs::{
 pub use users::{
     ShareItem, SharesData, SharesList, UserData, UserItem, UsersData, UsersInner, UsersList,
 };
+
+pub use videos::VideosData;

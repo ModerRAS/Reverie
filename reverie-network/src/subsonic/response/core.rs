@@ -130,6 +130,7 @@ pub enum ResponseData {
     SimilarSongs2(SimilarSongs2Data),
     TopSongs(TopSongsData),
     OpenSubsonicExtensions(OpenSubsonicExtensionsData),
+    Videos(VideosData),
 }
 
 // Re-export types from other modules
@@ -143,5 +144,5 @@ pub use super::{
     PlaylistItem, PlaylistWithEntries, PlaylistsData, RandomSongsData, ScanStatusData,
     SearchResult2Data, SearchResult3Data, ShareItem, SharesData, SimilarSongs2Data,
     SimilarSongsData, SongData, SongsByGenreData, Starred2Data, StarredData, TopSongsData,
-    UserData, UserItem, UsersData,
+    UserData, UserItem, UsersData, VideosData,
 };

@@ -437,3 +437,22 @@ async fn test_change_password_missing_params() {
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
+
+// === Video Tests ===
+
+#[tokio::test]
+async fn test_get_videos_empty() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getVideos?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    // video should be an array (possibly empty)
+    assert!(json["subsonic-response"]["video"].is_array());
+}
+
+#[tokio::test]
+async fn test_get_videos_with_data() {
+    let router = create_test_router();
+    let json = get_json_response(router, "/getVideos?f=json").await;
+    assert_eq!(json["subsonic-response"]["status"], "ok");
+    assert!(json["subsonic-response"]["video"].is_array());
+}

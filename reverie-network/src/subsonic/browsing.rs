@@ -300,3 +300,18 @@ pub async fn get_now_playing_handler<S: SubsonicStorage + Clone>(
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
+
+/// GET /rest/getVideos - 获取视频列表
+pub async fn get_videos_handler<S: SubsonicStorage + Clone>(
+    State(state): State<SubsonicState<S>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    match state.storage.get_videos().await {
+        Ok(videos) => {
+            let data = VideosData::from(videos);
+            let response = SubsonicResponse::ok_with(data);
+            format_response(&params, response)
+        }
+        Err(e) => error_response(&params, 0, &e.to_string()),
+    }
+}
