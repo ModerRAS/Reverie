@@ -5,14 +5,14 @@
 
 pub mod config;
 pub mod opendal;
-pub mod vfs_trait;
 pub mod types;
+pub mod vfs_trait;
 
 // 重新导出主要类型
 pub use config::VfsConfig;
 pub use opendal::OpendalVfs;
-pub use vfs_trait::Vfs;
 pub use types::{VfsEntry, VfsMetadata};
+pub use vfs_trait::Vfs;
 
 use std::sync::Arc;
 

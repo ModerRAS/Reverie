@@ -6,10 +6,10 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use opendal::Operator;
 
-use crate::error::{Result, StorageError};
 use super::config::VfsConfig;
-use super::vfs_trait::Vfs;
 use super::types::{VfsEntry, VfsMetadata};
+use super::vfs_trait::Vfs;
+use crate::error::{Result, StorageError};
 
 /// 基于 OpenDAL 的 VFS 实现
 #[derive(Clone)]

@@ -1,10 +1,6 @@
 //! 健康检查处理器
-use axum::{
-    response::Json,
-    routing::get,
-    Router,
-};
 use crate::dto::HealthResponse;
+use axum::{response::Json, routing::get, Router};
 
 /// 健康检查处理程序
 pub async fn health_handler() -> Json<HealthResponse> {

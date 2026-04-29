@@ -5,12 +5,13 @@
 use crate::error::{Result, StorageError};
 use async_trait::async_trait;
 use reverie_core::{
-    Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, PodcastEpisode, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes,
-    SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre,
-    SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying,
-    SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
-    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
-    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo,
+    Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, PodcastEpisode, SubsonicAlbum,
+    SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark,
+    SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics,
+    SubsonicMusicFolder, SubsonicNowPlaying, SubsonicOpenSubsonicExtension, SubsonicPlayQueue,
+    SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2,
+    SubsonicSearchResult3, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics,
+    SubsonicTopSongs, SubsonicUser, VideoInfo,
 };
 
 /// 完整的 Subsonic API 存储 trait
@@ -430,19 +431,27 @@ pub trait SubsonicStorage: Send + Sync {
     }
 
     /// 创建播客频道订阅
-    async fn create_podcast_channel(&self, _url: &str, _title: Option<&str>) -> Result<PodcastChannel> {
+    async fn create_podcast_channel(
+        &self,
+        _url: &str,
+        _title: Option<&str>,
+    ) -> Result<PodcastChannel> {
         Err(StorageError::Unavailable("Not implemented".to_string()))
     }
 
     /// 删除播客频道订阅
     /// TODO: 不级联删除 episodes（episodes 由其他端点管理）
     async fn delete_podcast_channel(&self, _id: &str) -> Result<()> {
-        Err(StorageError::NotFound("Podcast channel not found".to_string()))
+        Err(StorageError::NotFound(
+            "Podcast channel not found".to_string(),
+        ))
     }
 
     /// 删除播客单集
     async fn delete_podcast_episode(&self, _id: &str) -> Result<()> {
-        Err(StorageError::NotFound("Podcast episode not found".to_string()))
+        Err(StorageError::NotFound(
+            "Podcast episode not found".to_string(),
+        ))
     }
 
     /// 获取播客单集文件路径

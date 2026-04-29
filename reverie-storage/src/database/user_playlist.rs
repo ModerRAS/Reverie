@@ -248,14 +248,12 @@ impl PlaylistStorage for DatabaseStorage {
     }
 
     async fn remove_track_from_playlist(&self, playlist_id: Uuid, track_id: Uuid) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?",
-        )
-        .bind(playlist_id.to_string())
-        .bind(track_id.to_string())
-        .execute(self.pool())
-        .await
-        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        sqlx::query("DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?")
+            .bind(playlist_id.to_string())
+            .bind(track_id.to_string())
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         Ok(())
     }

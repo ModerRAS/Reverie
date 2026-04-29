@@ -17,11 +17,7 @@ pub fn FavoritesPage() -> Element {
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
-    let tabs = vec![
-        "歌曲".to_string(),
-        "专辑".to_string(),
-        "艺术家".to_string(),
-    ];
+    let tabs = vec!["歌曲".to_string(), "专辑".to_string(), "艺术家".to_string()];
 
     // 加载收藏内容
     use_effect(move || {

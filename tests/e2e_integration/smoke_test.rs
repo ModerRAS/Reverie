@@ -9,10 +9,7 @@ async fn test_ping_returns_ok() {
         .subsonic_get("ping", &[("f", "json")])
         .await
         .expect("Request failed");
-    assert_eq!(
-        resp["subsonic-response"]["status"].as_str(),
-        Some("ok")
-    );
+    assert_eq!(resp["subsonic-response"]["status"].as_str(), Some("ok"));
 }
 
 #[tokio::test]

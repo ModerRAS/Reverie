@@ -9,7 +9,7 @@
 use std::io::{BufReader, Cursor};
 use std::path::Path;
 
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::error::{Result, StorageError};
@@ -108,9 +108,8 @@ pub fn parse_cue_file(path: &Path) -> Result<CueSheet> {
     let cursor = Cursor::new(filtered.as_bytes());
     let mut buf_reader = BufReader::new(cursor);
 
-    let cue = rcue::parser::parse(&mut buf_reader, true).map_err(|e| {
-        StorageError::Unavailable(format!("Failed to parse CUE file: {}", e))
-    })?;
+    let cue = rcue::parser::parse(&mut buf_reader, true)
+        .map_err(|e| StorageError::Unavailable(format!("Failed to parse CUE file: {}", e)))?;
 
     // Build the CueSheet from rcue's Cue struct
     let album_title = cue.title;
@@ -173,18 +172,17 @@ pub fn parse_cue_file(path: &Path) -> Result<CueSheet> {
 /// Returns `Ok(None)` if the FLAC file has no CUESHEET block (not an error).
 #[cfg(feature = "flac")]
 pub fn extract_embedded_cue_from_flac(flac_path: &Path) -> Result<Option<CueSheet>> {
-    let path_str = flac_path.to_str().ok_or_else(|| {
-        StorageError::InvalidPath(format!("Non-UTF8 path: {:?}", flac_path))
-    })?;
+    let path_str = flac_path
+        .to_str()
+        .ok_or_else(|| StorageError::InvalidPath(format!("Non-UTF8 path: {:?}", flac_path)))?;
 
     // Read STREAMINFO to get the sample rate for offset→seconds conversion.
-    let stream_info =
-        flac::metadata::get_stream_info(path_str).map_err(|e| {
-            StorageError::Unavailable(format!(
-                "Failed to read FLAC stream info from {}: {:?}",
-                path_str, e
-            ))
-        })?;
+    let stream_info = flac::metadata::get_stream_info(path_str).map_err(|e| {
+        StorageError::Unavailable(format!(
+            "Failed to read FLAC stream info from {}: {:?}",
+            path_str, e
+        ))
+    })?;
     let sample_rate = stream_info.sample_rate as f64;
 
     // Read the CUESHEET block (type 5).
@@ -234,8 +232,8 @@ pub fn extract_embedded_cue_from_flac(flac_path: &Path) -> Result<Option<CueShee
 
         tracks.push(CueTrack {
             track_number,
-            title: None,      // CUESHEET block is binary — no text
-            performer: None,  // CUESHEET block is binary — no text
+            title: None,     // CUESHEET block is binary — no text
+            performer: None, // CUESHEET block is binary — no text
             index_start,
             index_pregap,
             file_name: file_name.clone(),
@@ -243,8 +241,8 @@ pub fn extract_embedded_cue_from_flac(flac_path: &Path) -> Result<Option<CueShee
     }
 
     Ok(Some(CueSheet {
-        album_title: None,      // CUESHEET block has no album title
-        album_performer: None,  // CUESHEET block has no album performer
+        album_title: None,     // CUESHEET block has no album title
+        album_performer: None, // CUESHEET block has no album performer
         tracks,
         file_path: path_str.to_string(),
     }))
@@ -399,7 +397,10 @@ pub(crate) mod tests {
         let sheet = parse_cue_file(Path::new(&fixture_path("missing_metadata.cue"))).unwrap();
 
         assert_eq!(sheet.album_title.as_deref(), Some("Partial Metadata Album"));
-        assert_eq!(sheet.album_performer.as_deref(), Some("Full Metadata Artist"));
+        assert_eq!(
+            sheet.album_performer.as_deref(),
+            Some("Full Metadata Artist")
+        );
         assert_eq!(sheet.tracks.len(), 4);
 
         // Track 1: complete metadata
@@ -464,9 +465,18 @@ pub(crate) mod tests {
         let uuid_track1 = stable_uuid(path, 1);
         let uuid_track2 = stable_uuid(path, 2);
 
-        assert_ne!(uuid_track0, uuid_track1, "Different tracks should have different UUIDs");
-        assert_ne!(uuid_track1, uuid_track2, "Different tracks should have different UUIDs");
-        assert_ne!(uuid_track0, uuid_track2, "Different tracks should have different UUIDs");
+        assert_ne!(
+            uuid_track0, uuid_track1,
+            "Different tracks should have different UUIDs"
+        );
+        assert_ne!(
+            uuid_track1, uuid_track2,
+            "Different tracks should have different UUIDs"
+        );
+        assert_ne!(
+            uuid_track0, uuid_track2,
+            "Different tracks should have different UUIDs"
+        );
     }
 
     #[test]
@@ -478,7 +488,10 @@ pub(crate) mod tests {
         let uuid1 = stable_uuid(file1, 1);
         let uuid2 = stable_uuid(file2, 1);
 
-        assert_ne!(uuid1, uuid2, "Different files should have different UUIDs for same track index");
+        assert_ne!(
+            uuid1, uuid2,
+            "Different files should have different UUIDs for same track index"
+        );
     }
 
     #[test]
@@ -498,8 +511,14 @@ pub(crate) mod tests {
         let uuid_track1_second = stable_uuid(path, 1);
 
         // Should be identical across "restarts"
-        assert_eq!(uuid_whole_disc1, uuid_whole_disc2, "Whole-disc UUID should be stable across restarts");
-        assert_eq!(uuid_track1_first, uuid_track1_second, "Track UUID should be stable across restarts");
+        assert_eq!(
+            uuid_whole_disc1, uuid_whole_disc2,
+            "Whole-disc UUID should be stable across restarts"
+        );
+        assert_eq!(
+            uuid_track1_first, uuid_track1_second,
+            "Track UUID should be stable across restarts"
+        );
     }
 
     #[test]
@@ -512,7 +531,10 @@ pub(crate) mod tests {
 
         // Check version (5xxx)
         let version_char = uuid.chars().nth(14).unwrap();
-        assert_eq!(version_char, '5', "UUID v5 should have '5' at position 14 (version)");
+        assert_eq!(
+            version_char, '5',
+            "UUID v5 should have '5' at position 14 (version)"
+        );
     }
 
     #[test]
@@ -523,7 +545,10 @@ pub(crate) mod tests {
         let uuid = stable_uuid(path, 0);
         let uuid_track1 = stable_uuid(path, 1);
 
-        assert_ne!(uuid, uuid_track1, "Whole-disc (0) and track 1 should have different UUIDs");
+        assert_ne!(
+            uuid, uuid_track1,
+            "Whole-disc (0) and track 1 should have different UUIDs"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -645,9 +670,7 @@ pub(crate) mod tests {
         let bps: u8 = (16u8 - 1) & 0x1F; // bps-1
         streaminfo.push(((sample_rate >> 12) & 0xFF) as u8);
         streaminfo.push(((sample_rate >> 4) & 0xFF) as u8);
-        streaminfo.push(
-            (((sample_rate & 0xF) as u8) << 4) | (ch << 1) | ((bps >> 4) & 0x01),
-        );
+        streaminfo.push((((sample_rate & 0xF) as u8) << 4) | (ch << 1) | ((bps >> 4) & 0x01));
         streaminfo.push(((bps & 0x0F) << 4) as u8);
 
         // --- total_samples (36 bits) ---
@@ -769,10 +792,12 @@ pub(crate) mod tests {
         let path = dir.path().join("nocue.flac");
         std::fs::write(&path, &flac_data).expect("write FLAC");
 
-        let result = extract_embedded_cue_from_flac(&path)
-            .expect("extract should succeed");
+        let result = extract_embedded_cue_from_flac(&path).expect("extract should succeed");
 
-        assert!(result.is_none(), "FLAC without CUESHEET must return None, not error");
+        assert!(
+            result.is_none(),
+            "FLAC without CUESHEET must return None, not error"
+        );
     }
 
     #[cfg(feature = "flac")]
@@ -807,11 +832,11 @@ pub(crate) mod tests {
                     is_pre_emphasis: false,
                     indices: vec![
                         flac::metadata::CueSheetTrackIndex {
-                            offset: 0,     // INDEX 00 at track start = 44100 total
+                            offset: 0, // INDEX 00 at track start = 44100 total
                             number: 0,
                         },
                         flac::metadata::CueSheetTrackIndex {
-                            offset: 4410,  // INDEX 01 0.1 s later = 48510 total
+                            offset: 4410, // INDEX 01 0.1 s later = 48510 total
                             number: 1,
                         },
                     ],
@@ -851,17 +876,26 @@ pub(crate) mod tests {
         // Track 2: pregap at 44100/44100=1.0 s, start at 48510/44100=1.1 s
         let t2 = &sheet.tracks[1];
         assert_eq!(t2.track_number, "02");
-        assert!((t2.index_start - 1.1).abs() < 1e-9,
-            "expected 1.1 s, got {}", t2.index_start);
+        assert!(
+            (t2.index_start - 1.1).abs() < 1e-9,
+            "expected 1.1 s, got {}",
+            t2.index_start
+        );
         assert!(t2.index_pregap.is_some());
-        assert!((t2.index_pregap.unwrap() - 1.0).abs() < 1e-9,
-            "expected pregap 1.0 s, got {}", t2.index_pregap.unwrap());
+        assert!(
+            (t2.index_pregap.unwrap() - 1.0).abs() < 1e-9,
+            "expected pregap 1.0 s, got {}",
+            t2.index_pregap.unwrap()
+        );
 
         // Track 3: absolute 88200 → 2.0 s
         let t3 = &sheet.tracks[2];
         assert_eq!(t3.track_number, "03");
-        assert!((t3.index_start - 2.0).abs() < f64::EPSILON,
-            "expected 2.0 s, got {}", t3.index_start);
+        assert!(
+            (t3.index_start - 2.0).abs() < f64::EPSILON,
+            "expected 2.0 s, got {}",
+            t3.index_start
+        );
     }
 
     #[cfg(feature = "flac")]

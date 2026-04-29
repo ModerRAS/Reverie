@@ -22,11 +22,11 @@ use reverie_storage::{
     AlbumStorage, ArtistStorage, FileStorage, PlaylistStorage, SubsonicStorage, TrackStorage,
 };
 
-pub mod health;
-pub mod tracks;
 pub mod albums;
 pub mod artists;
+pub mod health;
 pub mod playlists;
+pub mod tracks;
 
 /// 基于 Axum 的 HTTP 服务器。
 pub struct AxumServer<S> {
@@ -114,11 +114,17 @@ where
             // 曲目路由
             .route("/api/tracks", get(tracks::list_tracks_handler::<S>))
             .route("/api/tracks/:id", get(tracks::get_track_handler::<S>))
-            .route("/api/tracks/search", get(tracks::search_tracks_handler::<S>))
+            .route(
+                "/api/tracks/search",
+                get(tracks::search_tracks_handler::<S>),
+            )
             // 专辑路由
             .route("/api/albums", get(albums::list_albums_handler::<S>))
             .route("/api/albums/:id", get(albums::get_album_handler::<S>))
-            .route("/api/albums/:id/tracks", get(albums::get_album_tracks_handler::<S>))
+            .route(
+                "/api/albums/:id/tracks",
+                get(albums::get_album_tracks_handler::<S>),
+            )
             // 艺术家路由
             .route("/api/artists", get(artists::list_artists_handler::<S>))
             .route("/api/artists/:id", get(artists::get_artist_handler::<S>))
@@ -127,7 +133,10 @@ where
                 get(artists::get_artist_albums_handler::<S>),
             )
             // 播放列表路由
-            .route("/api/playlists/:id", get(playlists::get_playlist_handler::<S>));
+            .route(
+                "/api/playlists/:id",
+                get(playlists::get_playlist_handler::<S>),
+            );
 
         if let Some(ui_router) = self.create_ui_router() {
             router = router.merge(ui_router);

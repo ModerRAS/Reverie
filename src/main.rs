@@ -40,11 +40,9 @@ async fn main() -> Result<()> {
 
     tracing::info!(db_path = %db_path, music_dir = %music_dir, auto_scan, "存储配置");
 
-    let storage = Arc::new(DatabaseStorage::new(DatabaseConfig::new(
-        db_path,
-        VfsConfig::local(music_dir),
-    ))
-    .await?);
+    let storage = Arc::new(
+        DatabaseStorage::new(DatabaseConfig::new(db_path, VfsConfig::local(music_dir))).await?,
+    );
     storage.initialize().await?;
     if auto_scan {
         if let Err(e) = storage.perform_scan("/").await {
@@ -52,9 +50,10 @@ async fn main() -> Result<()> {
         }
     }
 
-    let mut config = ServerRunConfig::default();
-    // Serve the web UI (if present)
-    config.ui_dir = default_ui_dir();
+    let config = ServerRunConfig {
+        ui_dir: default_ui_dir(),
+        ..Default::default()
+    };
 
     run_with_storage(storage, config).await
 }

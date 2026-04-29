@@ -7,8 +7,8 @@ use axum::{
 use reverie_storage::SubsonicStorage;
 use std::collections::HashMap;
 
-use super::{error_response, format_response, ok_response, SubsonicState};
 use super::response::*;
+use super::{error_response, format_response, ok_response, SubsonicState};
 
 /// GET /rest/getPlaylists - 获取播放列表
 pub async fn get_playlists_handler<S: SubsonicStorage + Clone>(
@@ -60,7 +60,7 @@ pub async fn create_playlist_handler<S: SubsonicStorage + Clone>(
 ) -> Response {
     let playlist_id = params.get("playlistId").map(|s| s.as_str());
     let name = params.get("name").map(|s| s.as_str());
-    
+
     // 收集所有 songId 参数
     let song_ids: Vec<&str> = params
         .iter()
@@ -72,7 +72,11 @@ pub async fn create_playlist_handler<S: SubsonicStorage + Clone>(
         return error_response(&params, 10, "Either playlistId or name must be provided");
     }
 
-    match state.storage.create_playlist(name, playlist_id, &song_ids).await {
+    match state
+        .storage
+        .create_playlist(name, playlist_id, &song_ids)
+        .await
+    {
         Ok(playlist) => {
             let data = PlaylistData {
                 playlist: PlaylistWithEntries::from(&playlist),

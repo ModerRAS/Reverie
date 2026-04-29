@@ -74,12 +74,14 @@ fn make_test_flac(sample_rate: u32, tracks: &[(u8, u64, Vec<(u8, u64)>)]) -> Vec
     flac_be16(&mut si, 4096); // max_block_size
     si.extend_from_slice(&[0u8; 3]); // min_frame_size
     si.extend_from_slice(&[0u8; 3]); // max_frame_size
-    // sample_rate[19:12]
+                                     // sample_rate[19:12]
     si.push(((sample_rate >> 12) & 0xFF) as u8);
     // sample_rate[11:4]
     si.push(((sample_rate >> 4) & 0xFF) as u8);
     // sample_rate[3:0] | (ch-1)[2:0] | (bps-1)[4]
-    si.push((((sample_rate & 0xF) as u8) << 4) | (((ch - 1) & 0x7) << 1) | (((bps - 1) >> 4) & 0x01));
+    si.push(
+        (((sample_rate & 0xF) as u8) << 4) | (((ch - 1) & 0x7) << 1) | (((bps - 1) >> 4) & 0x01),
+    );
     // (bps-1)[3:0] | total_samples[35:32]
     si.push((((bps - 1) & 0x0F) << 4) as u8);
     flac_be16(&mut si, ((total_samples >> 16) & 0xFFFF) as u16);
@@ -181,12 +183,11 @@ async fn count_physical_tracks(storage: &DatabaseStorage) -> i64 {
 
 /// Fetch all virtual track titles, sorted by track_number.
 async fn virtual_track_titles(storage: &DatabaseStorage) -> Vec<String> {
-    let rows = sqlx::query(
-        "SELECT title FROM tracks WHERE is_cue_virtual = 1 ORDER BY track_number",
-    )
-    .fetch_all(storage.pool())
-    .await
-    .unwrap();
+    let rows =
+        sqlx::query("SELECT title FROM tracks WHERE is_cue_virtual = 1 ORDER BY track_number")
+            .fetch_all(storage.pool())
+            .await
+            .unwrap();
     rows.iter().map(|r| r.get::<String, _>("title")).collect()
 }
 
@@ -252,12 +253,27 @@ FILE "album.wav" WAVE
 
     storage.perform_scan("").await.expect("scan should succeed");
 
-    assert_eq!(count_tracks(&storage).await, 5, "expected 5 tracks (1 whole + 4 virtual)");
-    assert_eq!(count_virtual_tracks(&storage).await, 4, "expected 4 virtual tracks");
-    assert_eq!(count_physical_tracks(&storage).await, 1, "expected 1 whole-disc track");
+    assert_eq!(
+        count_tracks(&storage).await,
+        5,
+        "expected 5 tracks (1 whole + 4 virtual)"
+    );
+    assert_eq!(
+        count_virtual_tracks(&storage).await,
+        4,
+        "expected 4 virtual tracks"
+    );
+    assert_eq!(
+        count_physical_tracks(&storage).await,
+        1,
+        "expected 1 whole-disc track"
+    );
 
     let titles = virtual_track_titles(&storage).await;
-    assert_eq!(titles, vec!["Opening", "Development", "Climax", "Resolution"]);
+    assert_eq!(
+        titles,
+        vec!["Opening", "Development", "Climax", "Resolution"]
+    );
 
     // All virtual tracks should point to album.cue
     let paths = cue_paths(&storage).await;
@@ -288,15 +304,31 @@ async fn test_scan_embedded_cuesheet_same_as_external() {
 
     storage.perform_scan("").await.expect("scan should succeed");
 
-    assert_eq!(count_tracks(&storage).await, 4, "expected 4 tracks (1 whole + 3 virtual)");
-    assert_eq!(count_virtual_tracks(&storage).await, 3, "expected 3 virtual tracks");
-    assert_eq!(count_physical_tracks(&storage).await, 1, "expected 1 whole-disc track");
+    assert_eq!(
+        count_tracks(&storage).await,
+        4,
+        "expected 4 tracks (1 whole + 3 virtual)"
+    );
+    assert_eq!(
+        count_virtual_tracks(&storage).await,
+        3,
+        "expected 3 virtual tracks"
+    );
+    assert_eq!(
+        count_physical_tracks(&storage).await,
+        1,
+        "expected 1 whole-disc track"
+    );
 
     // Virtual tracks should reference the FLAC as source_file
     let sources = virtual_track_source_files(&storage).await;
     assert_eq!(sources.len(), 3);
     for s in &sources {
-        assert!(s.ends_with("album.flac"), "source_file should be album.flac, got {}", s);
+        assert!(
+            s.ends_with("album.flac"),
+            "source_file should be album.flac, got {}",
+            s
+        );
     }
 }
 
@@ -309,9 +341,21 @@ async fn test_scan_no_cue_regression() {
 
     storage.perform_scan("").await.expect("scan should succeed");
 
-    assert_eq!(count_tracks(&storage).await, 1, "expected exactly 1 track for file without CUE");
-    assert_eq!(count_virtual_tracks(&storage).await, 0, "expected 0 virtual tracks");
-    assert_eq!(count_physical_tracks(&storage).await, 1, "expected 1 whole-disc track");
+    assert_eq!(
+        count_tracks(&storage).await,
+        1,
+        "expected exactly 1 track for file without CUE"
+    );
+    assert_eq!(
+        count_virtual_tracks(&storage).await,
+        0,
+        "expected 0 virtual tracks"
+    );
+    assert_eq!(
+        count_physical_tracks(&storage).await,
+        1,
+        "expected 1 whole-disc track"
+    );
 
     // Verify cue_path is NULL
     let row = sqlx::query("SELECT cue_path, is_cue_virtual FROM tracks LIMIT 1")
@@ -320,7 +364,10 @@ async fn test_scan_no_cue_regression() {
         .unwrap();
     let cue_path: Option<String> = row.get("cue_path");
     let is_virtual: i64 = row.get("is_cue_virtual");
-    assert!(cue_path.is_none(), "cue_path should be NULL for non-CUE track");
+    assert!(
+        cue_path.is_none(),
+        "cue_path should be NULL for non-CUE track"
+    );
     assert_eq!(is_virtual, 0, "is_cue_virtual should be 0");
 }
 
@@ -356,7 +403,11 @@ FILE "album.wav" WAVE
 
     // First scan
     storage.perform_scan("").await.expect("first scan");
-    assert_eq!(count_tracks(&storage).await, 3, "after first scan: 3 tracks (1 whole + 2 virtual)");
+    assert_eq!(
+        count_tracks(&storage).await,
+        3,
+        "after first scan: 3 tracks (1 whole + 2 virtual)"
+    );
     assert_eq!(count_virtual_tracks(&storage).await, 2);
 
     // Modify CUE to have 3 tracks
@@ -377,7 +428,11 @@ FILE "album.wav" WAVE
 
     // Second scan (rescan)
     storage.perform_scan("").await.expect("second scan");
-    assert_eq!(count_tracks(&storage).await, 4, "after rescan: 4 tracks (1 whole + 3 virtual)");
+    assert_eq!(
+        count_tracks(&storage).await,
+        4,
+        "after rescan: 4 tracks (1 whole + 3 virtual)"
+    );
     assert_eq!(count_virtual_tracks(&storage).await, 3);
 
     // Verify no duplicates — unique IDs in tracks table
@@ -385,7 +440,11 @@ FILE "album.wav" WAVE
         .fetch_one(storage.pool())
         .await
         .unwrap();
-    assert_eq!(id_count, count_tracks(&storage).await, "all track IDs should be unique (no duplicates)");
+    assert_eq!(
+        id_count,
+        count_tracks(&storage).await,
+        "all track IDs should be unique (no duplicates)"
+    );
 
     let titles = virtual_track_titles(&storage).await;
     assert_eq!(titles, vec!["Track A", "Track B", "Track C"]);
@@ -436,8 +495,16 @@ FILE "b.wav" WAVE
 
     // Expected: (1 whole + 2 virt from a) + (1 whole + 3 virt from b) = 7
     assert_eq!(count_tracks(&storage).await, 7, "expected 7 tracks total");
-    assert_eq!(count_virtual_tracks(&storage).await, 5, "expected 5 virtual tracks");
-    assert_eq!(count_physical_tracks(&storage).await, 2, "expected 2 whole-disc tracks");
+    assert_eq!(
+        count_virtual_tracks(&storage).await,
+        5,
+        "expected 5 virtual tracks"
+    );
+    assert_eq!(
+        count_physical_tracks(&storage).await,
+        2,
+        "expected 2 whole-disc tracks"
+    );
 
     // Check per-file virtual track counts
     let a_virt: i64 = sqlx::query_scalar(
@@ -482,10 +549,17 @@ FILE "missing.flac" WAVE
 
     // Scan should succeed without error
     let result = storage.perform_scan("").await;
-    assert!(result.is_ok(), "scan should succeed even when CUE FILE references missing file");
+    assert!(
+        result.is_ok(),
+        "scan should succeed even when CUE FILE references missing file"
+    );
 
     // Virtual tracks still created from the CUE data
-    assert_eq!(count_tracks(&storage).await, 3, "expected 3 tracks (1 whole + 2 virtual)");
+    assert_eq!(
+        count_tracks(&storage).await,
+        3,
+        "expected 3 tracks (1 whole + 2 virtual)"
+    );
     assert_eq!(count_virtual_tracks(&storage).await, 2);
 
     let titles = virtual_track_titles(&storage).await;
@@ -494,6 +568,10 @@ FILE "missing.flac" WAVE
     // Virtual tracks are associated with the actual scanned file (track.wav), not the missing one
     let sources = virtual_track_source_files(&storage).await;
     for s in &sources {
-        assert!(s.ends_with("track.wav"), "virtual track should reference real audio file, got {}", s);
+        assert!(
+            s.ends_with("track.wav"),
+            "virtual track should reference real audio file, got {}",
+            s
+        );
     }
 }

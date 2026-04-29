@@ -16,9 +16,7 @@ fn find_in_path(exe_name: &str) -> Option<PathBuf> {
 }
 
 fn cargo_bin_dir() -> Option<PathBuf> {
-    let home = env::var("USERPROFILE")
-        .or_else(|_| env::var("HOME"))
-        .ok()?;
+    let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).ok()?;
     Some(PathBuf::from(home).join(".cargo").join("bin"))
 }
 
@@ -123,14 +121,11 @@ fn main() {
 
     // Some Windows setups may report a non-zero exit code from wasm-opt even when the bundle exists.
     // Prefer checking the actual output over the dx process exit code.
-    if !status.success() {
-        if !ui_src.join("index.html").exists() {
-            println!(
-                "cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.",
-                profile
-            );
-            return;
-        }
+    if !status.success() && !ui_src.join("index.html").exists() {
+        println!(
+            "cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.",
+            profile
+        );
     }
 
     if !ui_src.join("index.html").exists() {
@@ -155,6 +150,5 @@ fn main() {
             "cargo:warning=failed to copy ui from {:?} to {:?}: {}",
             ui_src, ui_out, e
         );
-        return;
     }
 }

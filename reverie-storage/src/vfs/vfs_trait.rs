@@ -5,8 +5,8 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 
-use crate::error::Result;
 use super::types::{VfsEntry, VfsMetadata};
+use crate::error::Result;
 
 /// 虚拟文件系统 trait - 不同存储后端的抽象
 #[async_trait]

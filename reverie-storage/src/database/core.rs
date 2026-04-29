@@ -331,11 +331,10 @@ impl Storage for DatabaseStorage {
 
         // Seed default podcast channel + episode for E2E test compatibility
         // (mirrors the mock storage pre-seeded data)
-        let podcast_ch_count: (i64,) =
-            sqlx::query_as("SELECT COUNT(*) FROM podcast_channels")
-                .fetch_one(self.pool())
-                .await
-                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        let podcast_ch_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM podcast_channels")
+            .fetch_one(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         if podcast_ch_count.0 == 0 {
             let now = Utc::now().to_rfc3339();

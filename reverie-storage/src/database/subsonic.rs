@@ -9,13 +9,12 @@ use crate::error::{Result, StorageError};
 use crate::traits::*;
 use crate::DatabaseStorage;
 use reverie_core::{
-    MediaFile, PodcastChannel, SubsonicAlbum, SubsonicAlbumInfo,
-    SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo,
-    SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation,
-    SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue,
-    SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2,
-    SubsonicSearchResult3, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics,
-    SubsonicTopSongs, SubsonicUser,
+    MediaFile, PodcastChannel, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist,
+    SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark,
+    SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics,
+    SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist,
+    SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3,
+    SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
 };
 
 /// 根据音频格式返回 MIME 类型
@@ -86,7 +85,9 @@ impl DatabaseStorage {
 
         match row {
             Some(r) => Ok(r.get("id")),
-            None => Err(StorageError::NotFound("Default admin user not found".to_string())),
+            None => Err(StorageError::NotFound(
+                "Default admin user not found".to_string(),
+            )),
         }
     }
 
@@ -111,8 +112,14 @@ impl DatabaseStorage {
             year: r.get::<Option<i32>, _>("year"),
             genre: r.get("genre"),
             cover_art: r.get::<Option<String>, _>("cover_art_path"),
-            duration: r.get::<Option<i64>, _>("duration").map(|v| v as f32).unwrap_or(0.0),
-            bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32).unwrap_or(0),
+            duration: r
+                .get::<Option<i64>, _>("duration")
+                .map(|v| v as f32)
+                .unwrap_or(0.0),
+            bit_rate: r
+                .get::<Option<i64>, _>("bitrate")
+                .map(|v| v as i32)
+                .unwrap_or(0),
             path: r.get("file_path"),
             size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
             suffix: format.clone(),
@@ -1224,7 +1231,7 @@ impl SubsonicStorage for DatabaseStorage {
         let played_at = time
             .map(|t| DateTime::from_timestamp(t / 1000, 0).unwrap_or_else(Utc::now))
             .unwrap_or_else(Utc::now);
-        
+
         // 增加播放次数
         sqlx::query("UPDATE tracks SET play_count = COALESCE(play_count, 0) + 1 WHERE id = ?")
             .bind(id)
@@ -1274,8 +1281,14 @@ impl SubsonicStorage for DatabaseStorage {
                     year: r.get::<Option<i32>, _>("year"),
                     genre: r.get("genre"),
                     cover_art: r.get::<Option<String>, _>("cover_art_path"),
-                    duration: r.get::<Option<i64>, _>("duration").map(|v| v as f32).unwrap_or(0.0),
-                    bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32).unwrap_or(0),
+                    duration: r
+                        .get::<Option<i64>, _>("duration")
+                        .map(|v| v as f32)
+                        .unwrap_or(0.0),
+                    bit_rate: r
+                        .get::<Option<i64>, _>("bitrate")
+                        .map(|v| v as i32)
+                        .unwrap_or(0),
                     path: r.get("file_path"),
                     size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
                     suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
@@ -1352,7 +1365,8 @@ impl SubsonicStorage for DatabaseStorage {
         match row {
             Some(r) => {
                 let track_ids_json: String = r.get("track_ids");
-                let track_ids: Vec<String> = serde_json::from_str(&track_ids_json).unwrap_or_default();
+                let track_ids: Vec<String> =
+                    serde_json::from_str(&track_ids_json).unwrap_or_default();
 
                 // 获取每个曲目的详细信息
                 let mut entries = Vec::new();
@@ -1661,10 +1675,7 @@ impl SubsonicStorage for DatabaseStorage {
             params.push(mail.to_string());
         }
 
-        let query = format!(
-            "UPDATE users SET {} WHERE username = ?",
-            updates.join(", ")
-        );
+        let query = format!("UPDATE users SET {} WHERE username = ?", updates.join(", "));
         params.push(username.to_string());
 
         // 根据参数数量执行查询
@@ -1747,7 +1758,7 @@ impl SubsonicStorage for DatabaseStorage {
     async fn start_scan(&self) -> Result<SubsonicScanStatus> {
         // 获取第一个音乐文件夹路径进行扫描
         let folders = self.get_music_folders().await?;
-        
+
         if folders.is_empty() {
             return Ok(SubsonicScanStatus {
                 scanning: false,
@@ -1761,13 +1772,12 @@ impl SubsonicStorage for DatabaseStorage {
         }
 
         // 获取第一个文件夹的路径
-        let folder_path = sqlx::query_scalar::<_, String>(
-            "SELECT path FROM music_folders WHERE id = ?",
-        )
-        .bind(folders[0].id)
-        .fetch_optional(self.pool())
-        .await
-        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        let folder_path =
+            sqlx::query_scalar::<_, String>("SELECT path FROM music_folders WHERE id = ?")
+                .bind(folders[0].id)
+                .fetch_optional(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         if let Some(path) = folder_path {
             // 在后台启动扫描

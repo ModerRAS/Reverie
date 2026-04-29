@@ -69,7 +69,10 @@ async fn main() -> Result<()> {
     // Serve the web UI (if present)
     config.ui_dir = default_ui_dir();
     tracing::info!(
-        env_REVERIE_UI_DIR = std::env::var("REVERIE_UI_DIR").ok().as_deref().unwrap_or(""),
+        env_REVERIE_UI_DIR = std::env::var("REVERIE_UI_DIR")
+            .ok()
+            .as_deref()
+            .unwrap_or(""),
         selected_ui_dir = config
             .ui_dir
             .as_ref()

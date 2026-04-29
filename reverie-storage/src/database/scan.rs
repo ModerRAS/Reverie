@@ -16,7 +16,7 @@ impl DatabaseStorage {
     /// 扫描指定路径下的所有音频文件，提取元数据并存储到数据库
     pub async fn perform_scan(&self, path: &str) -> Result<ScanResult> {
         let scanner = MediaScanner::new(self.vfs().clone());
-        
+
         // 更新扫描状态为正在扫描
         self.set_scan_status(true, None).await?;
 
@@ -27,7 +27,7 @@ impl DatabaseStorage {
             Ok(scan_result) => {
                 // 将扫描结果保存到数据库
                 self.save_scan_result(scan_result).await?;
-                
+
                 // 更新扫描状态
                 let count = scan_result.tracks.len() as i64;
                 self.set_scan_status(false, Some(count)).await?;
@@ -151,7 +151,7 @@ impl DatabaseStorage {
             if let (Some(album_id), Some(cover_data)) = (&album_id, &track.cover_data) {
                 // 生成封面路径
                 let cover_path = format!(".covers/{}.jpg", album_id);
-                
+
                 // 通过 VFS 保存封面
                 if let Err(e) = self
                     .vfs()
@@ -195,7 +195,7 @@ impl DatabaseStorage {
     /// 设置扫描状态
     async fn set_scan_status(&self, scanning: bool, count: Option<i64>) -> Result<()> {
         let now = Utc::now().to_rfc3339();
-        
+
         if scanning {
             sqlx::query(
                 "UPDATE scan_status SET scanning = 1, count = 0, error = NULL WHERE id = 1",

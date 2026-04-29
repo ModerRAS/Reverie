@@ -31,7 +31,9 @@ pub fn ArtistDetailPage(id: String) -> Element {
             albums.set(artist_albums);
 
             // 用曲目列表近似“热门歌曲”：取该艺术家前 N 首
-            let mut songs = crate::api::backend::list_tracks(200, 0).await.unwrap_or_default();
+            let mut songs = crate::api::backend::list_tracks(200, 0)
+                .await
+                .unwrap_or_default();
             songs.retain(|s| s.artist_id.as_deref() == Some(&artist_id));
             songs.truncate(10);
             top_songs.set(songs);

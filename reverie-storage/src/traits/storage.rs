@@ -2,9 +2,9 @@
 //!
 //! 定义了包含所有存储操作的组合 trait。
 
+use super::{AlbumStorage, ArtistStorage, FileStorage, PlaylistStorage, TrackStorage, UserStorage};
 use crate::error::Result;
 use async_trait::async_trait;
-use super::{TrackStorage, AlbumStorage, ArtistStorage, UserStorage, PlaylistStorage, FileStorage};
 
 /// 组合存储 trait，包含所有存储操作
 #[async_trait]

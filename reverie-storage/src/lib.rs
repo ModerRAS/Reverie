@@ -64,4 +64,7 @@ pub use vfs::{create_vfs, OpendalVfs, SharedVfs, Vfs, VfsConfig, VfsEntry, VfsMe
 pub use database::{DatabaseConfig, DatabaseStorage};
 
 #[cfg(feature = "scanner")]
-pub use scanner::{AudioMetadata, MediaScanner, ScanProgress, ScanResult, ScannedAlbum, ScannedArtist, ScannedTrack};
+pub use scanner::{
+    AudioMetadata, MediaScanner, ScanProgress, ScanResult, ScannedAlbum, ScannedArtist,
+    ScannedTrack,
+};

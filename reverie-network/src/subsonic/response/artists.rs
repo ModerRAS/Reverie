@@ -1,6 +1,6 @@
 //! 艺术家相关 DTO 类型
 
-use reverie_core::{SubsonicArtist, SubsonicArtistInfo, SubsonicArtistIndex};
+use reverie_core::{SubsonicArtist, SubsonicArtistIndex, SubsonicArtistInfo};
 use serde::Serialize;
 
 use super::AlbumID3Item;
@@ -264,11 +264,7 @@ impl From<&SubsonicArtistInfo> for ArtistInfo {
             small_url: a.small_image_url.clone(),
             medium_url: a.medium_image_url.clone(),
             large_url: a.large_image_url.clone(),
-            similar_artist: a
-                .similar_artists
-                .iter()
-                .map(ArtistID3Item::from)
-                .collect(),
+            similar_artist: a.similar_artists.iter().map(ArtistID3Item::from).collect(),
         }
     }
 }
@@ -298,11 +294,7 @@ impl From<&SubsonicArtistInfo> for ArtistInfo2 {
             biography: a.biography.clone(),
             links,
             image: images,
-            similar_artist: a
-                .similar_artists
-                .iter()
-                .map(ArtistID3Item::from)
-                .collect(),
+            similar_artist: a.similar_artists.iter().map(ArtistID3Item::from).collect(),
         }
     }
 }

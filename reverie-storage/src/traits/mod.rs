@@ -4,10 +4,10 @@
 //! 允许在不更改核心应用程序逻辑的情况下切换不同的实现。
 
 pub mod core;
-pub mod user;
 pub mod file;
 pub mod storage;
 pub mod subsonic;
+pub mod user;
 
 pub use core::{AlbumStorage, ArtistStorage, TrackStorage};
 pub use file::{FileMetadata, FileStorage};

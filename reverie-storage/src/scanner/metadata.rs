@@ -53,9 +53,13 @@ impl AudioMetadata {
         use lofty::probe::Probe;
 
         let tagged_file = Probe::open(path)
-            .map_err(|e| StorageError::IoError(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?
+            .map_err(|e| {
+                StorageError::IoError(std::io::Error::other(e.to_string()))
+            })?
             .read()
-            .map_err(|e| StorageError::IoError(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+            .map_err(|e| {
+                StorageError::IoError(std::io::Error::other(e.to_string()))
+            })?;
 
         Self::extract_metadata(&tagged_file)
     }
@@ -67,7 +71,7 @@ impl AudioMetadata {
 
         let cursor = Cursor::new(data);
         let mut probe = Probe::new(cursor);
-        
+
         // 根据文件扩展名提示设置文件类型
         if let Some(hint) = file_type_hint {
             if let Some(ft) = lofty::file::FileType::from_ext(hint) {
@@ -75,20 +79,22 @@ impl AudioMetadata {
             }
         }
 
-        let tagged_file = probe
-            .read()
-            .map_err(|e| StorageError::IoError(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+        let tagged_file = probe.read().map_err(|e| {
+            StorageError::IoError(std::io::Error::other(e.to_string()))
+        })?;
 
         Self::extract_metadata(&tagged_file)
     }
 
     #[cfg(feature = "scanner")]
     fn extract_metadata(tagged_file: &lofty::file::TaggedFile) -> Result<Self> {
-        use lofty::prelude::*;
         use lofty::picture::PictureType;
+        use lofty::prelude::*;
 
         let properties = tagged_file.properties();
-        let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
+        let tag = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag());
 
         let mut metadata = AudioMetadata {
             duration: properties.duration().as_secs_f32(),
@@ -117,12 +123,16 @@ impl AudioMetadata {
                 .or_else(|| metadata.artist.clone());
 
             // 提取封面图片
-            let cover = tag.pictures().iter().find(|p| {
-                matches!(
-                    p.pic_type(),
-                    PictureType::CoverFront | PictureType::Other | PictureType::Media
-                )
-            }).or_else(|| tag.pictures().first());
+            let cover = tag
+                .pictures()
+                .iter()
+                .find(|p| {
+                    matches!(
+                        p.pic_type(),
+                        PictureType::CoverFront | PictureType::Other | PictureType::Media
+                    )
+                })
+                .or_else(|| tag.pictures().first());
 
             if let Some(picture) = cover {
                 metadata.has_cover = true;
@@ -171,9 +181,7 @@ pub const SUPPORTED_AUDIO_EXTENSIONS: &[&str] = &[
 
 /// 获取文件扩展名（不含点）
 pub fn get_extension(path: &str) -> Option<&str> {
-    Path::new(path)
-        .extension()
-        .and_then(|ext| ext.to_str())
+    Path::new(path).extension().and_then(|ext| ext.to_str())
 }
 
 #[cfg(test)]
@@ -213,16 +221,8 @@ mod tests {
                 meta.duration
             );
             // Verify tags were extracted
-            assert!(
-                meta.title.is_some(),
-                "Title missing for {} fixture",
-                fmt
-            );
-            assert!(
-                meta.artist.is_some(),
-                "Artist missing for {} fixture",
-                fmt
-            );
+            assert!(meta.title.is_some(), "Title missing for {} fixture", fmt);
+            assert!(meta.artist.is_some(), "Artist missing for {} fixture", fmt);
         }
     }
 }

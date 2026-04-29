@@ -69,7 +69,9 @@ fn make_test_artist() -> Artist {
 }
 
 /// Seed a full artist+album+track hierarchy and return their IDs.
-async fn seed_test_hierarchy(ctx: &TestContext) -> Result<(Uuid, Uuid, Uuid), Box<dyn std::error::Error + Send + Sync>> {
+async fn seed_test_hierarchy(
+    ctx: &TestContext,
+) -> Result<(Uuid, Uuid, Uuid), Box<dyn std::error::Error + Send + Sync>> {
     let artist = make_test_artist();
     let album = make_test_album(artist.id);
     let track = make_test_track(artist.id, album.id);
@@ -95,7 +97,10 @@ async fn test_ping_happy() {
 #[tokio::test]
 async fn test_get_license_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getLicense", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getLicense", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
     assert_eq!(resp["subsonic-response"]["license"]["valid"], true);
 }
@@ -109,7 +114,10 @@ async fn test_get_license_happy() {
 #[tokio::test]
 async fn test_get_music_folders_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getMusicFolders", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getMusicFolders", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -118,7 +126,10 @@ async fn test_get_music_folders_happy() {
 #[tokio::test]
 async fn test_get_genres_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getGenres", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getGenres", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -127,7 +138,10 @@ async fn test_get_genres_happy() {
 #[tokio::test]
 async fn test_get_indexes_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getIndexes", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getIndexes", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -136,7 +150,10 @@ async fn test_get_indexes_happy() {
 #[tokio::test]
 async fn test_get_artists_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getArtists", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getArtists", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -147,14 +164,23 @@ async fn test_get_music_directory_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (artist_id, _album_id, _track_id) = seed_test_hierarchy(&ctx).await.unwrap();
     // music directory lookup by artist id (artists are top-level directories)
-    let resp = ctx.subsonic_get("getMusicDirectory", &[("f", "json"), ("id", &artist_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "getMusicDirectory",
+            &[("f", "json"), ("id", &artist_id.to_string())],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_music_directory_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getMusicDirectory", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getMusicDirectory", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -162,14 +188,23 @@ async fn test_get_music_directory_error() {
 async fn test_get_artist_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (artist_id, _album_id, _track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("getArtist", &[("f", "json"), ("id", &artist_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "getArtist",
+            &[("f", "json"), ("id", &artist_id.to_string())],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_artist_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getArtist", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getArtist", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -177,14 +212,20 @@ async fn test_get_artist_error() {
 async fn test_get_album_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (_artist_id, album_id, _track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("getAlbum", &[("f", "json"), ("id", &album_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAlbum", &[("f", "json"), ("id", &album_id.to_string())])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_album_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getAlbum", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAlbum", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -192,7 +233,10 @@ async fn test_get_album_error() {
 async fn test_get_song_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (_artist_id, _album_id, track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("getSong", &[("f", "json"), ("id", &track_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getSong", &[("f", "json"), ("id", &track_id.to_string())])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -207,14 +251,23 @@ async fn test_get_song_error() {
 async fn test_get_album_info_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (_artist_id, album_id, _track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("getAlbumInfo", &[("f", "json"), ("id", &album_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "getAlbumInfo",
+            &[("f", "json"), ("id", &album_id.to_string())],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_album_info_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getAlbumInfo", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAlbumInfo", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -222,28 +275,43 @@ async fn test_get_album_info_error() {
 async fn test_get_artist_info_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (artist_id, _album_id, _track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("getArtistInfo", &[("f", "json"), ("id", &artist_id.to_string())]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "getArtistInfo",
+            &[("f", "json"), ("id", &artist_id.to_string())],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_artist_info_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getArtistInfo", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getArtistInfo", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_get_album_list2_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getAlbumList2", &[("f", "json"), ("type", "recent")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAlbumList2", &[("f", "json"), ("type", "recent")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_album_list2_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getAlbumList2", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAlbumList2", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -254,7 +322,10 @@ async fn test_get_album_list2_error() {
 #[tokio::test]
 async fn test_search2_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("search2", &[("f", "json"), ("query", "test")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("search2", &[("f", "json"), ("query", "test")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -268,7 +339,10 @@ async fn test_search2_error() {
 #[tokio::test]
 async fn test_search3_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("search3", &[("f", "json"), ("query", "test")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("search3", &[("f", "json"), ("query", "test")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -286,7 +360,10 @@ async fn test_search3_error() {
 #[tokio::test]
 async fn test_get_playlists_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getPlaylists", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getPlaylists", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -295,14 +372,20 @@ async fn test_get_playlists_happy() {
 #[tokio::test]
 async fn test_get_playlist_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getPlaylist", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getPlaylist", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_create_playlist_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("createPlaylist", &[("f", "json"), ("name", "MyPlaylist")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("createPlaylist", &[("f", "json"), ("name", "MyPlaylist")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -310,21 +393,30 @@ async fn test_create_playlist_happy() {
 async fn test_create_playlist_error() {
     let ctx = TestContext::new().await.unwrap();
     // Neither playlistId nor name
-    let resp = ctx.subsonic_get("createPlaylist", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("createPlaylist", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_update_playlist_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("updatePlaylist", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("updatePlaylist", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_delete_playlist_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("deletePlaylist", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("deletePlaylist", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -335,7 +427,10 @@ async fn test_delete_playlist_error() {
 #[tokio::test]
 async fn test_get_users_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getUsers", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getUsers", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -362,21 +457,30 @@ async fn test_stream_error() {
 #[tokio::test]
 async fn test_download_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("download", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("download", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_get_cover_art_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getCoverArt", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getCoverArt", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_get_avatar_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getAvatar", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getAvatar", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -387,7 +491,10 @@ async fn test_get_avatar_error() {
 #[tokio::test]
 async fn test_get_starred_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getStarred", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getStarred", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -396,7 +503,10 @@ async fn test_get_starred_happy() {
 #[tokio::test]
 async fn test_get_starred2_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getStarred2", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getStarred2", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -405,7 +515,10 @@ async fn test_get_starred2_happy() {
 #[tokio::test]
 async fn test_star_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("star", &[("f", "json"), ("id", "song-1")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("star", &[("f", "json"), ("id", "song-1")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -414,7 +527,10 @@ async fn test_star_happy() {
 #[tokio::test]
 async fn test_unstar_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("unstar", &[("f", "json"), ("id", "song-1")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("unstar", &[("f", "json"), ("id", "song-1")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -422,14 +538,27 @@ async fn test_unstar_happy() {
 async fn test_set_rating_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (_artist_id, _album_id, track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("setRating", &[("f", "json"), ("id", &track_id.to_string()), ("rating", "4")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "setRating",
+            &[
+                ("f", "json"),
+                ("id", &track_id.to_string()),
+                ("rating", "4"),
+            ],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_set_rating_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("setRating", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("setRating", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -437,21 +566,37 @@ async fn test_set_rating_error() {
 async fn test_scrobble_happy() {
     let ctx = TestContext::new().await.unwrap();
     let (_artist_id, _album_id, track_id) = seed_test_hierarchy(&ctx).await.unwrap();
-    let resp = ctx.subsonic_get("scrobble", &[("f", "json"), ("id", &track_id.to_string()), ("submission", "true")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "scrobble",
+            &[
+                ("f", "json"),
+                ("id", &track_id.to_string()),
+                ("submission", "true"),
+            ],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_scrobble_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("scrobble", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("scrobble", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_get_now_playing_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getNowPlaying", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getNowPlaying", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -460,7 +605,10 @@ async fn test_get_now_playing_happy() {
 #[tokio::test]
 async fn test_get_random_songs_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getRandomSongs", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getRandomSongs", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -469,7 +617,13 @@ async fn test_get_random_songs_happy() {
 #[tokio::test]
 async fn test_get_lyrics_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getLyrics", &[("f", "json"), ("artist", "Test"), ("title", "Song")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "getLyrics",
+            &[("f", "json"), ("artist", "Test"), ("title", "Song")],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -482,7 +636,10 @@ async fn test_get_lyrics_happy() {
 #[tokio::test]
 async fn test_get_scan_status_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getScanStatus", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getScanStatus", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -491,7 +648,10 @@ async fn test_get_scan_status_happy() {
 #[tokio::test]
 async fn test_start_scan_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("startScan", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("startScan", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -504,7 +664,10 @@ async fn test_start_scan_happy() {
 #[tokio::test]
 async fn test_get_videos_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getVideos", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getVideos", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -513,14 +676,20 @@ async fn test_get_videos_happy() {
 #[tokio::test]
 async fn test_get_captions_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getCaptions", &[("f", "json"), ("id", "video-1")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getCaptions", &[("f", "json"), ("id", "video-1")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_get_captions_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getCaptions", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getCaptions", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -538,7 +707,10 @@ async fn test_hls_returns_not_implemented() {
 #[tokio::test]
 async fn test_jukebox_control_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("jukeboxControl", &[("f", "json"), ("action", "status")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("jukeboxControl", &[("f", "json"), ("action", "status")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -547,7 +719,10 @@ async fn test_jukebox_control_happy() {
 #[tokio::test]
 async fn test_get_chat_messages_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getChatMessages", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getChatMessages", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -556,21 +731,30 @@ async fn test_get_chat_messages_happy() {
 #[tokio::test]
 async fn test_add_chat_message_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("addChatMessage", &[("f", "json"), ("message", "Hello")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("addChatMessage", &[("f", "json"), ("message", "Hello")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_add_chat_message_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("addChatMessage", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("addChatMessage", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_get_podcasts_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getPodcasts", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getPodcasts", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -579,7 +763,10 @@ async fn test_get_podcasts_happy() {
 #[tokio::test]
 async fn test_get_newest_podcasts_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("getNewestPodcasts", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getNewestPodcasts", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -588,7 +775,10 @@ async fn test_get_newest_podcasts_happy() {
 #[tokio::test]
 async fn test_refresh_podcasts_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("refreshPodcasts", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("refreshPodcasts", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -597,35 +787,53 @@ async fn test_refresh_podcasts_happy() {
 #[tokio::test]
 async fn test_create_podcast_channel_happy() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("createPodcastChannel", &[("f", "json"), ("url", "https://example.com/feed.xml")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "createPodcastChannel",
+            &[("f", "json"), ("url", "https://example.com/feed.xml")],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_create_podcast_channel_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("createPodcastChannel", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("createPodcastChannel", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_delete_podcast_channel_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("deletePodcastChannel", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("deletePodcastChannel", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_delete_podcast_episode_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("deletePodcastEpisode", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("deletePodcastEpisode", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
 #[tokio::test]
 async fn test_download_podcast_episode_error() {
     let ctx = TestContext::new().await.unwrap();
-    let resp = ctx.subsonic_get("downloadPodcastEpisode", &[("f", "json")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("downloadPodcastEpisode", &[("f", "json")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "failed");
 }
 
@@ -637,12 +845,20 @@ async fn test_download_podcast_episode_error() {
 async fn test_get_playlist_happy() {
     let ctx = TestContext::new().await.unwrap();
     // Create playlist via API
-    let create_resp = ctx.subsonic_get("createPlaylist", &[("f", "json"), ("name", "ReadTest")]).await.unwrap();
+    let create_resp = ctx
+        .subsonic_get("createPlaylist", &[("f", "json"), ("name", "ReadTest")])
+        .await
+        .unwrap();
     assert_eq!(create_resp["subsonic-response"]["status"], "ok");
-    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"].as_str().unwrap();
+    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"]
+        .as_str()
+        .unwrap();
 
     // Get the playlist
-    let resp = ctx.subsonic_get("getPlaylist", &[("f", "json"), ("id", playlist_id)]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getPlaylist", &[("f", "json"), ("id", playlist_id)])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
     assert_eq!(resp["subsonic-response"]["playlist"]["name"], "ReadTest");
 }
@@ -651,29 +867,56 @@ async fn test_get_playlist_happy() {
 async fn test_update_playlist_happy() {
     let ctx = TestContext::new().await.unwrap();
     // Create playlist
-    let create_resp = ctx.subsonic_get("createPlaylist", &[("f", "json"), ("name", "UpdateTest")]).await.unwrap();
-    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"].as_str().unwrap();
+    let create_resp = ctx
+        .subsonic_get("createPlaylist", &[("f", "json"), ("name", "UpdateTest")])
+        .await
+        .unwrap();
+    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"]
+        .as_str()
+        .unwrap();
 
     // Update the playlist
-    let resp = ctx.subsonic_get("updatePlaylist", &[
-        ("f", "json"), ("playlistId", playlist_id), ("name", "UpdatedName")
-    ]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "updatePlaylist",
+            &[
+                ("f", "json"),
+                ("playlistId", playlist_id),
+                ("name", "UpdatedName"),
+            ],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 
     // Verify the update took effect
-    let get_resp = ctx.subsonic_get("getPlaylist", &[("f", "json"), ("id", playlist_id)]).await.unwrap();
-    assert_eq!(get_resp["subsonic-response"]["playlist"]["name"], "UpdatedName");
+    let get_resp = ctx
+        .subsonic_get("getPlaylist", &[("f", "json"), ("id", playlist_id)])
+        .await
+        .unwrap();
+    assert_eq!(
+        get_resp["subsonic-response"]["playlist"]["name"],
+        "UpdatedName"
+    );
 }
 
 #[tokio::test]
 async fn test_delete_playlist_happy() {
     let ctx = TestContext::new().await.unwrap();
     // Create playlist
-    let create_resp = ctx.subsonic_get("createPlaylist", &[("f", "json"), ("name", "DeleteTest")]).await.unwrap();
-    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"].as_str().unwrap();
+    let create_resp = ctx
+        .subsonic_get("createPlaylist", &[("f", "json"), ("name", "DeleteTest")])
+        .await
+        .unwrap();
+    let playlist_id = create_resp["subsonic-response"]["playlist"]["id"]
+        .as_str()
+        .unwrap();
 
     // Delete the playlist
-    let resp = ctx.subsonic_get("deletePlaylist", &[("f", "json"), ("id", playlist_id)]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("deletePlaylist", &[("f", "json"), ("id", playlist_id)])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -685,14 +928,26 @@ async fn test_delete_playlist_happy() {
 async fn test_get_user_happy() {
     let ctx = TestContext::new().await.unwrap();
     // Create a user via the API
-    let create_resp = ctx.subsonic_get("createUser", &[
-        ("f", "json"), ("username", "happyuser"), ("password", "secret"),
-        ("email", "happy@test.com"), ("adminRole", "false")
-    ]).await.unwrap();
+    let create_resp = ctx
+        .subsonic_get(
+            "createUser",
+            &[
+                ("f", "json"),
+                ("username", "happyuser"),
+                ("password", "secret"),
+                ("email", "happy@test.com"),
+                ("adminRole", "false"),
+            ],
+        )
+        .await
+        .unwrap();
     assert_eq!(create_resp["subsonic-response"]["status"], "ok");
 
     // Get the user
-    let resp = ctx.subsonic_get("getUser", &[("f", "json"), ("username", "happyuser")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get("getUser", &[("f", "json"), ("username", "happyuser")])
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
     assert_eq!(resp["subsonic-response"]["user"]["username"], "happyuser");
 }
@@ -732,12 +987,21 @@ async fn test_stream_happy() {
         is_cue_virtual: None,
     };
     ctx.storage().save_track(&track).await.unwrap();
-    ctx.storage().write_file(&file_path, audio_data).await.unwrap();
+    ctx.storage()
+        .write_file(&file_path, audio_data)
+        .await
+        .unwrap();
 
     let url = ctx.subsonic_url("stream", &[("id", &track_id.to_string())]);
     let resp = ctx.client.get(&url).send().await.unwrap();
     assert_eq!(resp.status(), 200);
-    assert!(resp.headers().get("content-type").unwrap().to_str().unwrap().contains("audio/"));
+    assert!(resp
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("audio/"));
 }
 
 #[tokio::test]
@@ -770,12 +1034,21 @@ async fn test_download_happy() {
         is_cue_virtual: None,
     };
     ctx.storage().save_track(&track).await.unwrap();
-    ctx.storage().write_file(&file_path, audio_data).await.unwrap();
+    ctx.storage()
+        .write_file(&file_path, audio_data)
+        .await
+        .unwrap();
 
     let url = ctx.subsonic_url("download", &[("id", &track_id.to_string())]);
     let resp = ctx.client.get(&url).send().await.unwrap();
     assert_eq!(resp.status(), 200);
-    assert!(resp.headers().get("content-disposition").unwrap().to_str().unwrap().contains("attachment"));
+    assert!(resp
+        .headers()
+        .get("content-disposition")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("attachment"));
 }
 
 #[tokio::test]
@@ -798,13 +1071,21 @@ async fn test_get_cover_art_happy() {
         updated_at: Utc::now(),
     };
     ctx.storage().save_album(&album).await.unwrap();
-    ctx.storage().write_file(&cover_path, image_data).await.unwrap();
+    ctx.storage()
+        .write_file(&cover_path, image_data)
+        .await
+        .unwrap();
 
     // Look up cover art by album ID
     let url = ctx.subsonic_url("getCoverArt", &[("id", &album.id.to_string())]);
     let resp = ctx.client.get(&url).send().await.unwrap();
     assert_eq!(resp.status(), 200);
-    let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert!(ct.contains("image/"));
 }
 
@@ -816,11 +1097,25 @@ async fn test_get_cover_art_happy() {
 async fn test_delete_podcast_channel_happy() {
     let ctx = TestContext::new().await.unwrap();
     // Create a channel first, then delete it
-    let _create = ctx.subsonic_get("createPodcastChannel", &[
-        ("f", "json"), ("url", "https://example.com/feed.xml"), ("title", "ToDelete")
-    ]).await.unwrap();
+    let _create = ctx
+        .subsonic_get(
+            "createPodcastChannel",
+            &[
+                ("f", "json"),
+                ("url", "https://example.com/feed.xml"),
+                ("title", "ToDelete"),
+            ],
+        )
+        .await
+        .unwrap();
     // delete by id (mock storage uses sequential "channel-N" ids)
-    let resp = ctx.subsonic_get("deletePodcastChannel", &[("f", "json"), ("id", "channel-1")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "deletePodcastChannel",
+            &[("f", "json"), ("id", "channel-1")],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -829,7 +1124,13 @@ async fn test_delete_podcast_episode_happy() {
     let ctx = TestContext::new().await.unwrap();
     // deletePodcastEpisode by ID - uses pre-seeded episode-2 (separate from
     // episode-1 used by download test, to avoid races in parallel execution)
-    let resp = ctx.subsonic_get("deletePodcastEpisode", &[("f", "json"), ("id", "episode-2")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "deletePodcastEpisode",
+            &[("f", "json"), ("id", "episode-2")],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }
 
@@ -838,6 +1139,12 @@ async fn test_download_podcast_episode_happy() {
     let ctx = TestContext::new().await.unwrap();
     // downloadPodcastEpisode by ID - mock storage uses pre-seeded episode-1
     // (real implementation would stream the file)
-    let resp = ctx.subsonic_get("downloadPodcastEpisode", &[("f", "json"), ("id", "episode-1")]).await.unwrap();
+    let resp = ctx
+        .subsonic_get(
+            "downloadPodcastEpisode",
+            &[("f", "json"), ("id", "episode-1")],
+        )
+        .await
+        .unwrap();
     assert_eq!(resp["subsonic-response"]["status"], "ok");
 }

@@ -97,7 +97,7 @@ fn make_id3v2(title: &str, artist: &str) -> Vec<u8> {
     tag.push(3);
     tag.push(0);
     tag.push(0); // flags
-    // Synchsafe integer: 4 bytes, each byte only uses 7 bits
+                 // Synchsafe integer: 4 bytes, each byte only uses 7 bits
     let ss = to_synchsafe(tag_body_len);
     tag.extend_from_slice(&ss);
     tag.extend_from_slice(&tit2);
@@ -165,7 +165,7 @@ fn generate_wav(title: &str, artist: &str) -> Vec<u8> {
     let riff_header_size: u32 = 4 // "WAVE"
         + 8 + fmt_size    // fmt chunk header + data
         + 8 + list_size   // LIST chunk header + data
-        + 8 + data_size;  // data chunk header + data
+        + 8 + data_size; // data chunk header + data
     let file_size: u32 = 8 + riff_header_size; // "RIFF" + size
 
     let mut buf = Vec::with_capacity(file_size as usize + 8);
@@ -250,16 +250,16 @@ fn generate_flac(title: &str, artist: &str) -> Vec<u8> {
     // Total samples: 44100 (1 second)
     // MD5: all zeros
     let mut streaminfo = Vec::with_capacity(34);
-    push_be16(&mut streaminfo, 4096);    // min block size
-    push_be16(&mut streaminfo, 4096);    // max block size
+    push_be16(&mut streaminfo, 4096); // min block size
+    push_be16(&mut streaminfo, 4096); // max block size
     streaminfo.extend_from_slice(&[0u8; 3]); // min frame size (24 bits)
     streaminfo.extend_from_slice(&[0u8; 3]); // max frame size (24 bits)
-    // Sample rate (20 bits): 44100 = 0xAC44, in 20 bits: 0000_1010_1100_0100_0100
-    // Bit layout: [sample_rate_high 16 bits][remaining 4 bits + channels(3) + bps(5) + total_samples(36)]
+                                             // Sample rate (20 bits): 44100 = 0xAC44, in 20 bits: 0000_1010_1100_0100_0100
+                                             // Bit layout: [sample_rate_high 16 bits][remaining 4 bits + channels(3) + bps(5) + total_samples(36)]
     let sr_lo: u8 = ((44100 & 0xF) as u8) << 4;
     let ch_3: u8 = (2 - 1) & 0x7; // channels-1
     let bps_5: u8 = (16 - 1) & 0x1F; // bps-1
-    // sr_lo(4) | ch(3) | bps(5) = first byte of metadata[10..]
+                                     // sr_lo(4) | ch(3) | bps(5) = first byte of metadata[10..]
     let meta10: u8 = sr_lo | (ch_3 << 1) | ((bps_5 >> 4) & 0x01);
     let meta11: u8 = ((bps_5 & 0x0F) << 4) as u8;
     streaminfo.push(meta10);
@@ -272,7 +272,7 @@ fn generate_flac(title: &str, artist: &str) -> Vec<u8> {
     streaminfo.push(((ts >> 12) & 0xFF) as u8);
     streaminfo.push(((ts >> 4) & 0xFF) as u8);
     streaminfo.push(((ts & 0xF) as u8) << 4); // last nibble is 0
-    // MD5: 16 bytes of zeros
+                                              // MD5: 16 bytes of zeros
     streaminfo.resize(34, 0);
 
     // STREAMINFO header (type=0, last=0)
@@ -337,10 +337,10 @@ fn generate_ogg(title: &str, artist: &str) -> Vec<u8> {
     push_le32(&mut id_packet, 160000); // bitrate nominal
     push_le32(&mut id_packet, 0); // bitrate min
     id_packet.push(0x98); // blocksize_0=8 << 4 | blocksize_1=10 = 0x98? No...
-    // Actually: blocksize_0=6 for 64 samples, blocksize_1=8 for 256 samples
-    // Or 8 and 10 for 256 and 1024. Let me use 6 and 8 for very short frames.
-    // blocksize byte: (log2(blocksize0)-1) << 4 | (log2(blocksize1)-1)
-    // log2(64)=6, log2(256)=8: (6)<<4 | (8) = 0x68
+                          // Actually: blocksize_0=6 for 64 samples, blocksize_1=8 for 256 samples
+                          // Or 8 and 10 for 256 and 1024. Let me use 6 and 8 for very short frames.
+                          // blocksize byte: (log2(blocksize0)-1) << 4 | (log2(blocksize1)-1)
+                          // log2(64)=6, log2(256)=8: (6)<<4 | (8) = 0x68
     id_packet.push(0x68);
     id_packet.push(1); // framing bit
 
@@ -378,8 +378,8 @@ fn generate_ogg(title: &str, artist: &str) -> Vec<u8> {
     // --- Page 3: Minimal audio packet ---
     // Set granule position to 44100 to indicate 1 second of audio
     let audio_packet = vec![
-        0x00,  // mode number (bit 0 = mode 0)
-        0x00, 0x00,  // minimal residue/floor data
+        0x00, // mode number (bit 0 = mode 0)
+        0x00, 0x00, // minimal residue/floor data
     ];
     let audio_page = make_ogg_page(0, 2, &audio_packet, 44100);
     buf.extend_from_slice(&audio_page);
@@ -395,8 +395,8 @@ fn minimal_vorbis_setup() -> Vec<u8> {
 
     // Codebooks: 0
     p.push(0); // codebook count (add 1 = 1)
-    // Actually add 1 decoding: value 0 means 1 codebook. But we need at least 1 for mode.
-    // Let's define 1 dummy codebook.
+               // Actually add 1 decoding: value 0 means 1 codebook. But we need at least 1 for mode.
+               // Let's define 1 dummy codebook.
     p.push(0); // add 1 → 1 codebook
 
     // Codebook 0: a minimal codebook
@@ -406,32 +406,32 @@ fn minimal_vorbis_setup() -> Vec<u8> {
     // dimensions: 1
     push_le16(&mut p, 1);
     push_le16(&mut p, 1); // actually add 1 → 2? No, raw value.
-    // entries: 1 (raw), ordered=false, sparse=false
+                          // entries: 1 (raw), ordered=false, sparse=false
     push_le24(&mut p, 1);
     p.push(0x05); // ordered(1)=0, sparse(1)=0, codeword_length_bits(5)=5, actual_lengths=0
     p.push(1); // actual length for entry 0
     p.push(0); // codeword = 0
-    // vector lookup type: 0 (none)
+               // vector lookup type: 0 (none)
 
     // Time domain transforms: 0 (Vorbis I uses 0 always)
     push_be24(&mut p, 0);
 
     // Floors: 1 (add 1 = 2... no, raw = 1 means 1 floor)
     p.push(1); // floor count
-    // Floor 0: type 0
+               // Floor 0: type 0
     push_le16(&mut p, 0); // floor type 0
-    // Floor0: order=1, rate=1, bark_map_size=1, amplitude_bits=1, amplitude_offset=0, num_books=0
+                          // Floor0: order=1, rate=1, bark_map_size=1, amplitude_bits=1, amplitude_offset=0, num_books=0
     p.push(1); // order
     push_le16(&mut p, 1); // rate
     push_le16(&mut p, 1); // bark map size
     p.push(1); // amplitude bits
     p.push(0); // amplitude offset
     p.push(0); // number of books (add 1 = 1)
-    // ... we said 0 books, so that's fine
+               // ... we said 0 books, so that's fine
 
     // Residues: 1 (add 1 = 1)
     p.push(0); // residue count (add 1 = 1)
-    // Residue 0: type 0
+               // Residue 0: type 0
     push_le16(&mut p, 0); // type 0
     push_le24(&mut p, 0); // begin
     push_le24(&mut p, 0); // end (add 1 = 1)
@@ -441,17 +441,17 @@ fn minimal_vorbis_setup() -> Vec<u8> {
 
     // Mappings: 1
     p.push(0); // mapping count (add 1 = 1)
-    // Mapping 0: type 0, submaps=1
+               // Mapping 0: type 0, submaps=1
     p.push(0x01); // type(1)=0, submaps(4)=1 (submaps-1), reserved=000
     p.push(0); // coupling steps (add 1 = 1... no, 0 means no coupling)
-    // Submap floor: floor 0
+               // Submap floor: floor 0
     p.push(0); // floor (add 1 = 1)
-    // Submap residue: residue 0
+               // Submap residue: residue 0
     p.push(0); // residue (add 1 = 1)
 
     // Modes: 1
     p.push(0); // mode count (add 1 = 1)
-    // Mode 0: blockflag=0, windowtype=0, transformtype=0, mapping=0
+               // Mode 0: blockflag=0, windowtype=0, transformtype=0, mapping=0
     p.push(0); // blockflag(1)=0, windowtype(1)=0, transformtype(1)=0, mapping(5)=0
     p.push(1); // framing bit
 
@@ -653,7 +653,7 @@ fn generate_m4a(title: &str, artist: &str) -> Vec<u8> {
     let mut stsd = Vec::new();
     stsd.resize(4, 0); // version + flags
     push_be32(&mut stsd, 1); // entry count
-    // mp4a entry
+                             // mp4a entry
     let mut mp4a = Vec::new();
     mp4a.resize(6, 0); // reserved
     push_be16(&mut mp4a, 1); // data ref index
@@ -715,7 +715,7 @@ fn generate_m4a(title: &str, artist: &str) -> Vec<u8> {
     // meta atom (hdlr + ilst)
     let mut meta = Vec::new();
     meta.resize(4, 0); // version + flags
-    // hdlr inside meta
+                       // hdlr inside meta
     let mut metahdlr = Vec::new();
     metahdlr.resize(4, 0);
     metahdlr.extend_from_slice(&[0u8; 4]);
@@ -771,12 +771,12 @@ fn make_mp4_atom(atype: &[u8; 4], data: &[u8]) -> Vec<u8> {
 fn make_esds() -> Vec<u8> {
     let mut esds = Vec::new();
     esds.resize(4, 0); // version + flags
-    // ES_Descriptor
+                       // ES_Descriptor
     esds.push(0x03); // tag
     push_esds_len(&mut esds, 25);
     push_be16(&mut esds, 1); // ES_ID
     esds.push(0); // flags
-    // DecoderConfig descriptor
+                  // DecoderConfig descriptor
     esds.push(0x04); // tag
     push_esds_len(&mut esds, 17);
     esds.push(0x40); // object type: Audio ISO/IEC 14496-3 (AAC)
@@ -784,13 +784,13 @@ fn make_esds() -> Vec<u8> {
     push_be24(&mut esds, 0); // buffer size DB
     push_be32(&mut esds, 0x0001_F400); // max bitrate: 128kbps
     push_be32(&mut esds, 0x0001_F400); // avg bitrate: 128kbps
-    // DecoderSpecificInfo
+                                       // DecoderSpecificInfo
     esds.push(0x05); // tag
     push_esds_len(&mut esds, 2);
     // AAC LC, 44100 Hz, stereo
     esds.push(0x12); // audio object type(5)=2 (AAC LC) << 3 | sampling freq idx(4)=4 (44100) >> 1
     esds.push(0x10); // sampling freq idx(1) << 7 | channels(3)=2 (stereo) << 4 | padding
-    // SLConfig descriptor
+                     // SLConfig descriptor
     esds.push(0x06); // tag
     push_esds_len(&mut esds, 1);
     esds.push(0x02); // predefined
@@ -849,22 +849,22 @@ fn generate_aac(title: &str, artist: &str) -> Vec<u8> {
     adts[0] = 0xFF; // sync
     adts[1] = 0xF1; // sync(4) + ID(1)=0 + layer(2)=00 + protection(1)=1
     adts[2] = 0x50; // profile(2)=01 + sample_rate(4)=0100 + private(1)=0 + channel_config_hi(1)=0 (channel config is 3 bits, so hi bit = (2>>2)&1 = 0)
-    // Wait, channel config for stereo is 2, in 3 bits: 010
-    // So: profile(2)=01 + sample_rate(4)=0100 + private(1)=0 + channel_hi(1)=(2>>2)&1=0
-    // = 01_0100_0_0 = 0x50
+                    // Wait, channel config for stereo is 2, in 3 bits: 010
+                    // So: profile(2)=01 + sample_rate(4)=0100 + private(1)=0 + channel_hi(1)=(2>>2)&1=0
+                    // = 01_0100_0_0 = 0x50
     adts[3] = 0x80; // channel_lo(2)=10 + original(1)=0 + home(1)=0 + copyright(1)=0 + copyright_start(1)=0 + frame_length_hi(2)
-    // frame_length_hi (2 bits): frame_length >> 11
+                    // frame_length_hi (2 bits): frame_length >> 11
     let fl_hi = ((frame_length >> 11) & 0x03) as u8;
     adts[3] = (2 << 6) | fl_hi; // channel_lo(2) << 6 | original(0)<<5 | home(0)<<4 | copyright(0)<<3 | copyright_start(0)<<2 | frame_length_hi(2)
-    // Wait let me recalc adts[3]:
-    // Bits: channel_lo(2)=10, original(1)=0, home(1)=0, copyright(1)=0, copyright_start(1)=0, frame_length_hi(2)
-    // 10_0_0_0_0_xx = 0x80 | fl_hi
+                                // Wait let me recalc adts[3]:
+                                // Bits: channel_lo(2)=10, original(1)=0, home(1)=0, copyright(1)=0, copyright_start(1)=0, frame_length_hi(2)
+                                // 10_0_0_0_0_xx = 0x80 | fl_hi
     adts[3] = 0x80 | fl_hi;
     // frame_length_mid (8 bits)
     adts[4] = ((frame_length >> 3) & 0xFF) as u8;
     // frame_length_lo (3 bits) + buffer_fullness_hi(5)
     adts[5] = (((frame_length & 0x07) as u8) << 5) | 0x1F; // buffer fullness hi bits = 11111
-    // buffer_fullness_lo(6) + num_raw_blocks(2)=0
+                                                           // buffer_fullness_lo(6) + num_raw_blocks(2)=0
     adts[6] = 0xFC; // buffer fullness lo = 111111, num_raw_blocks = 00
 
     buf.extend_from_slice(&adts);
@@ -958,7 +958,8 @@ fn generate_wma(title: &str, artist: &str) -> Vec<u8> {
 
     // Fix header object size
     let header_size = (buf.len() - header_obj_size_offset + 8) as u64;
-    buf[header_obj_size_offset..header_obj_size_offset + 8].copy_from_slice(&header_size.to_le_bytes());
+    buf[header_obj_size_offset..header_obj_size_offset + 8]
+        .copy_from_slice(&header_size.to_le_bytes());
 
     buf
 }
@@ -973,16 +974,28 @@ fn to_utf16le(s: &str) -> Vec<u8> {
 
 // ASF GUIDs
 fn guid_asf_header() -> [u8; 16] {
-    [0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C]
+    [
+        0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE,
+        0x6C,
+    ]
 }
 fn guid_file_properties() -> [u8; 16] {
-    [0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65]
+    [
+        0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53,
+        0x65,
+    ]
 }
 fn guid_content_desc() -> [u8; 16] {
-    [0x33, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C]
+    [
+        0x33, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE,
+        0x6C,
+    ]
 }
 fn guid_data_object() -> [u8; 16] {
-    [0x36, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C]
+    [
+        0x36, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE,
+        0x6C,
+    ]
 }
 
 /// AIFF: FORM AIFF with COMM + SSND + ID3 chunk.
@@ -1009,10 +1022,10 @@ fn generate_aiff(title: &str, artist: &str) -> Vec<u8> {
     comm.extend_from_slice(&ext_sr);
     // Compression type: "NONE" for PCM, or "sowt" for little-endian 16-bit
     comm.extend_from_slice(b"NONE"); // For AIFF (not AIFF-C), no compression name
-    // But for AIFF (non-compressed), there's no compression type string.
-    // Let me use standard AIFF without compression string.
-    // Actually, AIFF (not AIFF-C) COMM chunk is:
-    // channels(2) + numSampleFrames(4) + sampleSize(2) + sampleRate(extended 80-bit=10)
+                                     // But for AIFF (non-compressed), there's no compression type string.
+                                     // Let me use standard AIFF without compression string.
+                                     // Actually, AIFF (not AIFF-C) COMM chunk is:
+                                     // channels(2) + numSampleFrames(4) + sampleSize(2) + sampleRate(extended 80-bit=10)
 
     // Hmm wait, AIFF COMM is only 18 bytes (no compression field).
     // AIFF-C COMM (AIFC) has compression type + name.
@@ -1045,10 +1058,10 @@ fn generate_aiff(title: &str, artist: &str) -> Vec<u8> {
     buf.extend_from_slice(b"FORM");
     push_be32(&mut buf, (4 + form_data_len) as u32); // includes "AIFF"/"AIFC"
     buf.extend_from_slice(b"AIFC"); // Use AIFF-C to indicate possible compression info
-    // Actually, let me use "AIFF" since we're not compressing
-    // Let me correct the FORM type to just "AIFF"
-    // Actually I already wrote it. Let me fix: use plain AIFF with no compression.
-    // The comm chunk for plain AIFF doesn't have compression info.
+                                    // Actually, let me use "AIFF" since we're not compressing
+                                    // Let me correct the FORM type to just "AIFF"
+                                    // Actually I already wrote it. Let me fix: use plain AIFF with no compression.
+                                    // The comm chunk for plain AIFF doesn't have compression info.
 
     buf.extend_from_slice(&comm_chunk);
     buf.extend_from_slice(&ssnd_chunk);
@@ -1069,7 +1082,7 @@ fn generate_aiff(title: &str, artist: &str) -> Vec<u8> {
     push_be16(&mut comm_c, bits);
     comm_c.extend_from_slice(&ext_sr);
     comm_c.extend_from_slice(b"NONE"); // compression type
-    // compression name: pascal string (1 byte len + data)
+                                       // compression name: pascal string (1 byte len + data)
     comm_c.push(0); // zero-length name
 
     let comm_c_chunk = make_aiff_chunk(b"COMM", &comm_c);
@@ -1115,10 +1128,10 @@ fn generate_ape(title: &str, artist: &str) -> Vec<u8> {
     desc[14..18].copy_from_slice(&le32(0)); // wav header bytes
     desc[18..22].copy_from_slice(&le32(0)); // audio frames bytes
     desc[22..26].copy_from_slice(&le32(0)); // md5
-    // Wait, the descriptor format varies. Let me write a minimal valid one.
-    // Actually, for lofty to detect APE, we just need the "MAC " header and version.
-    // The descriptor is read but for a fixture that's just parsed for tags,
-    // we can have minimal values.
+                                            // Wait, the descriptor format varies. Let me write a minimal valid one.
+                                            // Actually, for lofty to detect APE, we just need the "MAC " header and version.
+                                            // The descriptor is read but for a fixture that's just parsed for tags,
+                                            // we can have minimal values.
 
     // For simplicity: use version 3.99, compression level 0 (fastest).
     //Descriptor bytes layout for APE 3.99:
@@ -1142,7 +1155,7 @@ fn generate_ape(title: &str, artist: &str) -> Vec<u8> {
 
     // Version 3.99 descriptor (52 bytes):
     // 0-1:   padding/seektable offset (2 bytes)
-    // 2-5:   descriptor bytes (4 bytes, descriptor size = 52)  
+    // 2-5:   descriptor bytes (4 bytes, descriptor size = 52)
     // 6-9:   header bytes (4 bytes)
     // 10-13: seektable bytes (4 bytes)
     // 14-17: wav header data bytes (4 bytes)
@@ -1196,14 +1209,14 @@ fn make_ape_tag(title: &str, artist: &str) -> Vec<u8> {
     // APETAGEX footer
     tag.extend_from_slice(b"APETAGEX");
     push_le32(&mut tag, 32); // version 2.000 = 2000 encoded as little-endian? Actually version is 4 bytes (1000 for 1.0, 2000 for 2.0).
-    // APE v1: version=1000, v2: version=2000
-    // Size (4 bytes): tag size excluding footer
+                             // APE v1: version=1000, v2: version=2000
+                             // Size (4 bytes): tag size excluding footer
     push_le32(&mut tag, tag_size);
     // Item count (4 bytes)
     push_le32(&mut tag, 3);
     // Flags (4 bytes): bit 29 = contains header, bit 30 = contains no footer, bit 31 = is header
     push_le32(&mut tag, 0x8000_0000); // has footer, this is footer
-    // Reserved (8 bytes)
+                                      // Reserved (8 bytes)
     tag.resize(tag.len() + 8, 0);
 
     tag
@@ -1230,7 +1243,7 @@ fn generate_wv(title: &str, artist: &str) -> Vec<u8> {
     push_le32(&mut buf, 32);
     // version (2 bytes)
     push_le16(&mut buf, 0x0410); // version 4.16... let me use a reasonable version. 0x0410 = 1040? No, version 4.80 = 0x0480
-    // Actually WavPack version is stored as (major << 8) | minor, so 4.80 = 0x0480
+                                 // Actually WavPack version is stored as (major << 8) | minor, so 4.80 = 0x0480
     push_le16(&mut buf, 0x0480);
     // track_no: 0
     buf.push(0);
@@ -1242,16 +1255,16 @@ fn generate_wv(title: &str, artist: &str) -> Vec<u8> {
     push_le32(&mut buf, 0);
     // flags (4 bytes): minimal
     push_le32(&mut buf, 0); // no hybrid, no mono, 16-bit, 44.1k... wait, sampling rate is derived.
-    // Actually flags encode things like sampling rate, bit depth, mono/stereo, etc.
-    // Let me set sample rate index for 44100 and 16-bit, 2 channels.
-    // sr index: 44100 = index 5
-    // flags byte 0: bits(2) + stereo(1) + hybrid(1) + sr_index_low(4)
-    // 16-bit: 00, stereo: 1, not hybrid: 0, 44100: index 5 → 0101
-    // = 00_1_0_0101 = 0x25
-    // flags byte 1: joint_stereo(1) + cross_decorr(1) + reserved + sr_index_hi
-    // Actually, let me just use zero flags and hope lofty can still detect the format.
-    // Lofty reads the wvpk header and gets sample rate from total_samples.
-    // For flags, setting to 0 should be fine for a non-hybrid PCM file.
+                            // Actually flags encode things like sampling rate, bit depth, mono/stereo, etc.
+                            // Let me set sample rate index for 44100 and 16-bit, 2 channels.
+                            // sr index: 44100 = index 5
+                            // flags byte 0: bits(2) + stereo(1) + hybrid(1) + sr_index_low(4)
+                            // 16-bit: 00, stereo: 1, not hybrid: 0, 44100: index 5 → 0101
+                            // = 00_1_0_0101 = 0x25
+                            // flags byte 1: joint_stereo(1) + cross_decorr(1) + reserved + sr_index_hi
+                            // Actually, let me just use zero flags and hope lofty can still detect the format.
+                            // Lofty reads the wvpk header and gets sample rate from total_samples.
+                            // For flags, setting to 0 should be fine for a non-hybrid PCM file.
 
     // block_data: minimal - just the header for format detection
 
@@ -1262,7 +1275,7 @@ fn generate_wv(title: &str, artist: &str) -> Vec<u8> {
     // Let me add them:
     push_le32(&mut buf, 44100); // block_samples
     push_le32(&mut buf, 0); // CRC (not checked for fixture)
-    // Now buf is 32 bytes
+                            // Now buf is 32 bytes
 
     // APE tag
     let ape_tag = make_ape_tag(title, artist);
@@ -1338,5 +1351,9 @@ fn main() {
         );
     }
 
-    println!("\nDone. {} fixtures written to {}", formats.len(), output_dir.display());
+    println!(
+        "\nDone. {} fixtures written to {}",
+        formats.len(),
+        output_dir.display()
+    );
 }

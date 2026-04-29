@@ -1,6 +1,9 @@
 //! 其他 DTO 类型
 
-use reverie_core::{SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicScanStatus, SubsonicStructuredLyrics};
+use reverie_core::{
+    SubsonicBookmark, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics,
+    SubsonicOpenSubsonicExtension, SubsonicPlayQueue, SubsonicScanStatus, SubsonicStructuredLyrics,
+};
 use serde::Serialize;
 
 // === 许可证 ===

@@ -59,22 +59,14 @@ async fn artist_name_map(limit: usize) -> Result<HashMap<String, String>, String
     let resp: ListResponse<ArtistResponse> =
         get_json(&format!("/api/artists?limit={}&offset=0", limit)).await?;
 
-    Ok(resp
-        .items
-        .into_iter()
-        .map(|a| (a.id, a.name))
-        .collect())
+    Ok(resp.items.into_iter().map(|a| (a.id, a.name)).collect())
 }
 
 async fn album_name_map(limit: usize) -> Result<HashMap<String, String>, String> {
     let resp: ListResponse<AlbumResponse> =
         get_json(&format!("/api/albums?limit={}&offset=0", limit)).await?;
 
-    Ok(resp
-        .items
-        .into_iter()
-        .map(|a| (a.id, a.name))
-        .collect())
+    Ok(resp.items.into_iter().map(|a| (a.id, a.name)).collect())
 }
 
 pub async fn list_albums(limit: usize, offset: usize) -> Result<Vec<Album>, String> {
@@ -140,7 +132,10 @@ pub async fn get_album_tracks(album_id: &str, limit_for_names: usize) -> Result<
         .map(|t| Song {
             id: t.id,
             title: t.title,
-            album: t.album_id.as_ref().and_then(|id| album_names.get(id).cloned()),
+            album: t
+                .album_id
+                .as_ref()
+                .and_then(|id| album_names.get(id).cloned()),
             album_id: t.album_id,
             artist: t
                 .artist_id
@@ -175,7 +170,10 @@ pub async fn list_tracks(limit: usize, offset: usize) -> Result<Vec<Song>, Strin
         .map(|t| Song {
             id: t.id,
             title: t.title,
-            album: t.album_id.as_ref().and_then(|id| album_names.get(id).cloned()),
+            album: t
+                .album_id
+                .as_ref()
+                .and_then(|id| album_names.get(id).cloned()),
             album_id: t.album_id,
             artist: t
                 .artist_id
@@ -229,7 +227,8 @@ pub async fn get_artist(id: &str) -> Result<Artist, String> {
 }
 
 pub async fn get_artist_albums(artist_id: &str) -> Result<Vec<Album>, String> {
-    let albums: Vec<AlbumResponse> = get_json(&format!("/api/artists/{}/albums", artist_id)).await?;
+    let albums: Vec<AlbumResponse> =
+        get_json(&format!("/api/artists/{}/albums", artist_id)).await?;
 
     Ok(albums
         .into_iter()

@@ -14,8 +14,8 @@ fn make_test_wav(sample_rate: u32, channels: u16, duration_secs: f32) -> Vec<u8>
         bits_per_sample: 16,
         sample_format: hound::SampleFormat::Int,
     };
-    let mut writer = hound::WavWriter::new(std::io::Cursor::new(&mut buf), spec)
-        .expect("WAV writer");
+    let mut writer =
+        hound::WavWriter::new(std::io::Cursor::new(&mut buf), spec).expect("WAV writer");
     let num_samples = (sample_rate as f32 * duration_secs) as u32;
     for i in 0..num_samples {
         let sample = ((i as f64 * 440.0 * 2.0 * std::f64::consts::PI / sample_rate as f64).sin()
@@ -71,7 +71,10 @@ async fn setup_storage(files: &[(&str, &[u8])]) -> (tempfile::TempDir, DatabaseS
     let storage = DatabaseStorage::new(config)
         .await
         .expect("Failed to create test storage");
-    storage.initialize().await.expect("Failed to initialize storage");
+    storage
+        .initialize()
+        .await
+        .expect("Failed to initialize storage");
     (dir, storage)
 }
 
@@ -113,7 +116,11 @@ async fn test_cue_lifecycle_add_new_tracks_rescan() {
 
     // --- Initial scan: 1 whole-disc + 2 virtual = 3 tracks ---
     let result = storage.perform_scan("").await.expect("initial scan");
-    assert_eq!(result.tracks.len(), 3, "initial scan should have 3 tracks (1 whole + 2 virtual)");
+    assert_eq!(
+        result.tracks.len(),
+        3,
+        "initial scan should have 3 tracks (1 whole + 2 virtual)"
+    );
 
     let virtual_count = result.tracks.iter().filter(|t| t.is_cue_virtual).count();
     assert_eq!(virtual_count, 2, "should have 2 virtual tracks");
@@ -122,15 +129,30 @@ async fn test_cue_lifecycle_add_new_tracks_rescan() {
     assert_eq!(whole_count, 1, "should have 1 whole-disc track");
 
     // Verify DB state
-    assert_eq!(count_tracks(&storage, true).await, 2, "DB: 2 virtual tracks");
-    assert_eq!(count_tracks(&storage, false).await, 1, "DB: 1 whole-disc track");
+    assert_eq!(
+        count_tracks(&storage, true).await,
+        2,
+        "DB: 2 virtual tracks"
+    );
+    assert_eq!(
+        count_tracks(&storage, false).await,
+        1,
+        "DB: 1 whole-disc track"
+    );
 
     // --- Modify .cue: add a 3rd track → rescan → 1 whole + 3 virtual = 4 tracks ---
     let cue_3 = make_cue("sample.wav", 3, 10);
     std::fs::write(dir.path().join("sample.cue"), cue_3.as_bytes()).expect("write updated cue");
 
-    let result2 = storage.perform_scan("").await.expect("rescan after adding track");
-    assert_eq!(result2.tracks.len(), 4, "rescan should have 4 tracks (1 whole + 3 virtual)");
+    let result2 = storage
+        .perform_scan("")
+        .await
+        .expect("rescan after adding track");
+    assert_eq!(
+        result2.tracks.len(),
+        4,
+        "rescan should have 4 tracks (1 whole + 3 virtual)"
+    );
 
     let virt2 = result2.tracks.iter().filter(|t| t.is_cue_virtual).count();
     assert_eq!(virt2, 3, "should have 3 virtual tracks after adding track");
@@ -141,7 +163,10 @@ async fn test_cue_lifecycle_add_new_tracks_rescan() {
     // (track 3 is new), we end up with 2 stale + 3 new = 5 virtual rows.
     // The scan result is the authoritative view.
     let db_virt = count_tracks(&storage, true).await;
-    assert!(db_virt >= 3, "DB should have at least 3 virtual tracks (may include stale rows)");
+    assert!(
+        db_virt >= 3,
+        "DB should have at least 3 virtual tracks (may include stale rows)"
+    );
 }
 
 // ============================================================================
@@ -166,10 +191,23 @@ async fn test_cue_lifecycle_remove_deletes_virtual_tracks() {
     // --- Delete .cue → rescan ---
     std::fs::remove_file(dir.path().join("sample.cue")).expect("delete cue");
 
-    let result2 = storage.perform_scan("").await.expect("rescan after cue removal");
-    assert_eq!(result2.tracks.len(), 1, "after removing .cue, scan result should have 1 track");
-    assert!(!result2.tracks[0].is_cue_virtual, "remaining track should be whole-disc");
-    assert!(result2.tracks[0].cue_path.is_none(), "whole-disc track should have no cue_path");
+    let result2 = storage
+        .perform_scan("")
+        .await
+        .expect("rescan after cue removal");
+    assert_eq!(
+        result2.tracks.len(),
+        1,
+        "after removing .cue, scan result should have 1 track"
+    );
+    assert!(
+        !result2.tracks[0].is_cue_virtual,
+        "remaining track should be whole-disc"
+    );
+    assert!(
+        result2.tracks[0].cue_path.is_none(),
+        "whole-disc track should have no cue_path"
+    );
 
     // DB: whole-disc row was updated (INSERT OR REPLACE with same id).
     // Old virtual tracks may persist in DB (scanner doesn't clean them).
@@ -182,7 +220,10 @@ async fn test_cue_lifecycle_remove_deletes_virtual_tracks() {
         .expect("fetch whole-disc");
     let cue_path: Option<String> = row.get("cue_path");
     let is_cue_virtual: i64 = row.get("is_cue_virtual");
-    assert!(cue_path.is_none(), "whole-disc cue_path should be NULL after CUE removal");
+    assert!(
+        cue_path.is_none(),
+        "whole-disc cue_path should be NULL after CUE removal"
+    );
     assert_eq!(is_cue_virtual, 0, "whole-disc is_cue_virtual should be 0");
 }
 
@@ -209,13 +250,21 @@ async fn test_cue_lifecycle_readd_restores_virtual_tracks() {
     // Step 2: Remove .cue → rescan → 1 whole-disc track
     std::fs::remove_file(dir.path().join("sample.cue")).expect("remove cue");
     let result2 = storage.perform_scan("").await.expect("scan 2");
-    assert_eq!(result2.tracks.len(), 1, "should have 1 track after cue removal");
+    assert_eq!(
+        result2.tracks.len(),
+        1,
+        "should have 1 track after cue removal"
+    );
     assert!(!result2.tracks[0].is_cue_virtual);
 
     // Step 3: Re-add identical .cue → rescan → 3 tracks restored
     std::fs::write(dir.path().join("sample.cue"), cue_content.as_bytes()).expect("re-add cue");
     let result3 = storage.perform_scan("").await.expect("scan 3");
-    assert_eq!(result3.tracks.len(), 3, "should have 3 tracks after cue re-add");
+    assert_eq!(
+        result3.tracks.len(),
+        3,
+        "should have 3 tracks after cue re-add"
+    );
     let virt = result3.tracks.iter().filter(|t| t.is_cue_virtual).count();
     assert_eq!(virt, 2, "should have 2 virtual tracks restored");
 }
@@ -248,12 +297,21 @@ async fn test_cue_lifecycle_readd_uuid_stability() {
     // Compute expected UUIDs via stable_uuid
     let expected_track1 = stable_uuid("sample.wav", 1);
     let expected_track2 = stable_uuid("sample.wav", 2);
-    assert_eq!(virt_ids_1[0], expected_track1, "virtual track 1 UUID should match stable_uuid");
-    assert_eq!(virt_ids_1[1], expected_track2, "virtual track 2 UUID should match stable_uuid");
+    assert_eq!(
+        virt_ids_1[0], expected_track1,
+        "virtual track 1 UUID should match stable_uuid"
+    );
+    assert_eq!(
+        virt_ids_1[1], expected_track2,
+        "virtual track 2 UUID should match stable_uuid"
+    );
 
     // Verify DB matches
     let db_ids_1 = virtual_track_ids(&storage).await;
-    assert_eq!(db_ids_1, virt_ids_1, "DB virtual track IDs should match scan result");
+    assert_eq!(
+        db_ids_1, virt_ids_1,
+        "DB virtual track IDs should match scan result"
+    );
 
     // Step 2: Remove .cue → rescan
     std::fs::remove_file(dir.path().join("sample.cue")).expect("remove cue");
@@ -270,7 +328,10 @@ async fn test_cue_lifecycle_readd_uuid_stability() {
         .filter(|t| t.is_cue_virtual)
         .map(|t| t.id.clone())
         .collect();
-    assert_eq!(virt_ids_3, virt_ids_1, "virtual track UUIDs must be identical after re-add");
+    assert_eq!(
+        virt_ids_3, virt_ids_1,
+        "virtual track UUIDs must be identical after re-add"
+    );
 
     // Verify DB: virtual tracks have the same IDs
     let db_ids_3 = virtual_track_ids(&storage).await;
@@ -284,9 +345,16 @@ async fn test_cue_lifecycle_readd_uuid_stability() {
             .fetch_one(storage.pool())
             .await
             .expect("count");
-        assert_eq!(count.0, 1, "virtual track {} should exist exactly once in DB", expected_id);
+        assert_eq!(
+            count.0, 1,
+            "virtual track {} should exist exactly once in DB",
+            expected_id
+        );
     }
-    assert_eq!(&db_ids_3, &virt_ids_1, "DB virtual track IDs should be stable");
+    assert_eq!(
+        &db_ids_3, &virt_ids_1,
+        "DB virtual track IDs should be stable"
+    );
 }
 
 // ============================================================================
@@ -346,13 +414,15 @@ FILE "sample.wav" WAVE
     assert!(whole_disc_count >= 1, "DB should have whole-disc track(s)");
 
     // Verify the whole-disc track has no cue_path
-    let cue_path: Option<String> = sqlx::query_scalar(
-        "SELECT cue_path FROM tracks WHERE is_cue_virtual = 0 LIMIT 1",
-    )
-    .fetch_one(storage.pool())
-    .await
-    .expect("query cue_path");
-    assert!(cue_path.is_none(), "whole-disc track should have no cue_path after malformed CUE");
+    let cue_path: Option<String> =
+        sqlx::query_scalar("SELECT cue_path FROM tracks WHERE is_cue_virtual = 0 LIMIT 1")
+            .fetch_one(storage.pool())
+            .await
+            .expect("query cue_path");
+    assert!(
+        cue_path.is_none(),
+        "whole-disc track should have no cue_path after malformed CUE"
+    );
 
     let _ = dir; // keep tempdir alive
 }

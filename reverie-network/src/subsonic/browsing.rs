@@ -9,10 +9,12 @@ use axum::{
 use reverie_storage::SubsonicStorage;
 use std::collections::HashMap;
 
-use super::{error_response, format_response, SubsonicState};
-use super::response::*;
 use super::response::chat::{ChatMessageItem, ChatMessagesData, ChatMessagesInner};
-use super::response::podcasts::{NewestPodcastsData, NewestPodcastsInner, PodcastChannelItem, PodcastsData, PodcastsInner};
+use super::response::podcasts::{
+    NewestPodcastsData, NewestPodcastsInner, PodcastChannelItem, PodcastsData, PodcastsInner,
+};
+use super::response::*;
+use super::{error_response, format_response, SubsonicState};
 
 /// GET /rest/getIndexes - 获取艺术家索引
 pub async fn get_indexes_handler<S: SubsonicStorage + Clone>(
@@ -22,7 +24,11 @@ pub async fn get_indexes_handler<S: SubsonicStorage + Clone>(
     let music_folder_id = params.get("musicFolderId").and_then(|s| s.parse().ok());
     let if_modified_since = params.get("ifModifiedSince").and_then(|s| s.parse().ok());
 
-    match state.storage.get_indexes(music_folder_id, if_modified_since).await {
+    match state
+        .storage
+        .get_indexes(music_folder_id, if_modified_since)
+        .await
+    {
         Ok(indexes) => {
             let data = build_indexes(&indexes, 0);
             let response = SubsonicResponse::ok_with(ResponseData::Indexes(data));
@@ -92,38 +98,49 @@ pub async fn get_album_list_handler<S: SubsonicStorage + Clone>(
 
     match state
         .storage
-        .get_album_list(list_type, size, offset, from_year, to_year, genre, music_folder_id)
+        .get_album_list(
+            list_type,
+            size,
+            offset,
+            from_year,
+            to_year,
+            genre,
+            music_folder_id,
+        )
         .await
     {
         Ok(albums) => {
             // AlbumList 返回 Child 类型，与 AlbumList2 不同
-            let items: Vec<Child> = albums.iter().map(|a| Child {
-                id: a.id.clone(),
-                parent: a.artist_id.clone(),
-                is_dir: true,
-                title: a.name.clone(),
-                album: Some(a.name.clone()),
-                artist: a.artist.clone(),
-                track: None,
-                year: a.year,
-                genre: a.genre.clone(),
-                cover_art: a.cover_art.clone(),
-                size: None,
-                content_type: None,
-                suffix: None,
-                duration: Some(a.duration as i32),
-                bit_rate: None,
-                path: None,
-                play_count: a.play_count,
-                disc_number: None,
-                created: a.created.map(|d| d.to_rfc3339()),
-                album_id: Some(a.id.clone()),
-                artist_id: a.artist_id.clone(),
-                starred: a.starred.map(|d| d.to_rfc3339()),
-                user_rating: a.user_rating,
-                media_type: Some("album".to_string()),
-                is_video: false,
-            }).collect();
+            let items: Vec<Child> = albums
+                .iter()
+                .map(|a| Child {
+                    id: a.id.clone(),
+                    parent: a.artist_id.clone(),
+                    is_dir: true,
+                    title: a.name.clone(),
+                    album: Some(a.name.clone()),
+                    artist: a.artist.clone(),
+                    track: None,
+                    year: a.year,
+                    genre: a.genre.clone(),
+                    cover_art: a.cover_art.clone(),
+                    size: None,
+                    content_type: None,
+                    suffix: None,
+                    duration: Some(a.duration as i32),
+                    bit_rate: None,
+                    path: None,
+                    play_count: a.play_count,
+                    disc_number: None,
+                    created: a.created.map(|d| d.to_rfc3339()),
+                    album_id: Some(a.id.clone()),
+                    artist_id: a.artist_id.clone(),
+                    starred: a.starred.map(|d| d.to_rfc3339()),
+                    user_rating: a.user_rating,
+                    media_type: Some("album".to_string()),
+                    is_video: false,
+                })
+                .collect();
             let data = AlbumListData {
                 album_list: AlbumListInner { album: items },
             };
@@ -203,47 +220,55 @@ pub async fn get_starred_handler<S: SubsonicStorage + Clone>(
     match state.storage.get_starred(music_folder_id).await {
         Ok(starred) => {
             // 转换 artists
-            let artists: Vec<ArtistItem> = starred.artists.iter().map(|a| ArtistItem {
-                id: a.id.clone(),
-                name: a.name.clone(),
-                cover_art: a.cover_art.clone(),
-                artist_image_url: None,
-                starred: a.starred.map(|d| d.to_rfc3339()),
-                user_rating: a.user_rating,
-            }).collect();
-            
+            let artists: Vec<ArtistItem> = starred
+                .artists
+                .iter()
+                .map(|a| ArtistItem {
+                    id: a.id.clone(),
+                    name: a.name.clone(),
+                    cover_art: a.cover_art.clone(),
+                    artist_image_url: None,
+                    starred: a.starred.map(|d| d.to_rfc3339()),
+                    user_rating: a.user_rating,
+                })
+                .collect();
+
             // 转换 albums 为 Child
-            let albums: Vec<Child> = starred.albums.iter().map(|a| Child {
-                id: a.id.clone(),
-                parent: a.artist_id.clone(),
-                is_dir: true,
-                title: a.name.clone(),
-                album: Some(a.name.clone()),
-                artist: a.artist.clone(),
-                track: None,
-                year: a.year,
-                genre: a.genre.clone(),
-                cover_art: a.cover_art.clone(),
-                size: None,
-                content_type: None,
-                suffix: None,
-                duration: Some(a.duration as i32),
-                bit_rate: None,
-                path: None,
-                play_count: a.play_count,
-                disc_number: None,
-                created: a.created.map(|d| d.to_rfc3339()),
-                album_id: Some(a.id.clone()),
-                artist_id: a.artist_id.clone(),
-                starred: a.starred.map(|d| d.to_rfc3339()),
-                user_rating: a.user_rating,
-                media_type: Some("album".to_string()),
-                is_video: false,
-            }).collect();
-            
+            let albums: Vec<Child> = starred
+                .albums
+                .iter()
+                .map(|a| Child {
+                    id: a.id.clone(),
+                    parent: a.artist_id.clone(),
+                    is_dir: true,
+                    title: a.name.clone(),
+                    album: Some(a.name.clone()),
+                    artist: a.artist.clone(),
+                    track: None,
+                    year: a.year,
+                    genre: a.genre.clone(),
+                    cover_art: a.cover_art.clone(),
+                    size: None,
+                    content_type: None,
+                    suffix: None,
+                    duration: Some(a.duration as i32),
+                    bit_rate: None,
+                    path: None,
+                    play_count: a.play_count,
+                    disc_number: None,
+                    created: a.created.map(|d| d.to_rfc3339()),
+                    album_id: Some(a.id.clone()),
+                    artist_id: a.artist_id.clone(),
+                    starred: a.starred.map(|d| d.to_rfc3339()),
+                    user_rating: a.user_rating,
+                    media_type: Some("album".to_string()),
+                    is_video: false,
+                })
+                .collect();
+
             // 转换 songs
             let songs: Vec<Child> = starred.songs.iter().map(Child::from).collect();
-            
+
             let data = StarredData {
                 starred: StarredInner {
                     artist: artists,
@@ -267,10 +292,11 @@ pub async fn get_starred2_handler<S: SubsonicStorage + Clone>(
 
     match state.storage.get_starred2(music_folder_id).await {
         Ok(starred) => {
-            let artists: Vec<ArtistID3Item> = starred.artists.iter().map(ArtistID3Item::from).collect();
+            let artists: Vec<ArtistID3Item> =
+                starred.artists.iter().map(ArtistID3Item::from).collect();
             let albums: Vec<AlbumID3Item> = starred.albums.iter().map(AlbumID3Item::from).collect();
             let songs: Vec<Child> = starred.songs.iter().map(Child::from).collect();
-            
+
             let data = Starred2Data {
                 starred2: Starred2Inner {
                     artist: artists,
@@ -377,7 +403,11 @@ pub async fn jukebox_control_handler<S: SubsonicStorage + Clone>(
     let offset = params.get("offset").and_then(|s| s.parse().ok());
     let timeout = params.get("timeout").and_then(|s| s.parse().ok());
 
-    match state.storage.jukebox_control(action, index, offset, timeout).await {
+    match state
+        .storage
+        .jukebox_control(action, index, offset, timeout)
+        .await
+    {
         Ok(status) => {
             let data = JukeboxStatusData {
                 jukebox_status: JukeboxStatusItem::from(&status),

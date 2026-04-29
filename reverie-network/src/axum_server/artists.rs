@@ -153,5 +153,8 @@ where
     Router::new()
         .route("/api/artists", get(list_artists_handler::<S>))
         .route("/api/artists/:id", get(get_artist_handler::<S>))
-        .route("/api/artists/:id/albums", get(get_artist_albums_handler::<S>))
+        .route(
+            "/api/artists/:id/albums",
+            get(get_artist_albums_handler::<S>),
+        )
 }

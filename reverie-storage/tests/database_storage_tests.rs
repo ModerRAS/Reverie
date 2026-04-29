@@ -1,5 +1,5 @@
 //! Integration tests for DatabaseStorage implementation
-//! 
+//!
 //! 使用 TDD 方法：先写测试，再实现/验证功能
 
 use chrono::Utc;
@@ -17,7 +17,10 @@ async fn create_test_storage() -> DatabaseStorage {
         .await
         .expect("Failed to create test storage");
     // 初始化存储（创建默认用户等）
-    storage.initialize().await.expect("Failed to initialize storage");
+    storage
+        .initialize()
+        .await
+        .expect("Failed to initialize storage");
     storage
 }
 
@@ -54,10 +57,16 @@ async fn test_database_storage_track_crud() {
     };
 
     // Test save
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     // Test get
-    let retrieved = storage.get_track(track.id).await.expect("Failed to get track");
+    let retrieved = storage
+        .get_track(track.id)
+        .await
+        .expect("Failed to get track");
     assert!(retrieved.is_some(), "Track should exist after save");
     let retrieved_track = retrieved.unwrap();
     assert_eq!(retrieved_track.id, track.id);
@@ -70,16 +79,31 @@ async fn test_database_storage_track_crud() {
     let mut updated_track = retrieved_track.clone();
     updated_track.title = "Updated Track Title".to_string();
     updated_track.updated_at = Utc::now();
-    storage.save_track(&updated_track).await.expect("Failed to update track");
+    storage
+        .save_track(&updated_track)
+        .await
+        .expect("Failed to update track");
 
-    let after_update = storage.get_track(track.id).await.expect("Failed to get updated track");
+    let after_update = storage
+        .get_track(track.id)
+        .await
+        .expect("Failed to get updated track");
     assert!(after_update.is_some());
     assert_eq!(after_update.unwrap().title, "Updated Track Title");
 
     // Test delete
-    storage.delete_track(track.id).await.expect("Failed to delete track");
-    let after_delete = storage.get_track(track.id).await.expect("Failed to get deleted track");
-    assert!(after_delete.is_none(), "Track should not exist after delete");
+    storage
+        .delete_track(track.id)
+        .await
+        .expect("Failed to delete track");
+    let after_delete = storage
+        .get_track(track.id)
+        .await
+        .expect("Failed to get deleted track");
+    assert!(
+        after_delete.is_none(),
+        "Track should not exist after delete"
+    );
 }
 
 #[tokio::test]
@@ -110,19 +134,31 @@ async fn test_database_storage_list_tracks() {
             byte_offset_end: None,
             is_cue_virtual: Some(false),
         };
-        storage.save_track(&track).await.expect("Failed to save track");
+        storage
+            .save_track(&track)
+            .await
+            .expect("Failed to save track");
     }
 
     // Test list with limit
-    let tracks = storage.list_tracks(3, 0).await.expect("Failed to list tracks");
+    let tracks = storage
+        .list_tracks(3, 0)
+        .await
+        .expect("Failed to list tracks");
     assert_eq!(tracks.len(), 3);
 
     // Test list with offset
-    let tracks = storage.list_tracks(10, 2).await.expect("Failed to list tracks with offset");
+    let tracks = storage
+        .list_tracks(10, 2)
+        .await
+        .expect("Failed to list tracks with offset");
     assert_eq!(tracks.len(), 3);
 
     // Test list all
-    let all_tracks = storage.list_tracks(100, 0).await.expect("Failed to list all tracks");
+    let all_tracks = storage
+        .list_tracks(100, 0)
+        .await
+        .expect("Failed to list all tracks");
     assert_eq!(all_tracks.len(), 5);
 }
 
@@ -142,7 +178,10 @@ async fn test_database_storage_album_crud() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_artist(&artist).await.expect("Failed to save artist");
+    storage
+        .save_artist(&artist)
+        .await
+        .expect("Failed to save artist");
 
     // Create an album
     let album = Album {
@@ -157,10 +196,15 @@ async fn test_database_storage_album_crud() {
     };
 
     // Test save
-    storage.save_album(&album).await.expect("Failed to save album");
+    storage
+        .save_album(&album)
+        .await
+        .expect("Failed to save album");
 
     // Test get (use AlbumStorage trait explicitly to avoid ambiguity)
-    let retrieved = AlbumStorage::get_album(&storage, album.id).await.expect("Failed to get album");
+    let retrieved = AlbumStorage::get_album(&storage, album.id)
+        .await
+        .expect("Failed to get album");
     assert!(retrieved.is_some());
     let retrieved_album = retrieved.unwrap();
     assert_eq!(retrieved_album.id, album.id);
@@ -169,13 +213,21 @@ async fn test_database_storage_album_crud() {
     assert_eq!(retrieved_album.year, album.year);
 
     // Test get albums by artist
-    let artist_albums = storage.get_albums_by_artist(artist.id).await.expect("Failed to get albums by artist");
+    let artist_albums = storage
+        .get_albums_by_artist(artist.id)
+        .await
+        .expect("Failed to get albums by artist");
     assert_eq!(artist_albums.len(), 1);
     assert_eq!(artist_albums[0].id, album.id);
 
     // Test delete
-    storage.delete_album(album.id).await.expect("Failed to delete album");
-    let after_delete = AlbumStorage::get_album(&storage, album.id).await.expect("Failed to get deleted album");
+    storage
+        .delete_album(album.id)
+        .await
+        .expect("Failed to delete album");
+    let after_delete = AlbumStorage::get_album(&storage, album.id)
+        .await
+        .expect("Failed to get deleted album");
     assert!(after_delete.is_none());
 }
 
@@ -196,10 +248,15 @@ async fn test_database_storage_artist_crud() {
     };
 
     // Test save
-    storage.save_artist(&artist).await.expect("Failed to save artist");
+    storage
+        .save_artist(&artist)
+        .await
+        .expect("Failed to save artist");
 
     // Test get (use ArtistStorage trait explicitly)
-    let retrieved = ArtistStorage::get_artist(&storage, artist.id).await.expect("Failed to get artist");
+    let retrieved = ArtistStorage::get_artist(&storage, artist.id)
+        .await
+        .expect("Failed to get artist");
     assert!(retrieved.is_some());
     let retrieved_artist = retrieved.unwrap();
     assert_eq!(retrieved_artist.id, artist.id);
@@ -207,12 +264,20 @@ async fn test_database_storage_artist_crud() {
     assert_eq!(retrieved_artist.bio, artist.bio);
 
     // Test list
-    let artists = storage.list_artists(10, 0).await.expect("Failed to list artists");
+    let artists = storage
+        .list_artists(10, 0)
+        .await
+        .expect("Failed to list artists");
     assert_eq!(artists.len(), 1);
 
     // Test delete
-    storage.delete_artist(artist.id).await.expect("Failed to delete artist");
-    let after_delete = ArtistStorage::get_artist(&storage, artist.id).await.expect("Failed to get deleted artist");
+    storage
+        .delete_artist(artist.id)
+        .await
+        .expect("Failed to delete artist");
+    let after_delete = ArtistStorage::get_artist(&storage, artist.id)
+        .await
+        .expect("Failed to get deleted artist");
     assert!(after_delete.is_none());
 }
 
@@ -238,7 +303,9 @@ async fn test_database_storage_user_crud() {
     storage.save_user(&user).await.expect("Failed to save user");
 
     // Test get (use UserStorage trait explicitly)
-    let retrieved = UserStorage::get_user(&storage, user.id).await.expect("Failed to get user");
+    let retrieved = UserStorage::get_user(&storage, user.id)
+        .await
+        .expect("Failed to get user");
     assert!(retrieved.is_some());
     let retrieved_user = retrieved.unwrap();
     assert_eq!(retrieved_user.id, user.id);
@@ -246,13 +313,20 @@ async fn test_database_storage_user_crud() {
     assert_eq!(retrieved_user.email, user.email);
 
     // Test get by username
-    let by_username = storage.get_user_by_username("testuser").await.expect("Failed to get user by username");
+    let by_username = storage
+        .get_user_by_username("testuser")
+        .await
+        .expect("Failed to get user by username");
     assert!(by_username.is_some());
     assert_eq!(by_username.unwrap().id, user.id);
 
     // Test delete
-    UserStorage::delete_user(&storage, user.id).await.expect("Failed to delete user");
-    let after_delete = UserStorage::get_user(&storage, user.id).await.expect("Failed to get deleted user");
+    UserStorage::delete_user(&storage, user.id)
+        .await
+        .expect("Failed to delete user");
+    let after_delete = UserStorage::get_user(&storage, user.id)
+        .await
+        .expect("Failed to get deleted user");
     assert!(after_delete.is_none());
 }
 
@@ -288,10 +362,15 @@ async fn test_database_storage_playlist_crud() {
     };
 
     // Test save
-    storage.save_playlist(&playlist).await.expect("Failed to save playlist");
+    storage
+        .save_playlist(&playlist)
+        .await
+        .expect("Failed to save playlist");
 
     // Test get (use PlaylistStorage trait explicitly)
-    let retrieved = PlaylistStorage::get_playlist(&storage, playlist.id).await.expect("Failed to get playlist");
+    let retrieved = PlaylistStorage::get_playlist(&storage, playlist.id)
+        .await
+        .expect("Failed to get playlist");
     assert!(retrieved.is_some());
     let retrieved_playlist = retrieved.unwrap();
     assert_eq!(retrieved_playlist.id, playlist.id);
@@ -299,12 +378,19 @@ async fn test_database_storage_playlist_crud() {
     assert_eq!(retrieved_playlist.user_id, user.id);
 
     // Test get playlists by user
-    let user_playlists = storage.get_playlists_by_user(user.id).await.expect("Failed to get playlists by user");
+    let user_playlists = storage
+        .get_playlists_by_user(user.id)
+        .await
+        .expect("Failed to get playlists by user");
     assert_eq!(user_playlists.len(), 1);
 
     // Test delete
-    PlaylistStorage::delete_playlist(&storage, playlist.id).await.expect("Failed to delete playlist");
-    let after_delete = PlaylistStorage::get_playlist(&storage, playlist.id).await.expect("Failed to get deleted playlist");
+    PlaylistStorage::delete_playlist(&storage, playlist.id)
+        .await
+        .expect("Failed to delete playlist");
+    let after_delete = PlaylistStorage::get_playlist(&storage, playlist.id)
+        .await
+        .expect("Failed to get deleted playlist");
     assert!(after_delete.is_none());
 }
 
@@ -369,8 +455,14 @@ async fn test_database_storage_playlist_tracks() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track1).await.expect("Failed to save track 1");
-    storage.save_track(&track2).await.expect("Failed to save track 2");
+    storage
+        .save_track(&track1)
+        .await
+        .expect("Failed to save track 1");
+    storage
+        .save_track(&track2)
+        .await
+        .expect("Failed to save track 2");
 
     // Create playlist
     let playlist = Playlist {
@@ -382,7 +474,10 @@ async fn test_database_storage_playlist_tracks() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_playlist(&playlist).await.expect("Failed to save playlist");
+    storage
+        .save_playlist(&playlist)
+        .await
+        .expect("Failed to save playlist");
 
     // Add tracks to playlist
     let playlist_track1 = PlaylistTrack {
@@ -397,8 +492,14 @@ async fn test_database_storage_playlist_tracks() {
         position: 1,
         added_at: Utc::now(),
     };
-    storage.add_track_to_playlist(&playlist_track1).await.expect("Failed to add track 1 to playlist");
-    storage.add_track_to_playlist(&playlist_track2).await.expect("Failed to add track 2 to playlist");
+    storage
+        .add_track_to_playlist(&playlist_track1)
+        .await
+        .expect("Failed to add track 1 to playlist");
+    storage
+        .add_track_to_playlist(&playlist_track2)
+        .await
+        .expect("Failed to add track 2 to playlist");
 
     // Create and add a third track
     let track3 = Track {
@@ -423,18 +524,27 @@ async fn test_database_storage_playlist_tracks() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track3).await.expect("Failed to save track 3");
-    
+    storage
+        .save_track(&track3)
+        .await
+        .expect("Failed to save track 3");
+
     let playlist_track3 = PlaylistTrack {
         playlist_id: playlist.id,
         track_id: track3.id,
         position: 2,
         added_at: Utc::now(),
     };
-    storage.add_track_to_playlist(&playlist_track3).await.expect("Failed to add track 3 to playlist");
+    storage
+        .add_track_to_playlist(&playlist_track3)
+        .await
+        .expect("Failed to add track 3 to playlist");
 
     // Test remove track from playlist
-    storage.remove_track_from_playlist(playlist.id, track1.id).await.expect("Failed to remove track from playlist");
+    storage
+        .remove_track_from_playlist(playlist.id, track1.id)
+        .await
+        .expect("Failed to remove track from playlist");
 }
 
 // ============================================================================
@@ -445,7 +555,10 @@ async fn test_database_storage_playlist_tracks() {
 async fn test_database_storage_subsonic_music_folders() {
     let storage = create_test_storage().await;
 
-    let folders = storage.get_music_folders().await.expect("Failed to get music folders");
+    let folders = storage
+        .get_music_folders()
+        .await
+        .expect("Failed to get music folders");
     // Should return at least the default music folder
     assert!(!folders.is_empty() || folders.is_empty()); // 允许空或非空
 }
@@ -479,7 +592,10 @@ async fn test_database_storage_subsonic_genres() {
             byte_offset_end: None,
             is_cue_virtual: Some(false),
         };
-        storage.save_track(&track).await.expect("Failed to save track");
+        storage
+            .save_track(&track)
+            .await
+            .expect("Failed to save track");
     }
 
     let genres_result = storage.get_genres().await.expect("Failed to get genres");
@@ -499,7 +615,10 @@ async fn test_database_storage_subsonic_search() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_artist(&artist).await.expect("Failed to save artist");
+    storage
+        .save_artist(&artist)
+        .await
+        .expect("Failed to save artist");
 
     let album = Album {
         id: Uuid::new_v4(),
@@ -511,7 +630,10 @@ async fn test_database_storage_subsonic_search() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_album(&album).await.expect("Failed to save album");
+    storage
+        .save_album(&album)
+        .await
+        .expect("Failed to save album");
 
     let track = Track {
         id: Uuid::new_v4(),
@@ -535,10 +657,22 @@ async fn test_database_storage_subsonic_search() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     // Test search
-    let result = storage.search2("Beatles", Some(10), Some(0), Some(10), Some(0), Some(10), Some(0))
+    let result = storage
+        .search2(
+            "Beatles",
+            Some(10),
+            Some(0),
+            Some(10),
+            Some(0),
+            Some(10),
+            Some(0),
+        )
         .await
         .expect("Failed to search");
 
@@ -580,7 +714,10 @@ async fn test_database_storage_track_album_artist_relationship() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_artist(&artist).await.expect("Failed to save artist");
+    storage
+        .save_artist(&artist)
+        .await
+        .expect("Failed to save artist");
 
     // Create album
     let album = Album {
@@ -593,7 +730,10 @@ async fn test_database_storage_track_album_artist_relationship() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_album(&album).await.expect("Failed to save album");
+    storage
+        .save_album(&album)
+        .await
+        .expect("Failed to save album");
 
     // Create tracks for the album
     let tracks = vec![
@@ -611,7 +751,11 @@ async fn test_database_storage_track_album_artist_relationship() {
             album_id: Some(album.id),
             artist_id: Some(artist.id),
             duration: *duration,
-            file_path: format!("/music/pinkfloyd/dsotm/{:02}_{}.flac", i + 1, title.to_lowercase().replace(' ', "_")),
+            file_path: format!(
+                "/music/pinkfloyd/dsotm/{:02}_{}.flac",
+                i + 1,
+                title.to_lowercase().replace(' ', "_")
+            ),
             file_size: (duration * 1000 * 176) as u64, // Approximate FLAC size
             bitrate: 1411,
             format: "flac".to_string(),
@@ -627,16 +771,25 @@ async fn test_database_storage_track_album_artist_relationship() {
             byte_offset_end: None,
             is_cue_virtual: Some(false),
         };
-        storage.save_track(&track).await.expect("Failed to save track");
+        storage
+            .save_track(&track)
+            .await
+            .expect("Failed to save track");
     }
 
     // Verify relationships
-    let artist_albums = storage.get_albums_by_artist(artist.id).await.expect("Failed to get albums by artist");
+    let artist_albums = storage
+        .get_albums_by_artist(artist.id)
+        .await
+        .expect("Failed to get albums by artist");
     assert_eq!(artist_albums.len(), 1);
     assert_eq!(artist_albums[0].name, "The Dark Side of the Moon");
 
     // Get all tracks and verify they reference the album
-    let all_tracks = storage.list_tracks(100, 0).await.expect("Failed to list tracks");
+    let all_tracks = storage
+        .list_tracks(100, 0)
+        .await
+        .expect("Failed to list tracks");
     assert_eq!(all_tracks.len(), 5);
     for track in &all_tracks {
         assert_eq!(track.album_id, Some(album.id));
@@ -675,7 +828,10 @@ async fn test_database_storage_bookmark_crud() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     let track_id = track.id.to_string();
 
@@ -686,7 +842,10 @@ async fn test_database_storage_bookmark_crud() {
         .expect("Failed to create bookmark");
 
     // 获取书签
-    let bookmarks = storage.get_bookmarks().await.expect("Failed to get bookmarks");
+    let bookmarks = storage
+        .get_bookmarks()
+        .await
+        .expect("Failed to get bookmarks");
     assert!(!bookmarks.is_empty(), "Should have bookmarks");
 
     let bookmark = &bookmarks[0];
@@ -700,8 +859,14 @@ async fn test_database_storage_bookmark_crud() {
         .expect("Failed to delete bookmark");
 
     // 验证删除
-    let bookmarks = storage.get_bookmarks().await.expect("Failed to get bookmarks");
-    assert!(bookmarks.is_empty(), "Bookmarks should be empty after deletion");
+    let bookmarks = storage
+        .get_bookmarks()
+        .await
+        .expect("Failed to get bookmarks");
+    assert!(
+        bookmarks.is_empty(),
+        "Bookmarks should be empty after deletion"
+    );
 }
 
 // ============================================================================
@@ -732,7 +897,10 @@ async fn test_database_storage_internet_radio_crud() {
     let station = &stations[0];
     assert_eq!(station.name, "Jazz FM");
     assert_eq!(station.stream_url, "http://stream.example.com/jazz");
-    assert_eq!(station.homepage_url.as_deref(), Some("http://jazzfm.example.com"));
+    assert_eq!(
+        station.homepage_url.as_deref(),
+        Some("http://jazzfm.example.com")
+    );
 
     let station_id = station.id.clone();
 
@@ -767,7 +935,10 @@ async fn test_database_storage_internet_radio_crud() {
         .get_internet_radio_stations()
         .await
         .expect("Failed to get radio stations");
-    assert!(stations.is_empty(), "Radio stations should be empty after deletion");
+    assert!(
+        stations.is_empty(),
+        "Radio stations should be empty after deletion"
+    );
 }
 
 // ============================================================================
@@ -801,7 +972,10 @@ async fn test_database_storage_star_unstar() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     let track_id = track.id.to_string();
 
@@ -829,7 +1003,10 @@ async fn test_database_storage_star_unstar() {
         .get_starred(None)
         .await
         .expect("Failed to get starred");
-    assert!(starred.songs.is_empty(), "Should have no starred songs after unstar");
+    assert!(
+        starred.songs.is_empty(),
+        "Should have no starred songs after unstar"
+    );
 }
 
 #[tokio::test]
@@ -859,7 +1036,10 @@ async fn test_database_storage_rating() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     let track_id = track.id.to_string();
 
@@ -944,8 +1124,14 @@ async fn test_database_storage_play_queue() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track1).await.expect("Failed to save track 1");
-    storage.save_track(&track2).await.expect("Failed to save track 2");
+    storage
+        .save_track(&track1)
+        .await
+        .expect("Failed to save track 1");
+    storage
+        .save_track(&track2)
+        .await
+        .expect("Failed to save track 2");
 
     let track_id1 = track1.id.to_string();
     let track_id2 = track2.id.to_string();
@@ -1003,7 +1189,10 @@ async fn test_database_storage_media_stream() {
         byte_offset_end: None,
         is_cue_virtual: Some(false),
     };
-    storage.save_track(&track).await.expect("Failed to save track");
+    storage
+        .save_track(&track)
+        .await
+        .expect("Failed to save track");
 
     // 写入模拟的音频文件到 VFS
     let audio_data = b"fake audio data for testing";
@@ -1041,7 +1230,10 @@ async fn test_database_storage_cover_art() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_artist(&artist).await.expect("Failed to save artist");
+    storage
+        .save_artist(&artist)
+        .await
+        .expect("Failed to save artist");
 
     // 创建带封面的专辑
     let album = Album {
@@ -1054,7 +1246,10 @@ async fn test_database_storage_cover_art() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
-    storage.save_album(&album).await.expect("Failed to save album");
+    storage
+        .save_album(&album)
+        .await
+        .expect("Failed to save album");
 
     // 写入模拟的封面图片到 VFS
     let cover_data = b"fake image data for testing";

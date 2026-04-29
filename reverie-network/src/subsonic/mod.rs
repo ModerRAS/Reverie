@@ -6,8 +6,8 @@
 mod auth;
 mod browsing;
 mod playlists;
-mod users;
 pub mod response;
+mod users;
 
 #[cfg(test)]
 mod tests;
@@ -79,11 +79,12 @@ fn error_response(params: &HashMap<String, String>, code: i32, message: &str) ->
 /// 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
 /// 通过 `Router::with_state` 实现。
 #[cfg(feature = "axum-server")]
-pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
+pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Clone + 'static>(
+) -> Router<SubsonicState<S>> {
     Router::new()
         // System endpoints
-        .route("/ping", get(ping_handler::<S>))
-        .route("/getLicense", get(get_license_handler::<S>))
+        .route("/ping", get(ping_handler))
+        .route("/getLicense", get(get_license_handler))
         .route("/getMusicFolders", get(get_music_folders_handler::<S>))
         // Browsing endpoints
         .route("/getIndexes", get(get_indexes_handler::<S>))
@@ -117,10 +118,22 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Cl
         .route("/getPodcasts", get(get_podcasts_handler::<S>))
         .route("/getNewestPodcasts", get(get_newest_podcasts_handler::<S>))
         .route("/refreshPodcasts", get(refresh_podcasts_handler::<S>))
-        .route("/createPodcastChannel", get(create_podcast_channel_handler::<S>))
-        .route("/deletePodcastChannel", get(delete_podcast_channel_handler::<S>))
-        .route("/deletePodcastEpisode", get(delete_podcast_episode_handler::<S>))
-        .route("/downloadPodcastEpisode", get(download_podcast_episode_handler::<S>))
+        .route(
+            "/createPodcastChannel",
+            get(create_podcast_channel_handler::<S>),
+        )
+        .route(
+            "/deletePodcastChannel",
+            get(delete_podcast_channel_handler::<S>),
+        )
+        .route(
+            "/deletePodcastEpisode",
+            get(delete_podcast_episode_handler::<S>),
+        )
+        .route(
+            "/downloadPodcastEpisode",
+            get(download_podcast_episode_handler::<S>),
+        )
         .route("/hls", get(hls_handler::<S>))
         // Search endpoints
         .route("/search2", get(search2_handler::<S>))
@@ -136,7 +149,10 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Cl
         .route("/download", get(download_handler::<S>))
         .route("/getCoverArt", get(get_cover_art_handler::<S>))
         .route("/getLyrics", get(get_lyrics_handler::<S>))
-        .route("/getLyricsBySongId", get(get_lyrics_by_song_id_handler::<S>))
+        .route(
+            "/getLyricsBySongId",
+            get(get_lyrics_by_song_id_handler::<S>),
+        )
         .route("/getAvatar", get(get_avatar_handler::<S>))
         // Annotation endpoints
         .route("/star", get(star_handler::<S>))
@@ -155,10 +171,22 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Cl
         .route("/updateShare", get(update_share_handler::<S>))
         .route("/deleteShare", get(delete_share_handler::<S>))
         // Internet radio endpoints
-        .route("/getInternetRadioStations", get(get_internet_radio_stations_handler::<S>))
-        .route("/createInternetRadioStation", get(create_internet_radio_station_handler::<S>))
-        .route("/updateInternetRadioStation", get(update_internet_radio_station_handler::<S>))
-        .route("/deleteInternetRadioStation", get(delete_internet_radio_station_handler::<S>))
+        .route(
+            "/getInternetRadioStations",
+            get(get_internet_radio_stations_handler::<S>),
+        )
+        .route(
+            "/createInternetRadioStation",
+            get(create_internet_radio_station_handler::<S>),
+        )
+        .route(
+            "/updateInternetRadioStation",
+            get(update_internet_radio_station_handler::<S>),
+        )
+        .route(
+            "/deleteInternetRadioStation",
+            get(delete_internet_radio_station_handler::<S>),
+        )
         // User management endpoints
         .route("/getUser", get(get_user_handler::<S>))
         .route("/getUsers", get(get_users_handler::<S>))
@@ -170,20 +198,23 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Cl
         .route("/getScanStatus", get(get_scan_status_handler::<S>))
         .route("/startScan", get(start_scan_handler::<S>))
         // OpenSubsonic extensions
-        .route("/getOpenSubsonicExtensions", get(get_open_subsonic_extensions_handler::<S>))
+        .route(
+            "/getOpenSubsonicExtensions",
+            get(get_open_subsonic_extensions_handler),
+        )
 }
 
 // ===== 系统处理器 =====
 
 /// GET /rest/ping - 测试连接
-async fn ping_handler<S: SubsonicStorage + Clone>(
+async fn ping_handler(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     ok_response(&params)
 }
 
 /// GET /rest/getLicense - 获取服务器许可证信息
-async fn get_license_handler<S: SubsonicStorage + Clone>(
+async fn get_license_handler(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     let response = SubsonicResponse::ok_with(ResponseData::License(LicenseData {
@@ -227,7 +258,11 @@ async fn get_artist_info_handler<S: SubsonicStorage + Clone>(
     let count = params.get("count").and_then(|s| s.parse().ok());
     let include_not_present = params.get("includeNotPresent").and_then(|s| s.parse().ok());
 
-    match state.storage.get_artist_info(id, count, include_not_present).await {
+    match state
+        .storage
+        .get_artist_info(id, count, include_not_present)
+        .await
+    {
         Ok(info) => {
             let data = ArtistInfoData {
                 artist_info: ArtistInfo::from(&info),
@@ -252,7 +287,11 @@ async fn get_artist_info2_handler<S: SubsonicStorage + Clone>(
     let count = params.get("count").and_then(|s| s.parse().ok());
     let include_not_present = params.get("includeNotPresent").and_then(|s| s.parse().ok());
 
-    match state.storage.get_artist_info2(id, count, include_not_present).await {
+    match state
+        .storage
+        .get_artist_info2(id, count, include_not_present)
+        .await
+    {
         Ok(info) => {
             let data = ArtistInfo2Data {
                 artist_info2: ArtistInfo2::from(&info),
@@ -632,9 +671,14 @@ async fn get_internet_radio_stations_handler<S: SubsonicStorage + Clone>(
 ) -> Response {
     match state.storage.get_internet_radio_stations().await {
         Ok(stations) => {
-            let items: Vec<InternetRadioStationItem> = stations.iter().map(InternetRadioStationItem::from).collect();
+            let items: Vec<InternetRadioStationItem> = stations
+                .iter()
+                .map(InternetRadioStationItem::from)
+                .collect();
             let data = InternetRadioStationsData {
-                internet_radio_stations: InternetRadioStationsList { internet_radio_station: items },
+                internet_radio_stations: InternetRadioStationsList {
+                    internet_radio_station: items,
+                },
             };
             let response = SubsonicResponse::ok_with(ResponseData::InternetRadioStations(data));
             format_response(&params, response)
@@ -660,7 +704,11 @@ async fn create_internet_radio_station_handler<S: SubsonicStorage + Clone>(
 
     let homepage_url = params.get("homepageUrl").map(|s| s.as_str());
 
-    match state.storage.create_internet_radio_station(stream_url, name, homepage_url).await {
+    match state
+        .storage
+        .create_internet_radio_station(stream_url, name, homepage_url)
+        .await
+    {
         Ok(()) => ok_response(&params),
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
@@ -688,7 +736,11 @@ async fn update_internet_radio_station_handler<S: SubsonicStorage + Clone>(
 
     let homepage_url = params.get("homepageUrl").map(|s| s.as_str());
 
-    match state.storage.update_internet_radio_station(id, stream_url, name, homepage_url).await {
+    match state
+        .storage
+        .update_internet_radio_station(id, stream_url, name, homepage_url)
+        .await
+    {
         Ok(()) => ok_response(&params),
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
@@ -711,21 +763,19 @@ async fn delete_internet_radio_station_handler<S: SubsonicStorage + Clone>(
 }
 
 /// GET /rest/getOpenSubsonicExtensions - 获取 OpenSubsonic 扩展列表
-async fn get_open_subsonic_extensions_handler<S: SubsonicStorage + Clone>(
+async fn get_open_subsonic_extensions_handler(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     // 目前返回空的扩展列表
     let data = OpenSubsonicExtensionsData {
-        open_subsonic_extensions: OpenSubsonicExtensionsList {
-            extension: vec![],
-        },
+        open_subsonic_extensions: OpenSubsonicExtensionsList { extension: vec![] },
     };
     let response = SubsonicResponse::ok_with(ResponseData::OpenSubsonicExtensions(data));
     format_response(&params, response)
 }
 
 /// GET /rest/hls - HLS 自适应流 (NOT IMPLEMENTED)
-/// 
+///
 /// 此端点用于自适应比特率流式传输，需要转码基础设施。
 /// 当前实现返回 HTTP 501 Not Implemented。
 async fn hls_handler<S: SubsonicStorage + Clone>(
@@ -747,7 +797,8 @@ async fn get_lyrics_by_song_id_handler<S: SubsonicStorage + Clone>(
 
     match state.storage.get_lyrics_by_song_id(id).await {
         Ok(lyrics_list) => {
-            let items: Vec<StructuredLyricsItem> = lyrics_list.iter().map(StructuredLyricsItem::from).collect();
+            let items: Vec<StructuredLyricsItem> =
+                lyrics_list.iter().map(StructuredLyricsItem::from).collect();
             let data = LyricsListData {
                 lyrics_list: LyricsListInner { lyrics: items },
             };
@@ -781,12 +832,7 @@ async fn get_avatar_handler<S: SubsonicStorage + FileStorage + Clone>(
                     } else {
                         "image/jpeg"
                     };
-                    (
-                        StatusCode::OK,
-                        [(header::CONTENT_TYPE, content_type)],
-                        data,
-                    )
-                        .into_response()
+                    (StatusCode::OK, [(header::CONTENT_TYPE, content_type)], data).into_response()
                 }
                 Err(_) => {
                     // 文件读取失败，返回默认头像或 404
@@ -858,10 +904,10 @@ async fn get_album_handler<S: SubsonicStorage + Clone>(
                 Ok(s) => s,
                 Err(e) => return error_response(&params, 0, &e.to_string()),
             };
-            
+
             // Convert songs to Child items
             let song_items: Vec<Child> = songs.iter().map(Child::from).collect();
-            
+
             // Build album response with songs
             let album_with_songs = AlbumWithSongs {
                 id: album.id.clone(),
@@ -878,7 +924,7 @@ async fn get_album_handler<S: SubsonicStorage + Clone>(
                 genre: album.genre.clone(),
                 song: song_items,
             };
-            
+
             let data = AlbumData {
                 album: album_with_songs,
             };
@@ -1049,7 +1095,10 @@ async fn get_cover_art_handler<S: SubsonicStorage + FileStorage + Clone>(
                 }
                 Err(e) => Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(axum::body::Body::from(format!("Failed to read cover art: {}", e)))
+                    .body(axum::body::Body::from(format!(
+                        "Failed to read cover art: {}",
+                        e
+                    )))
                     .unwrap(),
             }
         }
@@ -1204,7 +1253,9 @@ async fn stream_handler<S: SubsonicStorage + FileStorage + TrackStorage + Clone>
     let _max_bit_rate: Option<i32> = params.get("maxBitRate").and_then(|s| s.parse().ok());
     let _format = params.get("format").map(|s| s.as_str());
     let _time_offset: Option<i32> = params.get("timeOffset").and_then(|s| s.parse().ok());
-    let _estimated_content_length: Option<bool> = params.get("estimateContentLength").and_then(|s| s.parse().ok());
+    let _estimated_content_length: Option<bool> = params
+        .get("estimateContentLength")
+        .and_then(|s| s.parse().ok());
 
     // 解析 Range 请求头（客户端可能发送 Range: bytes=START-END）
     let range_header: Option<(u64, Option<u64>)> = params
@@ -1241,25 +1292,26 @@ async fn stream_handler<S: SubsonicStorage + FileStorage + TrackStorage + Clone>
 
     // 非 CUE 曲目：使用原有行为（返回完整文件）
     match state.storage.get_stream_path(id_str).await {
-        Ok(Some(path)) => {
-            match state.storage.read_file(&path).await {
-                Ok(data) => {
-                    let mime_type = mime_type_from_path(&path);
+        Ok(Some(path)) => match state.storage.read_file(&path).await {
+            Ok(data) => {
+                let mime_type = mime_type_from_path(&path);
 
-                    Response::builder()
-                        .status(StatusCode::OK)
-                        .header(header::CONTENT_TYPE, mime_type)
-                        .header(header::CONTENT_LENGTH, data.len())
-                        .header(header::ACCEPT_RANGES, "bytes")
-                        .body(axum::body::Body::from(data))
-                        .unwrap()
-                }
-                Err(e) => Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(axum::body::Body::from(format!("Failed to read media file: {}", e)))
-                    .unwrap(),
+                Response::builder()
+                    .status(StatusCode::OK)
+                    .header(header::CONTENT_TYPE, mime_type)
+                    .header(header::CONTENT_LENGTH, data.len())
+                    .header(header::ACCEPT_RANGES, "bytes")
+                    .body(axum::body::Body::from(data))
+                    .unwrap()
             }
-        }
+            Err(e) => Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(axum::body::Body::from(format!(
+                    "Failed to read media file: {}",
+                    e
+                )))
+                .unwrap(),
+        },
         Ok(None) => Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(axum::body::Body::from("Media file not found"))

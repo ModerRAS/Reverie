@@ -40,7 +40,9 @@ async fn get_json_response_error(router: axum::Router, uri: &str) -> serde_json:
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK); // Subsonic always returns 200, error is in body
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     serde_json::from_slice(&body).unwrap()
 }
 
@@ -164,7 +166,8 @@ async fn test_get_top_songs() {
 #[tokio::test]
 async fn test_get_lyrics() {
     let router = create_test_router();
-    let json = get_json_response(router, "/getLyrics?f=json&artist=TestArtist&title=TestSong").await;
+    let json =
+        get_json_response(router, "/getLyrics?f=json&artist=TestArtist&title=TestSong").await;
 
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
@@ -254,7 +257,11 @@ async fn test_get_internet_radio_stations() {
 #[tokio::test]
 async fn test_create_internet_radio_station() {
     let router = create_test_router();
-    let json = get_json_response(router, "/createInternetRadioStation?f=json&name=TestRadio&streamUrl=http://example.com/stream").await;
+    let json = get_json_response(
+        router,
+        "/createInternetRadioStation?f=json&name=TestRadio&streamUrl=http://example.com/stream",
+    )
+    .await;
 
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
@@ -292,18 +299,16 @@ async fn test_create_user_success() {
     let router = create_test_router();
     let json = get_json_response(
         router,
-        "/createUser?f=json&username=testuser&password=test123&email=test@test.com&adminRole=false"
-    ).await;
+        "/createUser?f=json&username=testuser&password=test123&email=test@test.com&adminRole=false",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_create_user_missing_username() {
     let router = create_test_router();
-    let json = get_json_response_error(
-        router,
-        "/createUser?f=json&password=test123"
-    ).await;
+    let json = get_json_response_error(router, "/createUser?f=json&password=test123").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
@@ -314,13 +319,15 @@ async fn test_create_user_duplicate() {
     // Create first user
     let _ = get_json_response(
         router.clone(),
-        "/createUser?f=json&username=dupuser&password=test123&email=test@test.com"
-    ).await;
+        "/createUser?f=json&username=dupuser&password=test123&email=test@test.com",
+    )
+    .await;
     // Try to create duplicate
     let json = get_json_response_error(
         router,
-        "/createUser?f=json&username=dupuser&password=test456&email=dup@test.com"
-    ).await;
+        "/createUser?f=json&username=dupuser&password=test456&email=dup@test.com",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 40);
 }
@@ -331,13 +338,15 @@ async fn test_update_user_success() {
     // First create a user
     let _ = get_json_response(
         router.clone(),
-        "/createUser?f=json&username=updateme&password=oldpwd&email=old@test.com"
-    ).await;
+        "/createUser?f=json&username=updateme&password=oldpwd&email=old@test.com",
+    )
+    .await;
     // Then update the user
     let json = get_json_response(
         router,
-        "/updateUser?f=json&username=updateme&email=new@test.com"
-    ).await;
+        "/updateUser?f=json&username=updateme&email=new@test.com",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -346,8 +355,9 @@ async fn test_update_user_not_found() {
     let router = create_test_router();
     let json = get_json_response_error(
         router,
-        "/updateUser?f=json&username=nonexistent&email=test@test.com"
-    ).await;
+        "/updateUser?f=json&username=nonexistent&email=test@test.com",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
 }
@@ -355,10 +365,7 @@ async fn test_update_user_not_found() {
 #[tokio::test]
 async fn test_update_user_missing_username() {
     let router = create_test_router();
-    let json = get_json_response_error(
-        router,
-        "/updateUser?f=json&email=test@test.com"
-    ).await;
+    let json = get_json_response_error(router, "/updateUser?f=json&email=test@test.com").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
@@ -369,23 +376,18 @@ async fn test_delete_user_success() {
     // First create a user
     let _ = get_json_response(
         router.clone(),
-        "/createUser?f=json&username=todelete&password=secret&email=del@test.com"
-    ).await;
+        "/createUser?f=json&username=todelete&password=secret&email=del@test.com",
+    )
+    .await;
     // Then delete the user
-    let json = get_json_response(
-        router,
-        "/deleteUser?f=json&username=todelete"
-    ).await;
+    let json = get_json_response(router, "/deleteUser?f=json&username=todelete").await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
 #[tokio::test]
 async fn test_delete_user_not_found() {
     let router = create_test_router();
-    let json = get_json_response_error(
-        router,
-        "/deleteUser?f=json&username=nonexistent"
-    ).await;
+    let json = get_json_response_error(router, "/deleteUser?f=json&username=nonexistent").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
 }
@@ -393,10 +395,7 @@ async fn test_delete_user_not_found() {
 #[tokio::test]
 async fn test_delete_user_missing_username() {
     let router = create_test_router();
-    let json = get_json_response_error(
-        router,
-        "/deleteUser?f=json"
-    ).await;
+    let json = get_json_response_error(router, "/deleteUser?f=json").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
@@ -407,13 +406,15 @@ async fn test_change_password_success() {
     // First create a user
     let _ = get_json_response(
         router.clone(),
-        "/createUser?f=json&username=pwduser&password=oldpwd&email=pwd@test.com"
-    ).await;
+        "/createUser?f=json&username=pwduser&password=oldpwd&email=pwd@test.com",
+    )
+    .await;
     // Then change password
     let json = get_json_response(
         router,
-        "/changePassword?f=json&username=pwduser&password=newpwd123"
-    ).await;
+        "/changePassword?f=json&username=pwduser&password=newpwd123",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -422,8 +423,9 @@ async fn test_change_password_not_found() {
     let router = create_test_router();
     let json = get_json_response_error(
         router,
-        "/changePassword?f=json&username=nonexistent&password=newpwd"
-    ).await;
+        "/changePassword?f=json&username=nonexistent&password=newpwd",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
 }
@@ -432,10 +434,7 @@ async fn test_change_password_not_found() {
 async fn test_change_password_missing_params() {
     let router = create_test_router();
     // Missing password
-    let json = get_json_response_error(
-        router,
-        "/changePassword?f=json&username=testuser"
-    ).await;
+    let json = get_json_response_error(router, "/changePassword?f=json&username=testuser").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 10);
 }
@@ -504,7 +503,12 @@ async fn test_hls_returns_not_implemented() {
     let router = create_test_router();
     // hls endpoint returns HTTP 501, not a JSON error
     let response = router
-        .oneshot(Request::builder().uri("/hls?f=json&id=1").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/hls?f=json&id=1")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
@@ -606,7 +610,11 @@ async fn test_refresh_podcasts_placeholder() {
 #[tokio::test]
 async fn test_create_podcast_channel_success() {
     let router = create_test_router();
-    let json = get_json_response(router, "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast").await;
+    let json = get_json_response(
+        router,
+        "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast",
+    )
+    .await;
     assert_eq!(json["subsonic-response"]["status"], "ok");
 }
 
@@ -624,7 +632,11 @@ async fn test_create_podcast_channel_missing_url() {
 async fn test_delete_podcast_channel_success() {
     let router = create_test_router();
     // First create a channel
-    let create_json = get_json_response(router.clone(), "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast").await;
+    let create_json = get_json_response(
+        router.clone(),
+        "/createPodcastChannel?f=json&url=https://example.com/feed.xml&title=TestPodcast",
+    )
+    .await;
     assert_eq!(create_json["subsonic-response"]["status"], "ok");
 
     // Now delete the channel we just created (channel-1)
@@ -672,7 +684,8 @@ async fn test_download_podcast_episode() {
 #[tokio::test]
 async fn test_download_podcast_episode_not_found() {
     let router = create_test_router();
-    let json = get_json_response_error(router, "/downloadPodcastEpisode?f=json&id=nonexistent").await;
+    let json =
+        get_json_response_error(router, "/downloadPodcastEpisode?f=json&id=nonexistent").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
 }
@@ -730,7 +743,11 @@ pub(super) fn create_cue_test_router(
 }
 
 /// Helper to create a router with a normal (non-CUE) track
-pub(super) fn create_normal_track_test_router(track_id: Uuid, file_path: &str, file_data: Vec<u8>) -> axum::Router {
+pub(super) fn create_normal_track_test_router(
+    track_id: Uuid,
+    file_path: &str,
+    file_data: Vec<u8>,
+) -> axum::Router {
     use chrono::Utc;
 
     let storage = Arc::new(MockSubsonicStorage::new());
@@ -799,15 +816,9 @@ async fn test_stream_cue_virtual_track_returns_206() {
     assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
 
     let headers = response.headers();
-    assert_eq!(
-        headers.get(header::CONTENT_TYPE).unwrap(),
-        "audio/flac"
-    );
+    assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "audio/flac");
     assert!(headers.contains_key(header::CONTENT_RANGE));
-    assert_eq!(
-        headers.get(header::ACCEPT_RANGES).unwrap(),
-        "bytes"
-    );
+    assert_eq!(headers.get(header::ACCEPT_RANGES).unwrap(), "bytes");
 
     let actual_content_range = headers
         .get(header::CONTENT_RANGE)
@@ -903,14 +914,8 @@ async fn test_stream_normal_track_returns_200() {
     assert_eq!(response.status(), StatusCode::OK);
 
     let headers = response.headers();
-    assert_eq!(
-        headers.get(header::CONTENT_TYPE).unwrap(),
-        "audio/mpeg"
-    );
-    assert_eq!(
-        headers.get(header::ACCEPT_RANGES).unwrap(),
-        "bytes"
-    );
+    assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "audio/mpeg");
+    assert_eq!(headers.get(header::ACCEPT_RANGES).unwrap(), "bytes");
 
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await

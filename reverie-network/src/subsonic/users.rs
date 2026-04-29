@@ -7,8 +7,8 @@ use axum::{
 use reverie_storage::{FileStorage, StorageError, SubsonicStorage};
 use std::collections::HashMap;
 
-use super::{error_response, format_response, ok_response, SubsonicState};
 use super::response::*;
+use super::{error_response, format_response, ok_response, SubsonicState};
 
 /// GET /rest/getUser - 获取用户信息
 pub async fn get_user_handler<S: SubsonicStorage + Clone>(
@@ -117,44 +117,52 @@ pub async fn search2_handler<S: SubsonicStorage + Clone>(
     {
         Ok(result) => {
             // search2 使用 ArtistItem（非 ID3 版本）
-            let artists: Vec<ArtistItem> = result.artists.iter().map(|a| ArtistItem {
-                id: a.id.clone(),
-                name: a.name.clone(),
-                cover_art: a.cover_art.clone(),
-                artist_image_url: None,
-                starred: a.starred.map(|d| d.to_rfc3339()),
-                user_rating: a.user_rating,
-            }).collect();
-            
+            let artists: Vec<ArtistItem> = result
+                .artists
+                .iter()
+                .map(|a| ArtistItem {
+                    id: a.id.clone(),
+                    name: a.name.clone(),
+                    cover_art: a.cover_art.clone(),
+                    artist_image_url: None,
+                    starred: a.starred.map(|d| d.to_rfc3339()),
+                    user_rating: a.user_rating,
+                })
+                .collect();
+
             // albums 转换为 Child
-            let albums: Vec<Child> = result.albums.iter().map(|a| Child {
-                id: a.id.clone(),
-                parent: a.artist_id.clone(),
-                is_dir: true,
-                title: a.name.clone(),
-                album: Some(a.name.clone()),
-                artist: a.artist.clone(),
-                track: None,
-                year: a.year,
-                genre: a.genre.clone(),
-                cover_art: a.cover_art.clone(),
-                size: None,
-                content_type: None,
-                suffix: None,
-                duration: Some(a.duration as i32),
-                bit_rate: None,
-                path: None,
-                play_count: a.play_count,
-                disc_number: None,
-                created: a.created.map(|d| d.to_rfc3339()),
-                album_id: Some(a.id.clone()),
-                artist_id: a.artist_id.clone(),
-                starred: a.starred.map(|d| d.to_rfc3339()),
-                user_rating: a.user_rating,
-                media_type: Some("album".to_string()),
-                is_video: false,
-            }).collect();
-            
+            let albums: Vec<Child> = result
+                .albums
+                .iter()
+                .map(|a| Child {
+                    id: a.id.clone(),
+                    parent: a.artist_id.clone(),
+                    is_dir: true,
+                    title: a.name.clone(),
+                    album: Some(a.name.clone()),
+                    artist: a.artist.clone(),
+                    track: None,
+                    year: a.year,
+                    genre: a.genre.clone(),
+                    cover_art: a.cover_art.clone(),
+                    size: None,
+                    content_type: None,
+                    suffix: None,
+                    duration: Some(a.duration as i32),
+                    bit_rate: None,
+                    path: None,
+                    play_count: a.play_count,
+                    disc_number: None,
+                    created: a.created.map(|d| d.to_rfc3339()),
+                    album_id: Some(a.id.clone()),
+                    artist_id: a.artist_id.clone(),
+                    starred: a.starred.map(|d| d.to_rfc3339()),
+                    user_rating: a.user_rating,
+                    media_type: Some("album".to_string()),
+                    is_video: false,
+                })
+                .collect();
+
             let songs: Vec<Child> = result.songs.iter().map(Child::from).collect();
 
             let data = SearchResult2Data {
@@ -255,7 +263,10 @@ pub async fn scrobble_handler<S: SubsonicStorage + Clone>(
         None => return error_response(&params, 10, "Missing required parameter: id"),
     };
     let time = params.get("time").and_then(|s| s.parse().ok());
-    let submission = params.get("submission").and_then(|s| s.parse().ok()).unwrap_or(true);
+    let submission = params
+        .get("submission")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(true);
 
     match state.storage.scrobble(id, time, submission).await {
         Ok(()) => ok_response(&params),
@@ -298,7 +309,10 @@ pub async fn download_handler<S: SubsonicStorage + FileStorage + Clone>(
                 }
                 Err(e) => Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(axum::body::Body::from(format!("Failed to read file: {}", e)))
+                    .body(axum::body::Body::from(format!(
+                        "Failed to read file: {}",
+                        e
+                    )))
                     .unwrap(),
             }
         }
@@ -327,44 +341,92 @@ pub async fn create_user_handler<S: SubsonicStorage + Clone>(
         _ => return error_response(&params, 10, "Missing required parameter: password"),
     };
 
-    let email = params.get("email").filter(|s| !s.is_empty()).map(|s| s.as_str());
-    let admin_role = params.get("adminRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let settings_role = params.get("settingsRole").and_then(|s| s.parse().ok()).unwrap_or(true);
-    let stream_role = params.get("streamRole").and_then(|s| s.parse().ok()).unwrap_or(true);
-    let jukebox_role = params.get("jukeboxRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let download_role = params.get("downloadRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let upload_role = params.get("uploadRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let playlist_role = params.get("playlistRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let cover_art_role = params.get("coverArtRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let comment_role = params.get("commentRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let podcast_role = params.get("podcastRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let share_role = params.get("shareRole").and_then(|s| s.parse().ok()).unwrap_or(false);
-    let video_conversion_role = params.get("videoConversionRole").and_then(|s| s.parse().ok()).unwrap_or(false);
+    let email = params
+        .get("email")
+        .filter(|s| !s.is_empty())
+        .map(|s| s.as_str());
+    let admin_role = params
+        .get("adminRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let settings_role = params
+        .get("settingsRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(true);
+    let stream_role = params
+        .get("streamRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(true);
+    let jukebox_role = params
+        .get("jukeboxRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let download_role = params
+        .get("downloadRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let upload_role = params
+        .get("uploadRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let playlist_role = params
+        .get("playlistRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let cover_art_role = params
+        .get("coverArtRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let comment_role = params
+        .get("commentRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let podcast_role = params
+        .get("podcastRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let share_role = params
+        .get("shareRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+    let video_conversion_role = params
+        .get("videoConversionRole")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
 
     // Parse music folder IDs (comma-separated)
-    let music_folder_ids: Vec<i32> = params.get("musicFolderId")
-        .map(|s| s.split(',').filter_map(|id| id.trim().parse().ok()).collect())
+    let music_folder_ids: Vec<i32> = params
+        .get("musicFolderId")
+        .map(|s| {
+            s.split(',')
+                .filter_map(|id| id.trim().parse().ok())
+                .collect()
+        })
         .unwrap_or_default();
 
     // TODO: Add authentication check (requires admin role)
-    match state.storage.create_user(
-        username,
-        password,
-        email,
-        admin_role,
-        settings_role,
-        stream_role,
-        jukebox_role,
-        download_role,
-        upload_role,
-        playlist_role,
-        cover_art_role,
-        comment_role,
-        podcast_role,
-        share_role,
-        video_conversion_role,
-        &music_folder_ids,
-    ).await {
+    match state
+        .storage
+        .create_user(
+            username,
+            password,
+            email,
+            admin_role,
+            settings_role,
+            stream_role,
+            jukebox_role,
+            download_role,
+            upload_role,
+            playlist_role,
+            cover_art_role,
+            comment_role,
+            podcast_role,
+            share_role,
+            video_conversion_role,
+            &music_folder_ids,
+        )
+        .await
+    {
         Ok(()) => ok_response(&params),
         Err(ref e) if e.to_string().contains("already exists") => {
             error_response(&params, 40, "User already exists")
@@ -384,8 +446,14 @@ pub async fn update_user_handler<S: SubsonicStorage + Clone>(
     };
 
     // Optional fields
-    let password = params.get("password").filter(|s| !s.is_empty()).map(|s| s.as_str());
-    let email = params.get("email").filter(|s| !s.is_empty()).map(|s| s.as_str());
+    let password = params
+        .get("password")
+        .filter(|s| !s.is_empty())
+        .map(|s| s.as_str());
+    let email = params
+        .get("email")
+        .filter(|s| !s.is_empty())
+        .map(|s| s.as_str());
     let admin_role = params.get("adminRole").and_then(|s| s.parse().ok());
     let settings_role = params.get("settingsRole").and_then(|s| s.parse().ok());
     let stream_role = params.get("streamRole").and_then(|s| s.parse().ok());
@@ -397,35 +465,46 @@ pub async fn update_user_handler<S: SubsonicStorage + Clone>(
     let comment_role = params.get("commentRole").and_then(|s| s.parse().ok());
     let podcast_role = params.get("podcastRole").and_then(|s| s.parse().ok());
     let share_role = params.get("shareRole").and_then(|s| s.parse().ok());
-    let video_conversion_role = params.get("videoConversionRole").and_then(|s| s.parse().ok());
+    let video_conversion_role = params
+        .get("videoConversionRole")
+        .and_then(|s| s.parse().ok());
     let max_bit_rate = params.get("maxBitRate").and_then(|s| s.parse().ok());
 
     // Parse music folder IDs (comma-separated)
-    let music_folder_ids = params.get("musicFolderId")
-        .map(|s| s.split(',').filter_map(|id| id.trim().parse().ok()).collect::<Vec<_>>());
+    let music_folder_ids = params.get("musicFolderId").map(|s| {
+        s.split(',')
+            .filter_map(|id| id.trim().parse().ok())
+            .collect::<Vec<_>>()
+    });
 
     // TODO: Add authentication check (requires admin role)
-    match state.storage.update_user(
-        username,
-        password,
-        email,
-        admin_role,
-        settings_role,
-        stream_role,
-        jukebox_role,
-        download_role,
-        upload_role,
-        playlist_role,
-        cover_art_role,
-        comment_role,
-        podcast_role,
-        share_role,
-        video_conversion_role,
-        music_folder_ids.as_deref(),
-        max_bit_rate,
-    ).await {
+    match state
+        .storage
+        .update_user(
+            username,
+            password,
+            email,
+            admin_role,
+            settings_role,
+            stream_role,
+            jukebox_role,
+            download_role,
+            upload_role,
+            playlist_role,
+            cover_art_role,
+            comment_role,
+            podcast_role,
+            share_role,
+            video_conversion_role,
+            music_folder_ids.as_deref(),
+            max_bit_rate,
+        )
+        .await
+    {
         Ok(()) => ok_response(&params),
-        Err(StorageError::NotFound(_)) => error_response(&params, 70, &format!("User {} not found", username)),
+        Err(StorageError::NotFound(_)) => {
+            error_response(&params, 70, &format!("User {} not found", username))
+        }
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
@@ -444,7 +523,9 @@ pub async fn delete_user_handler<S: SubsonicStorage + Clone>(
     // TODO: Prevent deleting self (safety check)
     match state.storage.delete_user(username).await {
         Ok(()) => ok_response(&params),
-        Err(StorageError::NotFound(_)) => error_response(&params, 70, &format!("User {} not found", username)),
+        Err(StorageError::NotFound(_)) => {
+            error_response(&params, 70, &format!("User {} not found", username))
+        }
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }
@@ -466,7 +547,9 @@ pub async fn change_password_handler<S: SubsonicStorage + Clone>(
     // TODO: Add authentication check (requires admin role or self)
     match state.storage.change_password(username, password).await {
         Ok(()) => ok_response(&params),
-        Err(StorageError::NotFound(_)) => error_response(&params, 70, &format!("User {} not found", username)),
+        Err(StorageError::NotFound(_)) => {
+            error_response(&params, 70, &format!("User {} not found", username))
+        }
         Err(e) => error_response(&params, 0, &e.to_string()),
     }
 }

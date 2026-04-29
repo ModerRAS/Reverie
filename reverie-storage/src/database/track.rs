@@ -77,9 +77,10 @@ const TRACK_SELECT_COLUMNS: &str = r#"
 #[async_trait]
 impl TrackStorage for DatabaseStorage {
     async fn get_track(&self, id: Uuid) -> Result<Option<Track>> {
-        let row = sqlx::query_as::<_, TrackRow>(
-            &format!("SELECT {} FROM tracks WHERE id = ?", TRACK_SELECT_COLUMNS),
-        )
+        let row = sqlx::query_as::<_, TrackRow>(&format!(
+            "SELECT {} FROM tracks WHERE id = ?",
+            TRACK_SELECT_COLUMNS
+        ))
         .bind(id.to_string())
         .fetch_optional(self.pool())
         .await
@@ -89,9 +90,10 @@ impl TrackStorage for DatabaseStorage {
     }
 
     async fn list_tracks(&self, limit: usize, offset: usize) -> Result<Vec<Track>> {
-        let rows = sqlx::query_as::<_, TrackRow>(
-            &format!("SELECT {} FROM tracks ORDER BY title LIMIT ? OFFSET ?", TRACK_SELECT_COLUMNS),
-        )
+        let rows = sqlx::query_as::<_, TrackRow>(&format!(
+            "SELECT {} FROM tracks ORDER BY title LIMIT ? OFFSET ?",
+            TRACK_SELECT_COLUMNS
+        ))
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(self.pool())
@@ -167,12 +169,10 @@ impl TrackStorage for DatabaseStorage {
 
     async fn search_tracks(&self, query: &str) -> Result<Vec<Track>> {
         let pattern = format!("%{}%", query);
-        let rows = sqlx::query_as::<_, TrackRow>(
-            &format!(
-                "SELECT {} FROM tracks WHERE title LIKE ? ORDER BY title LIMIT 100",
-                TRACK_SELECT_COLUMNS
-            ),
-        )
+        let rows = sqlx::query_as::<_, TrackRow>(&format!(
+            "SELECT {} FROM tracks WHERE title LIKE ? ORDER BY title LIMIT 100",
+            TRACK_SELECT_COLUMNS
+        ))
         .bind(&pattern)
         .fetch_all(self.pool())
         .await
@@ -182,12 +182,10 @@ impl TrackStorage for DatabaseStorage {
     }
 
     async fn get_tracks_by_album(&self, album_id: Uuid) -> Result<Vec<Track>> {
-        let rows = sqlx::query_as::<_, TrackRow>(
-            &format!(
-                "SELECT {} FROM tracks WHERE album_id = ? ORDER BY disc_number, track_number",
-                TRACK_SELECT_COLUMNS
-            ),
-        )
+        let rows = sqlx::query_as::<_, TrackRow>(&format!(
+            "SELECT {} FROM tracks WHERE album_id = ? ORDER BY disc_number, track_number",
+            TRACK_SELECT_COLUMNS
+        ))
         .bind(album_id.to_string())
         .fetch_all(self.pool())
         .await
@@ -197,12 +195,10 @@ impl TrackStorage for DatabaseStorage {
     }
 
     async fn get_tracks_by_artist(&self, artist_id: Uuid) -> Result<Vec<Track>> {
-        let rows = sqlx::query_as::<_, TrackRow>(
-            &format!(
-                "SELECT {} FROM tracks WHERE artist_id = ? ORDER BY title",
-                TRACK_SELECT_COLUMNS
-            ),
-        )
+        let rows = sqlx::query_as::<_, TrackRow>(&format!(
+            "SELECT {} FROM tracks WHERE artist_id = ? ORDER BY title",
+            TRACK_SELECT_COLUMNS
+        ))
         .bind(artist_id.to_string())
         .fetch_all(self.pool())
         .await

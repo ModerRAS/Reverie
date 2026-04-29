@@ -12,12 +12,12 @@ use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
-use crate::error::{Result, StorageError};
-use crate::vfs::{SharedVfs, VfsEntry};
-use super::cue::{CueSheet, CueTrack, stable_uuid};
 #[cfg(feature = "flac")]
 use super::cue::extract_embedded_cue_from_flac;
-use super::metadata::{is_audio_file, AudioMetadata, get_extension};
+use super::cue::{stable_uuid, CueSheet, CueTrack};
+use super::metadata::{get_extension, is_audio_file, AudioMetadata};
+use crate::error::{Result, StorageError};
+use crate::vfs::{SharedVfs, VfsEntry};
 
 /// 扫描进度状态
 #[derive(Debug, Clone, Default)]
@@ -135,8 +135,7 @@ impl MediaScanner {
     pub async fn scan(&self, path: &str) -> Result<ScanResult> {
         // 检查是否已在扫描
         if self.scanning.swap(true, Ordering::SeqCst) {
-            return Err(StorageError::IoError(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            return Err(StorageError::IoError(std::io::Error::other(
                 "Scan already in progress",
             )));
         }
@@ -234,17 +233,18 @@ impl MediaScanner {
                                 album_name.to_lowercase()
                             );
 
-                            let album = result.albums.entry(album_key.clone()).or_insert_with(|| {
-                                ScannedAlbum {
-                                    id: Uuid::new_v4().to_string(),
-                                    name: album_name.clone(),
-                                    artist_id: artist_id.clone(),
-                                    artist_name: artist_name.cloned(),
-                                    year: track.year,
-                                    genre: track.genre.clone(),
-                                    tracks: Vec::new(),
-                                }
-                            });
+                            let album =
+                                result.albums.entry(album_key.clone()).or_insert_with(|| {
+                                    ScannedAlbum {
+                                        id: Uuid::new_v4().to_string(),
+                                        name: album_name.clone(),
+                                        artist_id: artist_id.clone(),
+                                        artist_name: artist_name.cloned(),
+                                        year: track.year,
+                                        genre: track.genre.clone(),
+                                        tracks: Vec::new(),
+                                    }
+                                });
 
                             album.tracks.push(track.id.clone());
 
@@ -295,7 +295,10 @@ impl MediaScanner {
         // 构建 whole-disc 音轨（track_index 0 = whole disc）
         let whole_disc = ScannedTrack {
             id: stable_uuid(path, 0),
-            title: metadata.title.clone().unwrap_or_else(|| default_title.clone()),
+            title: metadata
+                .title
+                .clone()
+                .unwrap_or_else(|| default_title.clone()),
             artist: metadata.artist.clone(),
             album: metadata.album.clone(),
             album_artist: metadata.album_artist.clone(),
@@ -322,7 +325,9 @@ impl MediaScanner {
         let mut tracks = vec![whole_disc];
 
         // CUE 检测
-        if let Some((cue_sheet, cue_path_str)) = self.detect_cue(path, &file_data, &metadata).await? {
+        if let Some((cue_sheet, cue_path_str)) =
+            self.detect_cue(path, &file_data, &metadata).await?
+        {
             // Determine if format is lossless for byte offset calculation
             let is_lossless = matches!(extension, "flac" | "wav" | "ape" | "wv");
             let file_duration = metadata.duration as f64;
@@ -415,7 +420,10 @@ impl MediaScanner {
                 match parse_cue_from_bytes(&cue_bytes) {
                     Ok(cue_sheet) => return Ok(Some((cue_sheet, cue_path_str.to_string()))),
                     Err(e) => {
-                        warn!("Failed to parse CUE file {}, falling back to whole-disc only: {}", cue_path_str, e);
+                        warn!(
+                            "Failed to parse CUE file {}, falling back to whole-disc only: {}",
+                            cue_path_str, e
+                        );
                         return Ok(None);
                     }
                 }
@@ -430,7 +438,10 @@ impl MediaScanner {
             let tmp_name = format!("reverie_flac_{}.tmp", Uuid::new_v4());
             let tmp_path = tmp_dir.join(&tmp_name);
             if let Err(e) = std::fs::write(&tmp_path, file_data) {
-                debug!("Failed to write FLAC tempfile for CUESHEET extraction: {}", e);
+                debug!(
+                    "Failed to write FLAC tempfile for CUESHEET extraction: {}",
+                    e
+                );
                 return Ok(None);
             }
             let result = extract_embedded_cue_from_flac(&tmp_path);
@@ -465,9 +476,8 @@ impl MediaScanner {
 ///
 /// Strips UTF-8 BOM, filters blank lines, then delegates to rcue strict parser.
 fn parse_cue_from_bytes(data: &[u8]) -> Result<CueSheet> {
-    let raw = std::str::from_utf8(data).map_err(|e| {
-        StorageError::Unavailable(format!("CUE file is not valid UTF-8: {}", e))
-    })?;
+    let raw = std::str::from_utf8(data)
+        .map_err(|e| StorageError::Unavailable(format!("CUE file is not valid UTF-8: {}", e)))?;
 
     // Strip UTF-8 BOM
     let content = raw.strip_prefix('\u{FEFF}').unwrap_or(raw);
@@ -482,9 +492,8 @@ fn parse_cue_from_bytes(data: &[u8]) -> Result<CueSheet> {
     let cursor = Cursor::new(filtered.as_bytes());
     let mut buf_reader = BufReader::new(cursor);
 
-    let cue = rcue::parser::parse(&mut buf_reader, true).map_err(|e| {
-        StorageError::Unavailable(format!("Failed to parse CUE file: {}", e))
-    })?;
+    let cue = rcue::parser::parse(&mut buf_reader, true)
+        .map_err(|e| StorageError::Unavailable(format!("Failed to parse CUE file: {}", e)))?;
 
     let album_title = cue.title;
     let album_performer = cue.performer;
@@ -564,11 +573,7 @@ mod tests {
     }
 
     /// Generate a minimal valid WAV file via hound.
-    fn make_test_wav(
-        sample_rate: u32,
-        channels: u16,
-        duration_secs: f32,
-    ) -> Vec<u8> {
+    fn make_test_wav(sample_rate: u32, channels: u16, duration_secs: f32) -> Vec<u8> {
         let mut buf = Vec::new();
         let spec = hound::WavSpec {
             channels,
@@ -576,11 +581,12 @@ mod tests {
             bits_per_sample: 16,
             sample_format: hound::SampleFormat::Int,
         };
-        let mut writer = hound::WavWriter::new(std::io::Cursor::new(&mut buf), spec)
-            .expect("WAV writer");
+        let mut writer =
+            hound::WavWriter::new(std::io::Cursor::new(&mut buf), spec).expect("WAV writer");
         let num_samples = (sample_rate as f32 * duration_secs) as u32;
         for i in 0..num_samples {
-            let sample = ((i as f64 * 440.0 * 2.0 * std::f64::consts::PI / sample_rate as f64).sin()
+            let sample = ((i as f64 * 440.0 * 2.0 * std::f64::consts::PI / sample_rate as f64)
+                .sin()
                 * 16000.0) as i16;
             for _ in 0..channels {
                 writer.write_sample(sample).expect("write sample");
@@ -620,16 +626,25 @@ FILE "sample.wav" WAVE
         let (_dir, vfs) = setup_temp_vfs(&[
             ("sample.wav", &wav_data),
             ("sample.cue", cue_content.as_bytes()),
-        ]).await;
+        ])
+        .await;
 
         let scanner = MediaScanner::new(vfs);
         let result = scanner.scan("").await.expect("scan");
 
         // Expected: 1 whole-disc + 2 virtual = 3 tracks
-        assert_eq!(result.tracks.len(), 3, "should have 3 tracks (1 whole + 2 virtual)");
+        assert_eq!(
+            result.tracks.len(),
+            3,
+            "should have 3 tracks (1 whole + 2 virtual)"
+        );
 
         // Whole-disc track
-        let whole = result.tracks.iter().find(|t| !t.is_cue_virtual).expect("whole-disc track");
+        let whole = result
+            .tracks
+            .iter()
+            .find(|t| !t.is_cue_virtual)
+            .expect("whole-disc track");
         assert!(!whole.is_cue_virtual);
         assert!(whole.cue_path.is_none());
         assert_eq!(whole.source_file.as_deref(), Some("sample.wav"));
@@ -658,9 +673,7 @@ FILE "sample.wav" WAVE
     #[tokio::test]
     async fn test_scan_no_cue_unchanged() {
         let wav_data = make_test_wav(44100, 2, 3.0);
-        let (_dir, vfs) = setup_temp_vfs(&[
-            ("sample.wav", &wav_data),
-        ]).await;
+        let (_dir, vfs) = setup_temp_vfs(&[("sample.wav", &wav_data)]).await;
 
         let scanner = MediaScanner::new(vfs);
         let result = scanner.scan("").await.expect("scan");
@@ -697,7 +710,8 @@ FILE "sample.wav" WAVE
         let (_dir, vfs) = setup_temp_vfs(&[
             ("sample.wav", &wav_data),
             ("sample.cue", cue_content.as_bytes()),
-        ]).await;
+        ])
+        .await;
 
         let scanner = MediaScanner::new(vfs);
         let result = scanner.scan("").await.expect("scan");
@@ -720,9 +734,7 @@ FILE "sample.wav" WAVE
         // Track 2: 5s → 8s → offset_start ≈ 5*176375
         let t2 = virt[1];
         let expected_start_2 = (5.0 * 44100.0 * 2.0 * 2.0) as u64;
-        assert!(
-            (t2.byte_offset_start.unwrap() as i64 - expected_start_2 as i64).abs() < 5000
-        );
+        assert!((t2.byte_offset_start.unwrap() as i64 - expected_start_2 as i64).abs() < 5000);
 
         // Track 3: last → duration = 10 - 8 = 2s
         let t3 = virt[2];
@@ -768,18 +780,24 @@ FILE "sample.wav" WAVE
         };
 
         let flac_data = make_test_flac(sample_rate, Some(&flac_cue));
-        let (_dir, vfs) = setup_temp_vfs(&[
-            ("sample.flac", &flac_data),
-        ]).await;
+        let (_dir, vfs) = setup_temp_vfs(&[("sample.flac", &flac_data)]).await;
 
         let scanner = MediaScanner::new(vfs);
         let result = scanner.scan("").await.expect("scan");
 
         // Expected: 1 whole-disc + 2 virtual = 3 tracks
-        assert_eq!(result.tracks.len(), 3, "should have 3 tracks (1 whole + 2 virtual)");
+        assert_eq!(
+            result.tracks.len(),
+            3,
+            "should have 3 tracks (1 whole + 2 virtual)"
+        );
 
         // Whole-disc track
-        let whole = result.tracks.iter().find(|t| !t.is_cue_virtual).expect("whole-disc");
+        let whole = result
+            .tracks
+            .iter()
+            .find(|t| !t.is_cue_virtual)
+            .expect("whole-disc");
         assert!(!whole.is_cue_virtual);
 
         // Virtual tracks
@@ -850,16 +868,25 @@ FILE "sample.flac" WAVE
         let (_dir, vfs) = setup_temp_vfs(&[
             ("sample.flac", &flac_data),
             ("sample.cue", cue_content.as_bytes()),
-        ]).await;
+        ])
+        .await;
 
         let scanner = MediaScanner::new(vfs);
         let result = scanner.scan("").await.expect("scan");
 
         // External CUE wins: 1 whole + 3 virtual = 4 tracks
-        assert_eq!(result.tracks.len(), 4, "should have 4 tracks (1 whole + 3 virtual from external CUE)");
+        assert_eq!(
+            result.tracks.len(),
+            4,
+            "should have 4 tracks (1 whole + 3 virtual from external CUE)"
+        );
 
         let virt: Vec<&ScannedTrack> = result.tracks.iter().filter(|t| t.is_cue_virtual).collect();
-        assert_eq!(virt.len(), 3, "external CUE should take priority (3 tracks) not embedded (2 tracks)");
+        assert_eq!(
+            virt.len(),
+            3,
+            "external CUE should take priority (3 tracks) not embedded (2 tracks)"
+        );
 
         assert_eq!(virt[0].title, "Overridden T1");
         assert_eq!(virt[0].album.as_deref(), Some("External Album"));

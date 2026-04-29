@@ -284,8 +284,16 @@ impl SubsonicStorage for MemoryStorage {
         genre: Option<&str>,
         music_folder_id: Option<i32>,
     ) -> Result<Vec<SubsonicAlbum>> {
-        self.get_album_list(list_type, size, offset, from_year, to_year, genre, music_folder_id)
-            .await
+        self.get_album_list(
+            list_type,
+            size,
+            offset,
+            from_year,
+            to_year,
+            genre,
+            music_folder_id,
+        )
+        .await
     }
 
     async fn get_random_songs(

@@ -18,7 +18,9 @@ use uuid::Uuid;
 /// Build a deterministic byte pattern that is easy to verify at any offset.
 /// Returns `(pattern * 37 + 128) % 256` — a cheap pseudo-random sequence.
 fn make_pattern_audio(len: u64) -> Vec<u8> {
-    (0..len).map(|i| ((i.wrapping_mul(37).wrapping_add(128)) % 256) as u8).collect()
+    (0..len)
+        .map(|i| ((i.wrapping_mul(37).wrapping_add(128)) % 256) as u8)
+        .collect()
 }
 
 /// Verify that `data` matches `make_pattern_audio` starting at byte `offset`.
@@ -26,9 +28,13 @@ fn assert_pattern_match(data: &[u8], offset: u64) {
     for (i, byte) in data.iter().enumerate() {
         let expected = ((offset + i as u64).wrapping_mul(37).wrapping_add(128) % 256) as u8;
         assert_eq!(
-            *byte, expected,
+            *byte,
+            expected,
             "byte mismatch at position {} (absolute offset {}): got {}, expected {}",
-            i, offset + i as u64, byte, expected
+            i,
+            offset + i as u64,
+            byte,
+            expected
         );
     }
 }
@@ -73,16 +79,10 @@ async fn test_stream_cue_virtual_track_returns_206_partial_content() {
     let headers = response.headers();
 
     // Content-Type
-    assert_eq!(
-        headers.get(header::CONTENT_TYPE).unwrap(),
-        "audio/flac"
-    );
+    assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "audio/flac");
 
     // Accept-Ranges
-    assert_eq!(
-        headers.get(header::ACCEPT_RANGES).unwrap(),
-        "bytes"
-    );
+    assert_eq!(headers.get(header::ACCEPT_RANGES).unwrap(), "bytes");
 
     // Content-Range format: "bytes {start}-{end}/{total}"
     let content_range = headers
@@ -220,14 +220,8 @@ async fn test_stream_normal_track_returns_200_full_file() {
     );
 
     let headers = response.headers();
-    assert_eq!(
-        headers.get(header::CONTENT_TYPE).unwrap(),
-        "audio/mpeg"
-    );
-    assert_eq!(
-        headers.get(header::ACCEPT_RANGES).unwrap(),
-        "bytes"
-    );
+    assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "audio/mpeg");
+    assert_eq!(headers.get(header::ACCEPT_RANGES).unwrap(), "bytes");
 
     // Normal track should NOT have a Content-Range header
     assert!(
@@ -238,7 +232,11 @@ async fn test_stream_normal_track_returns_200_full_file() {
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
-    assert_eq!(body.as_ref(), file_data.as_slice(), "full file content mismatch");
+    assert_eq!(
+        body.as_ref(),
+        file_data.as_slice(),
+        "full file content mismatch"
+    );
 }
 
 // ===========================================================================
