@@ -9,7 +9,7 @@ license.workspace = true
 reverie-core = { path = "../reverie-core" }
 async-trait.workspace = true
 thiserror.workspace = true
-uuid = { version = "1.6", features = ["v4"] }
+uuid = { version = "1.6", features = ["v4", "v5"] }
 tokio.workspace = true
 rand = "0.8"
 chrono = "0.4"
@@ -23,6 +23,15 @@ opendal = { version = "0.55", default-features = false, features = ["services-fs
 # Audio metadata parsing
 lofty = { version = "0.21", optional = true }
 
+# CUE sheet parsing (MIT, zero-dep, pure Rust)
+rcue = { version = "0.1", optional = true }
+
+# FLAC CUESHEET block extraction (sourrust, BSD-3-Clause)
+flac = { version = "0.5", optional = true }
+
+# SHA256 for stable UUID generation
+sha2 = { version = "0.10", optional = true }
+
 # Optional dependencies for specific implementations
 sqlx = { workspace = true, optional = true, features = ["runtime-tokio", "sqlite"] }
 walkdir = { version = "2.4", optional = true }
@@ -30,12 +39,16 @@ shellexpand = { version = "3", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 
+[[bin]]
+name = "generate-audio-fixtures"
+path = "src/bin/generate_audio_fixtures.rs"
+
 [features]
 default = ["filesystem", "memory", "database", "scanner"]
 filesystem = ["walkdir", "shellexpand"]
 database = ["sqlx"]
 memory = []
-scanner = ["lofty"]
+scanner = ["lofty", "rcue", "flac", "sha2"]
 
 # VFS backend features
 vfs-s3 = ["opendal/services-s3"]
@@ -53,4 +66,7 @@ vfs-cloud = ["vfs-s3", "vfs-azblob", "vfs-gcs"]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 chrono = "0.4"
 tempfile = "3"
-uuid = { version = "1.6", features = ["v4"] }
+uuid = { version = "1.6", features = ["v4", "v5"] }
+hound = "3.5"
+symphonia = { version = "0.5", features = ["all"] }
+sqlx = { workspace = true }

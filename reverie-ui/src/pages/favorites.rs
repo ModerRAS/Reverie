@@ -45,6 +45,7 @@ pub fn FavoritesPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-favorites",
 
             PageHeader {
                 title: "收藏".to_string(),

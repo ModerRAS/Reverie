@@ -9,6 +9,7 @@ pub fn SettingsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6 max-w-2xl",
+            "data-testid": "page-settings",
 
             PageHeader {
                 title: "设置".to_string()

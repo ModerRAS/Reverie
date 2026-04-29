@@ -202,6 +202,11 @@ impl SubsonicStorage for MemoryStorage {
         }))
     }
 
+    async fn get_songs_by_album(&self, _album_id: &str) -> Result<Vec<MediaFile>> {
+        // MemoryStorage returns empty for tests
+        Ok(vec![])
+    }
+
     async fn get_artist_info(
         &self,
         _id: &str,

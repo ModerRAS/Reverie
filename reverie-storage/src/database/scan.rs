@@ -116,8 +116,10 @@ impl DatabaseStorage {
                 r#"INSERT OR REPLACE INTO tracks 
                    (id, title, album_id, artist_id, duration, file_path, file_size, 
                     bitrate, sample_rate, channels, format, track_number, disc_number, 
-                    year, genre, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                    year, genre, created_at, updated_at,
+                    source_file, byte_offset_start, byte_offset_end, cue_path, is_cue_virtual)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           ?, ?, ?, ?, ?)"#,
             )
             .bind(&track.id)
             .bind(&track.title)
@@ -136,6 +138,11 @@ impl DatabaseStorage {
             .bind(&track.genre)
             .bind(&now)
             .bind(&now)
+            .bind(&track.source_file)
+            .bind(track.byte_offset_start.map(|v| v as i64))
+            .bind(track.byte_offset_end.map(|v| v as i64))
+            .bind(&track.cue_path)
+            .bind(track.is_cue_virtual as i64)
             .execute(self.pool())
             .await
             .map_err(|e| StorageError::DatabaseError(e.to_string()))?;

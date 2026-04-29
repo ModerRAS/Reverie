@@ -40,6 +40,7 @@ pub fn PlaylistDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-playlist-detail",
 
             // 歌单头部
             div {

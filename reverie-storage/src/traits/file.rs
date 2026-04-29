@@ -11,6 +11,24 @@ pub trait FileStorage: Send + Sync {
     /// 按路径读取文件
     async fn read_file(&self, path: &str) -> Result<Vec<u8>>;
 
+    /// 从文件中读取指定范围的字节
+    ///
+    /// 默认实现读取整个文件然后切片。后端可以重写以进行更高效的范围读取。
+    async fn read_file_range(&self, path: &str, offset: u64, size: u64) -> Result<Vec<u8>> {
+        let data = self.read_file(path).await?;
+        let start = offset as usize;
+        let end = std::cmp::min(start + size as usize, data.len());
+        if start >= data.len() {
+            return Err(crate::error::StorageError::NotFound(format!(
+                "Range start {} exceeds file size {}: {}",
+                offset,
+                data.len(),
+                path
+            )));
+        }
+        Ok(data[start..end].to_vec())
+    }
+
     /// 写入文件
     async fn write_file(&self, path: &str, data: &[u8]) -> Result<()>;
 

@@ -155,6 +155,10 @@ impl AudioMetadata {
 /// 判断文件是否为支持的音频格式
 pub fn is_audio_file(path: &str) -> bool {
     let path = path.to_lowercase();
+    // Explicitly exclude CUE sheets — they are not audio files
+    if path.ends_with(".cue") {
+        return false;
+    }
     SUPPORTED_AUDIO_EXTENSIONS
         .iter()
         .any(|ext| path.ends_with(ext))
@@ -190,5 +194,35 @@ mod tests {
         assert_eq!(get_extension("song.mp3"), Some("mp3"));
         assert_eq!(get_extension("/path/to/track.flac"), Some("flac"));
         assert_eq!(get_extension("no_extension"), None);
+    }
+
+    #[test]
+    #[cfg(feature = "scanner")]
+    fn test_fixtures_parseable() {
+        let formats = [
+            "mp3", "flac", "ogg", "opus", "m4a", "aac", "wav", "wma", "aiff", "ape", "wv",
+        ];
+        for fmt in formats {
+            let path = format!("tests/fixtures/audio/{}/sample.{}", fmt, fmt);
+            let meta = AudioMetadata::from_path(std::path::Path::new(&path))
+                .unwrap_or_else(|e| panic!("Failed to parse {} fixture: {}", fmt, e));
+            assert!(
+                meta.duration > 0.0,
+                "Duration should be > 0 for {} (got {})",
+                fmt,
+                meta.duration
+            );
+            // Verify tags were extracted
+            assert!(
+                meta.title.is_some(),
+                "Title missing for {} fixture",
+                fmt
+            );
+            assert!(
+                meta.artist.is_some(),
+                "Artist missing for {} fixture",
+                fmt
+            );
+        }
     }
 }

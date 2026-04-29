@@ -2,26 +2,34 @@
 
 use crate::api::Song;
 use crate::components::{EmptyState, LoadingSpinner, PageHeader, TrackList};
-use crate::mock;
 use dioxus::prelude::*;
 
 /// 歌曲页面组件
 #[component]
 pub fn SongsPage() -> Element {
-    let mut songs = use_signal(Vec::<Song>::new);
+    let songs = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
 
     // 加载歌曲
     use_effect(move || {
         loading.set(true);
 
-        songs.set(mock::songs(50));
-        loading.set(false);
+        let mut songs = songs.clone();
+        let mut loading = loading.clone();
+        spawn(async move {
+            if let Ok(items) = crate::api::backend::list_tracks(50, 0).await {
+                songs.set(items);
+            } else {
+                songs.set(Vec::new());
+            }
+            loading.set(false);
+        });
     });
 
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-songs",
 
             PageHeader {
                 title: "歌曲".to_string(),

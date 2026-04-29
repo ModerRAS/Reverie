@@ -103,6 +103,7 @@ pub fn AppBar() -> Element {
                 input {
                     class: "search-input",
                     r#type: "text",
+                    "data-testid": "search-input",
                     placeholder: "Search music...",
                     value: "{search_query}",
                     oninput: on_search
@@ -176,6 +177,7 @@ pub fn Sidebar(open: bool) -> Element {
     rsx! {
         aside {
             class: "{sidebar_class}",
+            "data-testid": "sidebar",
 
             nav {
                 class: "flex-1 py-4",
@@ -194,6 +196,7 @@ pub fn Sidebar(open: bool) -> Element {
                             button {
                                 key: "{label}",
                                 class: "{item_class} w-full",
+                                "data-testid": "nav-item-{label}",
                                 onclick: move |_| {
                                     ui_state.write().current_view = view_type_clone.clone();
                                 },

@@ -1,22 +1,27 @@
 //! Mock Subsonic Storage 实现
 
-use reverie_core::{Caption, ChatMessage, JukeboxStatus, MediaFile, PodcastChannel, PodcastEpisode, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
-use reverie_storage::{error::StorageError, SubsonicStorage, FileStorage, FileMetadata};
+use reverie_core::{Caption, ChatMessage, JukeboxStatus, MediaFile, Track, PodcastChannel, PodcastEpisode, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicPlayQueue, SubsonicScanStatus, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser, VideoInfo};
+use reverie_storage::{error::StorageError, SubsonicStorage, TrackStorage, FileStorage, FileMetadata};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, RwLock};
 use tokio::sync::RwLock as TokioRwLock;
+use uuid::Uuid;
 
 type Result<T> = std::result::Result<T, StorageError>;
 
 /// 用于测试的模拟存储
 #[derive(Clone)]
 pub struct MockSubsonicStorage {
-    users: Arc<RwLock<HashMap<String, SubsonicUser>>>,
+    pub users: Arc<RwLock<HashMap<String, SubsonicUser>>>,
     passwords: Arc<RwLock<HashMap<String, String>>>,
     chat_messages: Arc<TokioRwLock<Vec<ChatMessage>>>,
     podcast_channels: Arc<TokioRwLock<Vec<PodcastChannel>>>,
     podcast_episodes: Arc<TokioRwLock<Vec<PodcastEpisode>>>,
+    /// Tracks for TrackStorage (including CUE fields)
+    pub tracks: Arc<RwLock<HashMap<Uuid, Track>>>,
+    /// File data for FileStorage (path -> bytes)
+    pub file_data: Arc<RwLock<HashMap<String, Vec<u8>>>>,
 }
 
 impl MockSubsonicStorage {
@@ -52,6 +57,8 @@ impl MockSubsonicStorage {
                     cover_art: None,
                 },
             ])),
+            tracks: Arc::new(RwLock::new(HashMap::new())),
+            file_data: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -91,6 +98,41 @@ impl Default for MockSubsonicStorage {
 impl fmt::Debug for MockSubsonicStorage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MockSubsonicStorage")
+    }
+}
+
+#[async_trait::async_trait]
+impl TrackStorage for MockSubsonicStorage {
+    async fn get_track(&self, id: Uuid) -> Result<Option<Track>> {
+        let tracks = self.tracks.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        Ok(tracks.get(&id).cloned())
+    }
+
+    async fn list_tracks(&self, _limit: usize, _offset: usize) -> Result<Vec<Track>> {
+        let tracks = self.tracks.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        Ok(tracks.values().cloned().collect())
+    }
+
+    async fn save_track(&self, track: &Track) -> Result<()> {
+        let mut tracks = self.tracks.write().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        tracks.insert(track.id, track.clone());
+        Ok(())
+    }
+
+    async fn delete_track(&self, _id: Uuid) -> Result<()> {
+        Ok(())
+    }
+
+    async fn search_tracks(&self, _query: &str) -> Result<Vec<Track>> {
+        Ok(vec![])
+    }
+
+    async fn get_tracks_by_album(&self, _album_id: Uuid) -> Result<Vec<Track>> {
+        Ok(vec![])
+    }
+
+    async fn get_tracks_by_artist(&self, _artist_id: Uuid) -> Result<Vec<Track>> {
+        Ok(vec![])
     }
 }
 
@@ -178,6 +220,10 @@ impl SubsonicStorage for MockSubsonicStorage {
 
     async fn get_song(&self, _id: &str) -> Result<Option<MediaFile>> {
         Ok(Some(MediaFile::default()))
+    }
+
+    async fn get_songs_by_album(&self, _album_id: &str) -> Result<Vec<MediaFile>> {
+        Ok(vec![])
     }
 
     async fn get_video_info(&self, id: &str) -> Result<Option<VideoInfo>> {
@@ -439,7 +485,16 @@ impl SubsonicStorage for MockSubsonicStorage {
         Ok(())
     }
 
-    async fn get_stream_path(&self, _id: &str) -> Result<Option<String>> {
+    async fn get_stream_path(&self, id: &str) -> Result<Option<String>> {
+        // Try to look up the track by UUID to get its file_path
+        if let Ok(uuid) = Uuid::parse_str(id) {
+            if let Ok(tracks) = self.tracks.read() {
+                if let Some(track) = tracks.get(&uuid) {
+                    return Ok(Some(track.file_path.clone()));
+                }
+            }
+        }
+        // Fallback for tests that don't register tracks
         Ok(Some("/music/test.mp3".to_string()))
     }
 
@@ -832,19 +887,43 @@ impl SubsonicStorage for MockSubsonicStorage {
 
 #[async_trait::async_trait]
 impl FileStorage for MockSubsonicStorage {
-    async fn read_file(&self, _path: &str) -> Result<Vec<u8>> {
-        Ok(vec![0, 1, 2, 3]) // 返回一些虚拟数据
+    async fn read_file(&self, path: &str) -> Result<Vec<u8>> {
+        let files = self.file_data.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        files
+            .get(path)
+            .cloned()
+            .ok_or_else(|| StorageError::NotFound(path.to_string()))
     }
 
-    async fn write_file(&self, _path: &str, _data: &[u8]) -> Result<()> {
+    async fn read_file_range(&self, path: &str, offset: u64, size: u64) -> Result<Vec<u8>> {
+        let data = self.read_file(path).await?;
+        let start = offset as usize;
+        let end = std::cmp::min(start + size as usize, data.len());
+        if start >= data.len() {
+            return Err(StorageError::NotFound(format!(
+                "Range start {} exceeds file size {}: {}",
+                offset,
+                data.len(),
+                path
+            )));
+        }
+        Ok(data[start..end].to_vec())
+    }
+
+    async fn write_file(&self, path: &str, data: &[u8]) -> Result<()> {
+        let mut files = self.file_data.write().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        files.insert(path.to_string(), data.to_vec());
         Ok(())
     }
 
-    async fn file_exists(&self, _path: &str) -> Result<bool> {
-        Ok(true)
+    async fn file_exists(&self, path: &str) -> Result<bool> {
+        let files = self.file_data.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        Ok(files.contains_key(path))
     }
 
-    async fn delete_file(&self, _path: &str) -> Result<()> {
+    async fn delete_file(&self, path: &str) -> Result<()> {
+        let mut files = self.file_data.write().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        files.remove(path);
         Ok(())
     }
 
@@ -852,9 +931,13 @@ impl FileStorage for MockSubsonicStorage {
         Ok(vec![])
     }
 
-    async fn get_file_metadata(&self, _path: &str) -> Result<FileMetadata> {
+    async fn get_file_metadata(&self, path: &str) -> Result<FileMetadata> {
+        let files = self.file_data.read().map_err(|e| StorageError::Unavailable(e.to_string()))?;
+        let data = files
+            .get(path)
+            .ok_or_else(|| StorageError::NotFound(path.to_string()))?;
         Ok(FileMetadata {
-            size: 1024,
+            size: data.len() as u64,
             modified: std::time::SystemTime::now(),
             is_file: true,
             is_dir: false,

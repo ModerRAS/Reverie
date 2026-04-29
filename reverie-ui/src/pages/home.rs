@@ -2,14 +2,13 @@
 
 use crate::api::{Album, Song};
 use crate::components::{AlbumCard, LoadingSpinner, SongCard};
-use crate::mock;
 use dioxus::prelude::*;
 
 /// 首页组件
 #[component]
 pub fn HomePage() -> Element {
-    let mut recent_albums = use_signal(Vec::<Album>::new);
-    let mut recent_songs = use_signal(Vec::<Song>::new);
+    let recent_albums = use_signal(Vec::<Album>::new);
+    let recent_songs = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
@@ -17,11 +16,23 @@ pub fn HomePage() -> Element {
     use_effect(move || {
         loading.set(true);
 
-        let (home_albums, home_songs) = mock::home();
-        recent_albums.set(home_albums);
-        recent_songs.set(home_songs);
+        let mut recent_albums = recent_albums.clone();
+        let mut recent_songs = recent_songs.clone();
+        let mut loading = loading.clone();
 
-        loading.set(false);
+        spawn(async move {
+            let albums = crate::api::backend::list_albums(12, 0).await;
+            let songs = crate::api::backend::list_tracks(12, 0).await;
+
+            if let Ok(a) = albums {
+                recent_albums.set(a);
+            }
+            if let Ok(s) = songs {
+                recent_songs.set(s);
+            }
+
+            loading.set(false);
+        });
     });
 
     let on_album_click = move |id: String| {
@@ -37,6 +48,7 @@ pub fn HomePage() -> Element {
     rsx! {
         div {
             class: "space-y-8",
+            "data-testid": "page-home",
 
             // 欢迎头部
             section {

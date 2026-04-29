@@ -108,6 +108,12 @@ async fn add_sample_data(storage: &MemoryStorage) -> Result<()> {
             genre: Some("Demo".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            // CUE-related fields (None for non-CUE tracks)
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            cue_path: None,
+            is_cue_virtual: None,
         };
         storage.save_track(&track).await?;
     }

@@ -24,6 +24,11 @@ fn test_track_creation() {
         genre: Some("Rock".to_string()),
         created_at: now,
         updated_at: now,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        cue_path: None,
+        is_cue_virtual: None,
     };
 
     assert_eq!(track.title, "Test Track");

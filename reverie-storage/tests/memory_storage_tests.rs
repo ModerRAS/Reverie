@@ -35,6 +35,11 @@ async fn test_memory_storage_track_operations() {
         genre: Some("Test Genre".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
 
     // Test save track
@@ -390,6 +395,11 @@ async fn test_memory_storage_relationships() {
             genre: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage
             .save_track(&track)

@@ -46,6 +46,11 @@ async fn test_database_storage_track_crud() {
         genre: Some("Rock".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
 
     // Test save
@@ -99,6 +104,11 @@ async fn test_database_storage_list_tracks() {
             genre: Some("Rock".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.expect("Failed to save track");
     }
@@ -331,6 +341,11 @@ async fn test_database_storage_playlist_tracks() {
         genre: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     let track2 = Track {
         id: Uuid::new_v4(),
@@ -348,6 +363,11 @@ async fn test_database_storage_playlist_tracks() {
         genre: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track1).await.expect("Failed to save track 1");
     storage.save_track(&track2).await.expect("Failed to save track 2");
@@ -397,6 +417,11 @@ async fn test_database_storage_playlist_tracks() {
         genre: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track3).await.expect("Failed to save track 3");
     
@@ -448,6 +473,11 @@ async fn test_database_storage_subsonic_genres() {
             genre: Some(genre.to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.expect("Failed to save track");
     }
@@ -499,6 +529,11 @@ async fn test_database_storage_subsonic_search() {
         genre: Some("Rock".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track).await.expect("Failed to save track");
 
@@ -586,6 +621,11 @@ async fn test_database_storage_track_album_artist_relationship() {
             genre: Some("Progressive Rock".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.expect("Failed to save track");
     }
@@ -629,6 +669,11 @@ async fn test_database_storage_bookmark_crud() {
         genre: Some("Test".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track).await.expect("Failed to save track");
 
@@ -750,6 +795,11 @@ async fn test_database_storage_star_unstar() {
         genre: Some("Pop".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track).await.expect("Failed to save track");
 
@@ -803,6 +853,11 @@ async fn test_database_storage_rating() {
         genre: Some("Rock".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track).await.expect("Failed to save track");
 
@@ -861,6 +916,11 @@ async fn test_database_storage_play_queue() {
         genre: Some("Electronic".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     let track2 = Track {
         id: Uuid::new_v4(),
@@ -878,6 +938,11 @@ async fn test_database_storage_play_queue() {
         genre: Some("Electronic".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track1).await.expect("Failed to save track 1");
     storage.save_track(&track2).await.expect("Failed to save track 2");
@@ -932,6 +997,11 @@ async fn test_database_storage_media_stream() {
         genre: Some("Test".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
     storage.save_track(&track).await.expect("Failed to save track");
 

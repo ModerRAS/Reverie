@@ -2,15 +2,14 @@
 
 use crate::api::{Album, Artist, Song};
 use crate::components::{AlbumCard, CompactSongList, LoadingSpinner};
-use crate::mock;
 use dioxus::prelude::*;
 
 /// 艺术家详情页组件
 #[component]
 pub fn ArtistDetailPage(id: String) -> Element {
-    let mut artist = use_signal(|| None::<Artist>);
-    let mut albums = use_signal(Vec::<Album>::new);
-    let mut top_songs = use_signal(Vec::<Song>::new);
+    let artist = use_signal(|| None::<Artist>);
+    let albums = use_signal(Vec::<Album>::new);
+    let top_songs = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
@@ -18,11 +17,34 @@ pub fn ArtistDetailPage(id: String) -> Element {
     use_effect(move || {
         loading.set(true);
 
-        let (mock_artist, mock_albums, mock_top_songs) = mock::artist_detail(&id);
-        artist.set(Some(mock_artist));
-        albums.set(mock_albums);
-        top_songs.set(mock_top_songs);
-        loading.set(false);
+        let artist_id = id.clone();
+        let mut artist = artist.clone();
+        let mut albums = albums.clone();
+        let mut top_songs = top_songs.clone();
+        let mut loading = loading.clone();
+
+        spawn(async move {
+            let artist_albums = crate::api::backend::get_artist_albums(&artist_id)
+                .await
+                .unwrap_or_default();
+            let album_count = artist_albums.len() as i32;
+            albums.set(artist_albums);
+
+            // 用曲目列表近似“热门歌曲”：取该艺术家前 N 首
+            let mut songs = crate::api::backend::list_tracks(200, 0).await.unwrap_or_default();
+            songs.retain(|s| s.artist_id.as_deref() == Some(&artist_id));
+            songs.truncate(10);
+            top_songs.set(songs);
+
+            // 组装 artist（回填 album_count）
+            let mut artist_data = crate::api::backend::get_artist(&artist_id).await.ok();
+            if let Some(ref mut a) = artist_data {
+                a.album_count = album_count;
+            }
+            artist.set(artist_data);
+
+            loading.set(false);
+        });
     });
 
     if loading() {
@@ -44,6 +66,7 @@ pub fn ArtistDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-8",
+            "data-testid": "page-artist-detail",
 
             // 艺术家头部
             div {

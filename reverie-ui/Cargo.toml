@@ -7,8 +7,9 @@ authors = ["Reverie Team"]
 license = "MIT"
 
 [dependencies]
-# Dioxus core with fullstack support
-dioxus = { version = "0.7", features = ["fullstack", "router"] }
+# Dioxus core
+# NOTE: For bundled static web UI, we intentionally avoid `fullstack`.
+dioxus = { version = "0.7", features = ["router"] }
 
 # Asset pipeline (bundles files under ./assets into the dev/build output)
 manganis = "0.7"

@@ -2,13 +2,12 @@
 
 use crate::api::Artist;
 use crate::components::{ArtistCard, EmptyState, LoadingSpinner, PageHeader};
-use crate::mock;
 use dioxus::prelude::*;
 
 /// 艺术家页面组件
 #[component]
 pub fn ArtistsPage() -> Element {
-    let mut artists = use_signal(Vec::<Artist>::new);
+    let artists = use_signal(Vec::<Artist>::new);
     let mut loading = use_signal(|| true);
     let navigator = use_navigator();
 
@@ -16,9 +15,16 @@ pub fn ArtistsPage() -> Element {
     use_effect(move || {
         loading.set(true);
 
-        // 演示数据
-        artists.set(mock::artists(20));
-        loading.set(false);
+        let mut artists = artists.clone();
+        let mut loading = loading.clone();
+        spawn(async move {
+            if let Ok(items) = crate::api::backend::list_artists(100, 0).await {
+                artists.set(items);
+            } else {
+                artists.set(Vec::new());
+            }
+            loading.set(false);
+        });
     });
 
     let on_artist_click = move |id: String| {
@@ -28,6 +34,7 @@ pub fn ArtistsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-artists",
 
             PageHeader {
                 title: "艺术家".to_string(),

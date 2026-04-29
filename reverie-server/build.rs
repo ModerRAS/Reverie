@@ -4,6 +4,42 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+fn find_in_path(exe_name: &str) -> Option<PathBuf> {
+    let path_var = env::var_os("PATH")?;
+    for dir in env::split_paths(&path_var) {
+        let candidate = dir.join(exe_name);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
+fn cargo_bin_dir() -> Option<PathBuf> {
+    let home = env::var("USERPROFILE")
+        .or_else(|_| env::var("HOME"))
+        .ok()?;
+    Some(PathBuf::from(home).join(".cargo").join("bin"))
+}
+
+fn find_dx() -> Option<PathBuf> {
+    #[cfg(windows)]
+    const DX: &str = "dx.exe";
+    #[cfg(not(windows))]
+    const DX: &str = "dx";
+
+    if let Some(p) = find_in_path(DX) {
+        return Some(p);
+    }
+
+    let candidate = cargo_bin_dir()?.join(DX);
+    if candidate.exists() {
+        Some(candidate)
+    } else {
+        None
+    }
+}
+
 fn copy_dir_recursive(from: &Path, to: &Path) -> io::Result<()> {
     if !to.exists() {
         fs::create_dir_all(to)?;
@@ -51,33 +87,31 @@ fn main() {
     println!("cargo:rerun-if-changed=../reverie-ui/Cargo.toml");
 
     let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string());
-    let dx_profile = if profile == "release" { "release" } else { "debug" };
+    // Always bundle the release UI output, even for debug builds, to avoid dev hot-reload artifacts.
+    let dx_profile = "release";
 
     // Build the UI with dioxus CLI
-    let mut cmd = Command::new("dx");
+    let Some(dx) = find_dx() else {
+        // Don't hard-fail compilation if dx is missing; server can still run without UI.
+        println!(
+            "cargo:warning=dx not found; skipping UI build. Install dioxus-cli or set REVERIE_SKIP_UI_BUILD=1."
+        );
+        return;
+    };
+
+    let mut cmd = Command::new(dx);
     cmd.current_dir(&workspace_dir)
         .arg("build")
         .arg("--package")
         .arg("reverie-ui");
 
-    if profile == "release" {
-        cmd.arg("--release");
-    }
+    cmd.arg("--release");
 
     let status = cmd.status();
     let Ok(status) = status else {
-        // Don't hard-fail compilation if dx is missing; server can still run without UI.
-        println!("cargo:warning=dx not found; skipping UI build. Install dioxus-cli or set REVERIE_SKIP_UI_BUILD=1.");
+        println!("cargo:warning=failed to execute dx; skipping UI build.");
         return;
     };
-
-    if !status.success() {
-        println!(
-            "cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.",
-            profile
-        );
-        return;
-    }
 
     let ui_src = workspace_dir
         .join("target")
@@ -86,6 +120,18 @@ fn main() {
         .join(dx_profile)
         .join("web")
         .join("public");
+
+    // Some Windows setups may report a non-zero exit code from wasm-opt even when the bundle exists.
+    // Prefer checking the actual output over the dx process exit code.
+    if !status.success() {
+        if !ui_src.join("index.html").exists() {
+            println!(
+                "cargo:warning=dx build failed; UI will not be bundled into target/{}/ui.",
+                profile
+            );
+            return;
+        }
+    }
 
     if !ui_src.join("index.html").exists() {
         println!("cargo:warning=dx build output not found at {:?}", ui_src);

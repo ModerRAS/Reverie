@@ -6,7 +6,6 @@
 
 use crate::api::Album;
 use crate::components::{AlbumCard, EmptyState, LoadingSpinner, PageHeader, TabBar};
-use crate::mock;
 use dioxus::prelude::*;
 
 /// 专辑列表类型（匹配 Navidrome 的专辑视图）
@@ -67,8 +66,23 @@ pub fn AlbumsPage() -> Element {
     use_effect(move || {
         loading.set(true);
 
-        albums.set(mock::albums(24));
-        loading.set(false);
+        let mut albums = albums.clone();
+        let mut loading = loading.clone();
+        let mut error = error.clone();
+
+        spawn(async move {
+            match crate::api::backend::list_albums(50, 0).await {
+                Ok(items) => {
+                    albums.set(items);
+                    error.set(None);
+                }
+                Err(e) => {
+                    albums.set(Vec::new());
+                    error.set(Some(e));
+                }
+            }
+            loading.set(false);
+        });
     });
 
     let on_tab_change = move |idx: usize| {
@@ -89,6 +103,7 @@ pub fn AlbumsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-albums",
 
             PageHeader {
                 title: "专辑".to_string(),

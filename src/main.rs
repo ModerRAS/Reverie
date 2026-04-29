@@ -1,6 +1,6 @@
 use anyhow::Result;
 use reverie_server::{run_with_storage, ServerRunConfig};
-use reverie_storage::memory::MemoryStorage;
+use reverie_storage::{DatabaseConfig, DatabaseStorage, Storage, VfsConfig};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -34,7 +34,23 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let storage = Arc::new(MemoryStorage::new());
+    let db_path = std::env::var("REVERIE_DB_PATH").unwrap_or_else(|_| "reverie.db".to_string());
+    let music_dir = std::env::var("REVERIE_MUSIC_DIR").unwrap_or_else(|_| "./music".to_string());
+    let auto_scan = std::env::var("REVERIE_AUTO_SCAN").unwrap_or_else(|_| "1".to_string()) != "0";
+
+    tracing::info!(db_path = %db_path, music_dir = %music_dir, auto_scan, "存储配置");
+
+    let storage = Arc::new(DatabaseStorage::new(DatabaseConfig::new(
+        db_path,
+        VfsConfig::local(music_dir),
+    ))
+    .await?);
+    storage.initialize().await?;
+    if auto_scan {
+        if let Err(e) = storage.perform_scan("/").await {
+            tracing::warn!(error = %e, "启动扫描失败（将继续启动服务）");
+        }
+    }
 
     let mut config = ServerRunConfig::default();
     // Serve the web UI (if present)

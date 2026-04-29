@@ -50,6 +50,9 @@ pub trait SubsonicStorage: Send + Sync {
     /// 通过 ID 获取单个专辑
     async fn get_album(&self, id: &str) -> Result<Option<SubsonicAlbum>>;
 
+    /// 获取专辑的所有歌曲（包括 CUE 虚拟曲目）
+    async fn get_songs_by_album(&self, album_id: &str) -> Result<Vec<MediaFile>>;
+
     /// 通过 ID 获取单个歌曲
     async fn get_song(&self, id: &str) -> Result<Option<MediaFile>>;
 

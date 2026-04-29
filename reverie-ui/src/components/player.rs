@@ -29,6 +29,7 @@ pub fn PlayerBar() -> Element {
     rsx! {
         div {
             class: "player-bar",
+            "data-testid": "player-bar",
 
             // Song info (left section)
             div {
@@ -62,6 +63,7 @@ pub fn PlayerBar() -> Element {
                         class: "min-w-0",
                         p {
                             class: "text-sm font-medium truncate",
+                            "data-testid": "track-title",
                             "{song.title}"
                         }
                         p {
@@ -118,6 +120,7 @@ pub fn PlayerBar() -> Element {
                     // Play/Pause button
                     button {
                         class: "w-10 h-10 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-105 transition-transform",
+                        "data-testid": "play-button",
                         onclick: move |_| {
                             if is_playing {
                                 apply_player_action(&mut player_state.write(), PlayerAction::Pause);
@@ -286,6 +289,7 @@ fn ProgressBar(progress: i32, current_time: f32, total_time: f32) -> Element {
             }
             div {
                 class: "progress-bar flex-1",
+                "data-testid": "progress-bar",
                 div {
                     class: "progress-fill",
                     style: "width: {progress}%"
@@ -335,6 +339,7 @@ fn VolumeControl() -> Element {
             input {
                 class: "volume-slider",
                 r#type: "range",
+                "data-testid": "volume-slider",
                 min: "0",
                 max: "100",
                 value: "{volume_percent}",

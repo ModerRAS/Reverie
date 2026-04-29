@@ -6,8 +6,9 @@ use reverie_storage::{Storage, SubsonicStorage};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::oneshot;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ServerRunConfig {
     pub host: String,
     pub port: u16,
@@ -15,6 +16,9 @@ pub struct ServerRunConfig {
     pub max_body_size: usize,
     pub timeout_seconds: u64,
     pub ui_dir: Option<PathBuf>,
+    /// Optional shutdown receiver. When received, the server stops.
+    /// If None, the server runs forever (until process termination).
+    pub shutdown_rx: Option<oneshot::Receiver<()>>,
 }
 
 impl Default for ServerRunConfig {
@@ -26,6 +30,7 @@ impl Default for ServerRunConfig {
             max_body_size: 10 * 1024 * 1024,
             timeout_seconds: 30,
             ui_dir: None,
+            shutdown_rx: None,
         }
     }
 }
@@ -56,10 +61,28 @@ where
         .parse()
         .expect("Invalid server address");
 
-    server
-        .start(addr)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to start server: {}", e))?;
-
-    Ok(())
+    // Keep running until shutdown signal is received, or forever if None.
+    //
+    // When shutdown_rx is provided, we start the server first (it blocks until
+    // the server naturally stops, e.g. via axum::serve error), and only then
+    // wait for the shutdown signal. This keeps the future alive indefinitely,
+    // preventing the test harness's tokio::spawn from completing prematurely.
+    if let Some(shutdown_rx) = config.shutdown_rx {
+        server
+            .start(addr)
+            .await
+            .map_err(|e| anyhow::anyhow!("Server error: {}", e))?;
+        // Server has stopped — wait for shutdown signal.
+        // This keeps the future alive so the caller's tokio::spawn does not
+        // complete and kill the server between tests.
+        let _ = shutdown_rx.await;
+        tracing::info!("Server shutdown complete");
+        Ok(())
+    } else {
+        server
+            .start(addr)
+            .await
+            .map_err(|e| anyhow::anyhow!("Server error: {}", e))?;
+        Ok(())
+    }
 }

@@ -29,6 +29,7 @@ pub fn PlaylistsPage() -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-playlists",
 
             PageHeader {
                 title: "歌单".to_string(),

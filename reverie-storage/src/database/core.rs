@@ -97,6 +97,16 @@ impl DatabaseStorage {
                 rating INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
+                -- CUE sheet support columns (added 2024)
+                -- source_file: parent audio file for CUE virtual tracks
+                -- byte_offset_start/end: byte range within parent file
+                -- cue_path: associated .cue file path (NULL for non-CUE tracks)
+                -- is_cue_virtual: whether this track is a CUE virtual track
+                source_file TEXT,
+                byte_offset_start INTEGER DEFAULT 0,
+                byte_offset_end INTEGER DEFAULT 0,
+                cue_path TEXT,
+                is_cue_virtual INTEGER DEFAULT 0,
                 FOREIGN KEY (album_id) REFERENCES albums(id),
                 FOREIGN KEY (artist_id) REFERENCES artists(id)
             );
@@ -227,6 +237,34 @@ impl DatabaseStorage {
 
             -- Insert default scan status row
             INSERT OR IGNORE INTO scan_status (id, scanning, count, folder_count) VALUES (1, 0, 0, 0);
+
+            CREATE TABLE IF NOT EXISTS podcast_channels (
+                id TEXT PRIMARY KEY,
+                url TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                cover_art TEXT,
+                status TEXT NOT NULL DEFAULT 'completed',
+                error_message TEXT,
+                created_at TEXT NOT NULL,
+                last_refresh TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS podcast_episodes (
+                id TEXT PRIMARY KEY,
+                channel_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                publish_date TEXT,
+                status TEXT NOT NULL DEFAULT 'completed',
+                stream_id TEXT,
+                duration INTEGER,
+                size INTEGER,
+                url TEXT,
+                cover_art TEXT,
+                file_path TEXT,
+                FOREIGN KEY (channel_id) REFERENCES podcast_channels(id) ON DELETE CASCADE
+            );
             "#,
         )
         .execute(self.pool())
@@ -279,10 +317,49 @@ impl Storage for DatabaseStorage {
         if folder_count.0 == 0 {
             sqlx::query("INSERT INTO music_folders (name, path) VALUES (?, ?)")
                 .bind("Music")
-                .bind("/music")
+                .bind("/")
                 .execute(self.pool())
                 .await
                 .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        }
+
+        // Backward-compat: older builds used `/music` while VFS root already pointed at the music directory.
+        // Normalize to `/` so scans and lookups operate relative to the VFS root.
+        let _ = sqlx::query("UPDATE music_folders SET path = '/' WHERE path = '/music'")
+            .execute(self.pool())
+            .await;
+
+        // Seed default podcast channel + episode for E2E test compatibility
+        // (mirrors the mock storage pre-seeded data)
+        let podcast_ch_count: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM podcast_channels")
+                .fetch_one(self.pool())
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        if podcast_ch_count.0 == 0 {
+            let now = Utc::now().to_rfc3339();
+            sqlx::query(
+                "INSERT INTO podcast_channels (id, url, title, status, created_at) VALUES ('channel-1', 'https://example.com/feed.xml', 'Test Channel', 'completed', ?)",
+            )
+            .bind(&now)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+            sqlx::query(
+                "INSERT INTO podcast_episodes (id, channel_id, title, status, file_path) VALUES ('episode-1', 'channel-1', 'Test Episode 1', 'completed', '/podcasts/episode-1.mp3')",
+            )
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+            sqlx::query(
+                "INSERT INTO podcast_episodes (id, channel_id, title, status) VALUES ('episode-2', 'channel-1', 'Test Episode 2', 'completed')",
+            )
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
         }
 
         Ok(())

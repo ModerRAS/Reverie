@@ -27,6 +27,7 @@ pub fn TrackList(
     rsx! {
         div {
             class: "track-list rounded-lg overflow-hidden",
+            "data-testid": "track-list",
 
             // Header row
             div {
@@ -99,6 +100,7 @@ fn TrackRow(
     rsx! {
         div {
             class: "{row_class}",
+            "data-testid": "track-row-{index}",
             ondoubleclick: move |_| {
                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(track_clone.clone()));
             },

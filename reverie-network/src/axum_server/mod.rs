@@ -67,7 +67,20 @@ where
     /// - assets/
     /// - wasm/
     pub fn with_ui_dir(mut self, ui_dir: impl Into<PathBuf>) -> Self {
-        self.ui_dir = Some(ui_dir.into());
+        let ui_dir = ui_dir.into();
+        let index = ui_dir.join("index.html");
+        let assets_dir = ui_dir.join("assets");
+        let wasm_dir = ui_dir.join("wasm");
+
+        tracing::info!(
+            ui_dir = %ui_dir.display(),
+            index_exists = index.exists(),
+            assets_exists = assets_dir.exists(),
+            wasm_exists = wasm_dir.exists(),
+            "Web UI 已启用"
+        );
+
+        self.ui_dir = Some(ui_dir);
         self
     }
 

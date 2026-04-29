@@ -40,6 +40,7 @@ pub fn LoginPage() -> Element {
     rsx! {
         div {
             class: "min-h-screen flex items-center justify-center bg-gray-900 px-4",
+            "data-testid": "page-login",
 
             div {
                 class: "w-full max-w-md",
@@ -99,6 +100,7 @@ pub fn LoginPage() -> Element {
                         input {
                             class: "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
                             r#type: "text",
+                            "data-testid": "username-input",
                             placeholder: "请输入用户名",
                             value: "{username}",
                             oninput: move |e| username.set(e.value())
@@ -114,6 +116,7 @@ pub fn LoginPage() -> Element {
                         input {
                             class: "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
                             r#type: "password",
+                            "data-testid": "password-input",
                             placeholder: "请输入密码",
                             value: "{password}",
                             oninput: move |e| password.set(e.value())
@@ -124,6 +127,7 @@ pub fn LoginPage() -> Element {
                     button {
                         class: "w-full btn-primary py-3 text-lg font-medium",
                         r#type: "submit",
+                        "data-testid": "login-button",
                         disabled: loading(),
                         if loading() {
                             "正在登录..."

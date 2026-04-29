@@ -107,6 +107,11 @@ async fn test_filesystem_storage_track_operations() {
         genre: Some("Test Genre".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
 
     // Save track
@@ -424,6 +429,11 @@ async fn test_filesystem_storage_update_track() {
         genre: Some("Rock".to_string()),
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        cue_path: None,
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        is_cue_virtual: Some(false),
     };
 
     storage.save_track(&track).await.unwrap();
@@ -473,6 +483,11 @@ async fn test_filesystem_storage_pagination() {
             genre: Some("Rock".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.unwrap();
     }
@@ -521,6 +536,11 @@ async fn test_filesystem_storage_get_tracks_by_album() {
             genre: Some("Rock".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.unwrap();
     }
@@ -563,6 +583,11 @@ async fn test_filesystem_storage_get_tracks_by_artist() {
             genre: Some("Rock".to_string()),
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            cue_path: None,
+            source_file: None,
+            byte_offset_start: None,
+            byte_offset_end: None,
+            is_cue_virtual: Some(false),
         };
         storage.save_track(&track).await.unwrap();
     }

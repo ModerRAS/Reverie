@@ -20,8 +20,9 @@ use axum::{
     Router,
 };
 use chrono::Utc;
-use reverie_storage::{FileStorage, SubsonicStorage};
+use reverie_storage::{FileStorage, SubsonicStorage, TrackStorage};
 use std::{collections::HashMap, sync::Arc};
+use uuid::Uuid;
 
 use response::*;
 
@@ -78,7 +79,7 @@ fn error_response(params: &HashMap<String, String>, code: i32, message: &str) ->
 /// 注意：返回的路由器缺少 `SubsonicState<S>`，它旨在嵌套到提供状态的外部路由器中，
 /// 通过 `Router::with_state` 实现。
 #[cfg(feature = "axum-server")]
-pub(crate) fn create_router<S: SubsonicStorage + FileStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
+pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Clone + 'static>() -> Router<SubsonicState<S>> {
     Router::new()
         // System endpoints
         .route("/ping", get(ping_handler::<S>))
@@ -852,8 +853,34 @@ async fn get_album_handler<S: SubsonicStorage + Clone>(
 
     match state.storage.get_album(id).await {
         Ok(Some(album)) => {
+            // Fetch songs for this album (includes CUE virtual tracks)
+            let songs = match state.storage.get_songs_by_album(id).await {
+                Ok(s) => s,
+                Err(e) => return error_response(&params, 0, &e.to_string()),
+            };
+            
+            // Convert songs to Child items
+            let song_items: Vec<Child> = songs.iter().map(Child::from).collect();
+            
+            // Build album response with songs
+            let album_with_songs = AlbumWithSongs {
+                id: album.id.clone(),
+                name: album.name.clone(),
+                artist: album.artist.clone(),
+                artist_id: album.artist_id.clone(),
+                cover_art: album.cover_art.clone(),
+                song_count: song_items.len() as i32,
+                duration: album.duration as i32,
+                play_count: album.play_count,
+                created: album.created.map(|d| d.to_rfc3339()),
+                starred: album.starred.map(|d| d.to_rfc3339()),
+                year: album.year,
+                genre: album.genre.clone(),
+                song: song_items,
+            };
+            
             let data = AlbumData {
-                album: AlbumWithSongs::from(&album),
+                album: album_with_songs,
             };
             let response = SubsonicResponse::ok_with(ResponseData::Album(data));
             format_response(&params, response)
@@ -1037,12 +1064,138 @@ async fn get_cover_art_handler<S: SubsonicStorage + FileStorage + Clone>(
     }
 }
 
+// === CUE Virtual Track Streaming Helpers ===
+
+/// Information needed to stream a CUE virtual track
+struct CueStreamInfo {
+    source_file: String,
+    format: String,
+    file_size: u64,
+    byte_offset_start: u64,
+    byte_offset_end: Option<u64>,
+}
+
+/// Parse a Range header value of the form "bytes=START-END" or "bytes=START-"
+/// Returns (start, optional_end)
+fn parse_range_header(value: &str) -> Option<(u64, Option<u64>)> {
+    let value = value.trim();
+    if !value.starts_with("bytes=") {
+        return None;
+    }
+    let range_spec = &value["bytes=".len()..];
+    let dash_pos = range_spec.find('-')?;
+    let start_str = &range_spec[..dash_pos];
+    let end_str = &range_spec[dash_pos + 1..];
+
+    let start = start_str.parse::<u64>().ok()?;
+    let end = if end_str.is_empty() {
+        None
+    } else {
+        Some(end_str.parse::<u64>().ok()?)
+    };
+
+    Some((start, end))
+}
+
+/// Determine MIME type based on file extension
+fn mime_type_from_path(path: &str) -> &'static str {
+    if path.ends_with(".flac") {
+        "audio/flac"
+    } else if path.ends_with(".ogg") || path.ends_with(".opus") {
+        "audio/ogg"
+    } else if path.ends_with(".m4a") || path.ends_with(".aac") {
+        "audio/mp4"
+    } else if path.ends_with(".wav") {
+        "audio/wav"
+    } else if path.ends_with(".wma") {
+        "audio/x-ms-wma"
+    } else {
+        "audio/mpeg"
+    }
+}
+
+/// Determine MIME type based on format string (e.g., "flac" -> "audio/flac")
+fn mime_type_from_format(format: &str) -> &'static str {
+    match format.to_lowercase().as_str() {
+        "flac" => "audio/flac",
+        "ogg" | "opus" => "audio/ogg",
+        "m4a" | "aac" | "mp4" => "audio/mp4",
+        "wav" => "audio/wav",
+        "wma" => "audio/x-ms-wma",
+        _ => "audio/mpeg",
+    }
+}
+
+/// Stream a CUE virtual track by reading the byte range from the source file
+async fn stream_cue_track<S: SubsonicStorage + FileStorage + TrackStorage + Clone>(
+    state: SubsonicState<S>,
+    cue: &CueStreamInfo,
+    range_header: Option<(u64, Option<u64>)>,
+) -> Response {
+    // Determine the byte range to read
+    // If client sent a Range header, use those values to override CUE offsets
+    let (byte_start, byte_end) = if let Some((r_start, r_end)) = range_header {
+        // Client requested specific range - adjust relative to CUE offset
+        let abs_start = cue.byte_offset_start + r_start;
+        let abs_end = r_end.map(|e| cue.byte_offset_start + e);
+        (abs_start, abs_end)
+    } else {
+        (cue.byte_offset_start, cue.byte_offset_end)
+    };
+
+    let mut end = byte_end.unwrap_or(cue.file_size);
+
+    // Edge case: if start >= file_size, return 416
+    if byte_start >= cue.file_size {
+        return Response::builder()
+            .status(StatusCode::RANGE_NOT_SATISFIABLE)
+            .header(header::CONTENT_RANGE, format!("bytes */{}", cue.file_size))
+            .body(axum::body::Body::empty())
+            .unwrap();
+    }
+
+    // Edge case: clamp end to file_size
+    if end > cue.file_size {
+        end = cue.file_size;
+    }
+
+    let size = end - byte_start;
+
+    // Read the byte range from the source file
+    match state
+        .storage
+        .read_file_range(&cue.source_file, byte_start, size)
+        .await
+    {
+        Ok(data) => {
+            let mime_type = mime_type_from_format(&cue.format);
+            let content_range = format!("bytes {}-{}/{}", byte_start, end - 1, cue.file_size);
+
+            Response::builder()
+                .status(StatusCode::PARTIAL_CONTENT)
+                .header(header::CONTENT_TYPE, mime_type)
+                .header(header::CONTENT_RANGE, content_range)
+                .header(header::CONTENT_LENGTH, data.len())
+                .header(header::ACCEPT_RANGES, "bytes")
+                .body(axum::body::Body::from(data))
+                .unwrap()
+        }
+        Err(e) => Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(axum::body::Body::from(format!(
+                "Failed to read CUE track range: {}",
+                e
+            )))
+            .unwrap(),
+    }
+}
+
 /// GET /rest/stream - 流式传输媒体文件
-async fn stream_handler<S: SubsonicStorage + FileStorage + Clone>(
+async fn stream_handler<S: SubsonicStorage + FileStorage + TrackStorage + Clone>(
     State(state): State<SubsonicState<S>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
-    let id = match params.get("id") {
+    let id_str = match params.get("id") {
         Some(id) => id,
         None => return error_response(&params, 10, "Missing required parameter: id"),
     };
@@ -1053,25 +1206,45 @@ async fn stream_handler<S: SubsonicStorage + FileStorage + Clone>(
     let _time_offset: Option<i32> = params.get("timeOffset").and_then(|s| s.parse().ok());
     let _estimated_content_length: Option<bool> = params.get("estimateContentLength").and_then(|s| s.parse().ok());
 
-    match state.storage.get_stream_path(id).await {
+    // 解析 Range 请求头（客户端可能发送 Range: bytes=START-END）
+    let range_header: Option<(u64, Option<u64>)> = params
+        .get("Range")
+        .or_else(|| params.get("range"))
+        .and_then(|v| parse_range_header(v));
+
+    // 尝试将 ID 解析为 UUID 以查找曲目元数据
+    let track_uuid = Uuid::parse_str(id_str).ok();
+
+    // 查找曲目以获取 CUE 相关信息
+    let cue_info = if let Some(uuid) = track_uuid {
+        match state.storage.get_track(uuid).await {
+            Ok(Some(track)) if track.cue_path.is_some() => {
+                // CUE 虚拟曲目
+                Some(CueStreamInfo {
+                    source_file: track.source_file.clone().unwrap_or_default(),
+                    format: track.format.clone(),
+                    file_size: track.file_size,
+                    byte_offset_start: track.byte_offset_start.unwrap_or(0),
+                    byte_offset_end: track.byte_offset_end,
+                })
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
+
+    if let Some(cue) = cue_info {
+        // CUE 虚拟曲目：读取源文件的字节范围
+        return stream_cue_track(state, &cue, range_header).await;
+    }
+
+    // 非 CUE 曲目：使用原有行为（返回完整文件）
+    match state.storage.get_stream_path(id_str).await {
         Ok(Some(path)) => {
-            // 读取媒体文件
             match state.storage.read_file(&path).await {
                 Ok(data) => {
-                    // 根据文件扩展名确定 MIME 类型
-                    let mime_type = if path.ends_with(".flac") {
-                        "audio/flac"
-                    } else if path.ends_with(".ogg") || path.ends_with(".opus") {
-                        "audio/ogg"
-                    } else if path.ends_with(".m4a") || path.ends_with(".aac") {
-                        "audio/mp4"
-                    } else if path.ends_with(".wav") {
-                        "audio/wav"
-                    } else if path.ends_with(".wma") {
-                        "audio/x-ms-wma"
-                    } else {
-                        "audio/mpeg"
-                    };
+                    let mime_type = mime_type_from_path(&path);
 
                     Response::builder()
                         .status(StatusCode::OK)

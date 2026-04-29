@@ -12,13 +12,29 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 reverie-server = { path = "./reverie-server" }
-reverie-storage = { path = "./reverie-storage", features = ["memory"] }
+reverie-storage = { path = "./reverie-storage", features = ["filesystem", "database", "scanner"] }
 
 # For examples
 chrono.workspace = true
 uuid.workspace = true
 reverie-core = { path = "./reverie-core" }
 reverie-network = { path = "./reverie-network" }
+
+[dev-dependencies]
+portpicker.workspace = true
+urlencoding.workspace = true
+reqwest.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+chrono.workspace = true
+uuid.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[[test]]
+name = "e2e_integration"
+path = "tests/e2e_integration/mod.rs"
 
 [workspace]
 members = [
@@ -71,3 +87,6 @@ config = "0.14"
 
 # Testing
 mockall = "0.12"
+portpicker = "0.1"
+urlencoding = "2.1"
+reqwest = { version = "0.12", features = ["json"] }

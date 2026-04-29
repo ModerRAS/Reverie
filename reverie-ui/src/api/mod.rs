@@ -6,6 +6,8 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod backend;
+
 /// Base URL for the Subsonic API
 const API_BASE: &str = "/rest";
 

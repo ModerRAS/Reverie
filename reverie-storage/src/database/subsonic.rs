@@ -9,18 +9,37 @@ use crate::error::{Result, StorageError};
 use crate::traits::*;
 use crate::DatabaseStorage;
 use reverie_core::{
-    MediaFile, SubsonicAlbum, SubsonicAlbumInfo, SubsonicArtist, SubsonicArtistIndex,
-    SubsonicArtistIndexes, SubsonicArtistInfo, SubsonicBookmark, SubsonicDirectory,
-    SubsonicGenre, SubsonicInternetRadioStation, SubsonicLyrics, SubsonicMusicFolder,
-    SubsonicNowPlaying, SubsonicPlayQueue, SubsonicPlaylist, SubsonicPlaylistWithSongs,
-    SubsonicScanStatus, SubsonicSearchResult2, SubsonicSearchResult3, SubsonicShare,
-    SubsonicStarred, SubsonicStructuredLyrics, SubsonicTopSongs, SubsonicUser,
+    MediaFile, PodcastChannel, SubsonicAlbum, SubsonicAlbumInfo,
+    SubsonicArtist, SubsonicArtistIndex, SubsonicArtistIndexes, SubsonicArtistInfo,
+    SubsonicBookmark, SubsonicDirectory, SubsonicGenre, SubsonicInternetRadioStation,
+    SubsonicLyrics, SubsonicMusicFolder, SubsonicNowPlaying, SubsonicPlayQueue,
+    SubsonicPlaylist, SubsonicPlaylistWithSongs, SubsonicScanStatus, SubsonicSearchResult2,
+    SubsonicSearchResult3, SubsonicShare, SubsonicStarred, SubsonicStructuredLyrics,
+    SubsonicTopSongs, SubsonicUser,
 };
+
+/// 根据音频格式返回 MIME 类型
+fn mime_type_from_format(format: &str) -> String {
+    match format.to_lowercase().as_str() {
+        "flac" => "audio/flac".to_string(),
+        "ogg" | "opus" => "audio/ogg".to_string(),
+        "m4a" | "aac" | "mp4" => "audio/mp4".to_string(),
+        "wav" => "audio/wav".to_string(),
+        "wma" => "audio/x-ms-wma".to_string(),
+        "mp3" | "mpeg" => "audio/mpeg".to_string(),
+        _ => format!("audio/{}", format.to_lowercase()),
+    }
+}
 
 #[async_trait]
 impl FileStorage for DatabaseStorage {
     async fn read_file(&self, path: &str) -> Result<Vec<u8>> {
         let data = self.vfs().read(path).await?;
+        Ok(data.to_vec())
+    }
+
+    async fn read_file_range(&self, path: &str, offset: u64, size: u64) -> Result<Vec<u8>> {
+        let data = self.vfs().read_range(path, offset, size).await?;
         Ok(data.to_vec())
     }
 
@@ -80,6 +99,7 @@ impl DatabaseStorage {
         Option<i32>: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
         Option<i64>: sqlx::Decode<'r, R::Database> + sqlx::Type<R::Database>,
     {
+        let format = r.get::<Option<String>, _>("format").unwrap_or_default();
         MediaFile {
             id: r.get("id"),
             parent: r.get::<Option<String>, _>("album_id"),
@@ -95,10 +115,13 @@ impl DatabaseStorage {
             bit_rate: r.get::<Option<i64>, _>("bitrate").map(|v| v as i32).unwrap_or(0),
             path: r.get("file_path"),
             size: r.get::<Option<i64>, _>("file_size").unwrap_or(0),
-            suffix: r.get::<Option<String>, _>("format").unwrap_or_default(),
+            suffix: format.clone(),
+            content_type: mime_type_from_format(&format),
             track_number: r.get::<Option<i64>, _>("track_number").map(|v| v as i32),
             disc_number: r.get::<Option<i64>, _>("disc_number").map(|v| v as i32),
             user_rating: r.get::<Option<i32>, _>("rating"),
+            album_id: r.get::<Option<String>, _>("album_id"),
+            artist_id: r.get::<Option<String>, _>("artist_id"),
             ..Default::default()
         }
     }
@@ -379,6 +402,22 @@ impl SubsonicStorage for DatabaseStorage {
         .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         Ok(row.map(|r| self.row_to_media_file(&r)))
+    }
+
+    async fn get_songs_by_album(&self, album_id: &str) -> Result<Vec<MediaFile>> {
+        let rows = sqlx::query(
+            r#"SELECT t.*, a.name as album_name, ar.name as artist_name
+               FROM tracks t
+               LEFT JOIN albums a ON t.album_id = a.id
+               LEFT JOIN artists ar ON t.artist_id = ar.id
+               WHERE t.album_id = ? ORDER BY t.disc_number, t.track_number"#,
+        )
+        .bind(album_id)
+        .fetch_all(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        Ok(rows.iter().map(|r| self.row_to_media_file(r)).collect())
     }
 
     async fn get_artist_info(
@@ -935,6 +974,7 @@ impl SubsonicStorage for DatabaseStorage {
             .map(|s| s.to_string())
             .unwrap_or_else(|| Uuid::new_v4().to_string());
         let playlist_name = name.unwrap_or("New Playlist");
+        let user_id = self.get_default_user_id().await?;
 
         sqlx::query(
             "INSERT INTO playlists (id, name, description, user_id, is_public, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -942,7 +982,7 @@ impl SubsonicStorage for DatabaseStorage {
         .bind(&id)
         .bind(playlist_name)
         .bind("")
-        .bind("system") // user_id
+        .bind(&user_id)
         .bind(0i64) // is_public
         .bind(&now)
         .bind(&now)
@@ -1193,9 +1233,10 @@ impl SubsonicStorage for DatabaseStorage {
             .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         // 记录 scrobble
-        // TODO: 需要用户 ID，暂时使用默认值
-        sqlx::query("INSERT INTO scrobbles (track_id, user_id, played_at) VALUES (?, 'admin', ?)")
+        let user_id = self.get_default_user_id().await?;
+        sqlx::query("INSERT INTO scrobbles (track_id, user_id, played_at) VALUES (?, ?, ?)")
             .bind(id)
+            .bind(&user_id)
             .bind(played_at.to_rfc3339())
             .execute(self.pool())
             .await
@@ -1742,6 +1783,83 @@ impl SubsonicStorage for DatabaseStorage {
         }
 
         self.get_scan_status().await
+    }
+
+    // === Podcasts ===
+
+    async fn create_podcast_channel(
+        &self,
+        url: &str,
+        title: Option<&str>,
+    ) -> Result<PodcastChannel> {
+        let now = Utc::now().to_rfc3339();
+        let channel_title = title.unwrap_or("Untitled Podcast").to_string();
+
+        // Generate sequential ID like "channel-N"
+        let next_num: (i64,) = sqlx::query_as(
+            "SELECT COALESCE(MAX(CAST(SUBSTR(id, 9) AS INTEGER)), 0) + 1 FROM podcast_channels",
+        )
+        .fetch_one(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+        let id = format!("channel-{}", next_num.0);
+
+        sqlx::query(
+            "INSERT INTO podcast_channels (id, url, title, status, created_at) VALUES (?, ?, ?, 'completed', ?)",
+        )
+        .bind(&id)
+        .bind(url)
+        .bind(&channel_title)
+        .bind(&now)
+        .execute(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        Ok(PodcastChannel::new(id, url.to_string(), channel_title))
+    }
+
+    async fn delete_podcast_channel(&self, id: &str) -> Result<()> {
+        let result = sqlx::query("DELETE FROM podcast_channels WHERE id = ?")
+            .bind(id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(StorageError::NotFound(format!(
+                "Podcast channel '{}' not found",
+                id
+            )));
+        }
+        Ok(())
+    }
+
+    async fn delete_podcast_episode(&self, id: &str) -> Result<()> {
+        let result = sqlx::query("DELETE FROM podcast_episodes WHERE id = ?")
+            .bind(id)
+            .execute(self.pool())
+            .await
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(StorageError::NotFound(format!(
+                "Podcast episode '{}' not found",
+                id
+            )));
+        }
+        Ok(())
+    }
+
+    async fn get_podcast_episode_path(&self, id: &str) -> Result<Option<String>> {
+        let row = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT file_path FROM podcast_episodes WHERE id = ?",
+        )
+        .bind(id)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
+
+        Ok(row.flatten())
     }
 
     async fn change_password(&self, username: &str, password: &str) -> Result<()> {

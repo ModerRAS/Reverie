@@ -62,6 +62,7 @@ pub fn SearchPage() -> Element {
     rsx! {
         div {
             class: "space-y-8",
+            "data-testid": "page-search",
 
             PageHeader {
                 title: format!("搜索: \"{}\"", current_query),

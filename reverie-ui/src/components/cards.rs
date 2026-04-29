@@ -106,7 +106,8 @@ pub fn ArtistCard(
 
     rsx! {
         div {
-            class: "card card-hover cursor-pointer group",
+            class: "album-card group",
+            "data-testid": "album-card",
             onclick: move |_| {
                 if let Some(handler) = &on_click {
                     handler.call(artist_id.clone());
@@ -190,6 +191,7 @@ pub fn PlaylistCard(
     rsx! {
         div {
             class: "album-card group",
+            "data-testid": "playlist-card",
             onclick: move |_| {
                 if let Some(handler) = &on_click {
                     handler.call(playlist_id.clone());
@@ -266,7 +268,8 @@ pub fn SongCard(song: Song, #[props(default)] show_album: bool) -> Element {
 
     rsx! {
         div {
-            class: "flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 cursor-pointer group",
+            class: "card card-hover cursor-pointer group",
+            "data-testid": "artist-card",
             onclick: move |_| {
                 apply_player_action(&mut player_state.write(), PlayerAction::PlaySong(song_clone.clone()));
             },

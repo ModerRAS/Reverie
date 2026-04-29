@@ -2,7 +2,6 @@
 
 use crate::api::{Album, Song};
 use crate::components::{format_duration_long, LoadingSpinner, TrackList};
-use crate::mock;
 use crate::state::{apply_player_action, PlayerAction, PlayerState};
 use dioxus::prelude::*;
 
@@ -15,19 +14,33 @@ pub struct AlbumDetailProps {
 #[component]
 pub fn AlbumDetailPage(id: String) -> Element {
     let mut player_state = use_context::<Signal<PlayerState>>();
-    let mut album = use_signal(|| None::<Album>);
-    let mut tracks = use_signal(Vec::<Song>::new);
+    let album = use_signal(|| None::<Album>);
+    let tracks = use_signal(Vec::<Song>::new);
     let mut loading = use_signal(|| true);
 
     // 加载专辑详情
     use_effect(move || {
         loading.set(true);
 
-        // 演示数据
-        let (mock_album, mock_tracks) = mock::album_detail(&id);
-        album.set(Some(mock_album));
-        tracks.set(mock_tracks);
-        loading.set(false);
+        let album_id = id.clone();
+        let mut album = album.clone();
+        let mut tracks = tracks.clone();
+        let mut loading = loading.clone();
+
+        spawn(async move {
+            match crate::api::backend::get_album(&album_id).await {
+                Ok(a) => album.set(Some(a)),
+                Err(_) => album.set(None),
+            }
+
+            if let Ok(items) = crate::api::backend::get_album_tracks(&album_id, 2000).await {
+                tracks.set(items);
+            } else {
+                tracks.set(Vec::new());
+            }
+
+            loading.set(false);
+        });
     });
 
     if loading() {
@@ -49,6 +62,7 @@ pub fn AlbumDetailPage(id: String) -> Element {
     rsx! {
         div {
             class: "space-y-6",
+            "data-testid": "page-album-detail",
 
             // 专辑头部
             div {

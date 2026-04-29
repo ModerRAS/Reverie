@@ -6,8 +6,10 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use reverie_core::Track;
 use std::sync::Arc;
 use tower::ServiceExt;
+use uuid::Uuid;
 
 // === 测试辅助函数 ===
 
@@ -673,4 +675,276 @@ async fn test_download_podcast_episode_not_found() {
     let json = get_json_response_error(router, "/downloadPodcastEpisode?f=json&id=nonexistent").await;
     assert_eq!(json["subsonic-response"]["status"], "failed");
     assert_eq!(json["subsonic-response"]["error"]["code"], 70);
+}
+
+// === Stream CUE Virtual Track Tests ===
+
+/// Helper to create a router with a CUE virtual track pre-populated
+pub(super) fn create_cue_test_router(
+    track_id: Uuid,
+    source_file: &str,
+    file_data: Vec<u8>,
+    file_size: u64,
+    byte_offset_start: u64,
+    byte_offset_end: Option<u64>,
+    format: &str,
+) -> axum::Router {
+    use chrono::Utc;
+
+    let storage = Arc::new(MockSubsonicStorage::new());
+
+    // Register the track
+    let track = Track {
+        id: track_id,
+        title: "CUE Virtual Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 180,
+        file_path: "/tmp/nonexistent.flac".to_string(), // not used for CUE tracks
+        file_size,
+        bitrate: 320,
+        format: format.to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Rock".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+        source_file: Some(source_file.to_string()),
+        byte_offset_start: Some(byte_offset_start),
+        byte_offset_end,
+        cue_path: Some("/music/test.cue".to_string()),
+        is_cue_virtual: Some(true),
+    };
+    storage.tracks.write().unwrap().insert(track_id, track);
+
+    // Write the source file data
+    storage
+        .file_data
+        .write()
+        .unwrap()
+        .insert(source_file.to_string(), file_data);
+
+    let state = crate::subsonic::SubsonicState::new(storage);
+    create_router::<MockSubsonicStorage>().with_state(state)
+}
+
+/// Helper to create a router with a normal (non-CUE) track
+pub(super) fn create_normal_track_test_router(track_id: Uuid, file_path: &str, file_data: Vec<u8>) -> axum::Router {
+    use chrono::Utc;
+
+    let storage = Arc::new(MockSubsonicStorage::new());
+
+    let track = Track {
+        id: track_id,
+        title: "Normal Track".to_string(),
+        album_id: None,
+        artist_id: None,
+        duration: 180,
+        file_path: file_path.to_string(),
+        file_size: file_data.len() as u64,
+        bitrate: 320,
+        format: "mp3".to_string(),
+        track_number: Some(1),
+        disc_number: Some(1),
+        year: Some(2024),
+        genre: Some("Pop".to_string()),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+        source_file: None,
+        byte_offset_start: None,
+        byte_offset_end: None,
+        cue_path: None,
+        is_cue_virtual: None,
+    };
+    storage.tracks.write().unwrap().insert(track_id, track);
+
+    storage
+        .file_data
+        .write()
+        .unwrap()
+        .insert(file_path.to_string(), file_data);
+
+    let state = crate::subsonic::SubsonicState::new(storage);
+    create_router::<MockSubsonicStorage>().with_state(state)
+}
+
+#[tokio::test]
+async fn test_stream_cue_virtual_track_returns_206() {
+    use axum::http::header;
+
+    let track_id = Uuid::new_v4();
+    // Create 50000 bytes of dummy audio data
+    let file_data: Vec<u8> = (0..50000u64).map(|i| (i % 256) as u8).collect();
+    let source_file = "/music/cue_test.flac";
+    let byte_start = 1024u64;
+    let byte_end = 20480u64;
+
+    let router = create_cue_test_router(
+        track_id,
+        source_file,
+        file_data,
+        50000,
+        byte_start,
+        Some(byte_end),
+        "flac",
+    );
+
+    let uri = format!("/stream?id={}", track_id);
+    let response = router
+        .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
+
+    let headers = response.headers();
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "audio/flac"
+    );
+    assert!(headers.contains_key(header::CONTENT_RANGE));
+    assert_eq!(
+        headers.get(header::ACCEPT_RANGES).unwrap(),
+        "bytes"
+    );
+
+    let actual_content_range = headers
+        .get(header::CONTENT_RANGE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let expected_range = format!("bytes {}-{}/{}", byte_start, byte_end - 1, 50000);
+    assert_eq!(actual_content_range, expected_range);
+
+    // Verify the body is the correct slice
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let expected_size = (byte_end - byte_start) as usize;
+    assert_eq!(body.len(), expected_size);
+    // Verify content matches the range
+    for i in 0..expected_size {
+        assert_eq!(body[i], ((byte_start as usize + i) % 256) as u8);
+    }
+}
+
+#[tokio::test]
+async fn test_stream_cue_track_content_range_header() {
+    use axum::http::header;
+
+    let track_id = Uuid::new_v4();
+    let file_data: Vec<u8> = (0..10000u64).map(|i| (i % 256) as u8).collect();
+    let source_file = "/music/cue_header_test.flac";
+    let byte_start = 500u64;
+    let byte_end = 2000u64;
+
+    let router = create_cue_test_router(
+        track_id,
+        source_file,
+        file_data,
+        10000,
+        byte_start,
+        Some(byte_end),
+        "flac",
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .uri(format!("/stream?id={}", track_id))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
+
+    let headers = response.headers();
+    let content_range = headers
+        .get(header::CONTENT_RANGE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    // Content-Range format: "bytes {start}-{end}/{total}"
+    assert_eq!(content_range, "bytes 500-1999/10000");
+
+    let content_length = headers
+        .get(header::CONTENT_LENGTH)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .parse::<usize>()
+        .unwrap();
+    assert_eq!(content_length, 1500); // 2000 - 500
+}
+
+#[tokio::test]
+async fn test_stream_normal_track_returns_200() {
+    use axum::http::header;
+
+    let track_id = Uuid::new_v4();
+    let file_data = vec![0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF];
+    let file_path = "/music/normal_test.mp3";
+
+    let router = create_normal_track_test_router(track_id, file_path, file_data.clone());
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .uri(format!("/stream?id={}", track_id))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let headers = response.headers();
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "audio/mpeg"
+    );
+    assert_eq!(
+        headers.get(header::ACCEPT_RANGES).unwrap(),
+        "bytes"
+    );
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(body.as_ref(), file_data.as_slice());
+}
+
+#[tokio::test]
+async fn test_stream_cue_track_range_exceeded() {
+    let track_id = Uuid::new_v4();
+    let file_data: Vec<u8> = (0..1000u64).map(|i| (i % 256) as u8).collect();
+    let source_file = "/music/cue_416_test.flac";
+    // byte_offset_start is >= file size
+    let byte_start = 2000u64; // >= 1000
+
+    let router = create_cue_test_router(
+        track_id,
+        source_file,
+        file_data,
+        1000,
+        byte_start,
+        Some(2100),
+        "flac",
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .uri(format!("/stream?id={}", track_id))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::RANGE_NOT_SATISFIABLE);
 }

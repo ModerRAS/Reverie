@@ -24,6 +24,12 @@ pub struct Track {
     pub genre: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    // CUE sheet support fields
+    pub source_file: Option<String>,        // Parent audio file for CUE virtual tracks
+    pub byte_offset_start: Option<u64>,     // Byte offset start within parent file
+    pub byte_offset_end: Option<u64>,        // Byte offset end within parent file
+    pub cue_path: Option<String>,           // Associated .cue file path (NULL for non-CUE tracks)
+    pub is_cue_virtual: Option<bool>,       // Whether this track is a CUE virtual track
 }
 
 /// 表示专辑
