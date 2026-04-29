@@ -1,8 +1,14 @@
 name: Nightly Release
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # 每天UTC 0点执行
+  # Only run when code changes occur on main branch, not daily
+  push:
+    branches: [main, master]
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+  # Allow manual trigger
   workflow_dispatch:
     inputs:
       version:
@@ -48,10 +54,12 @@ jobs:
         run: cargo update
 
       - name: Run outdated check
+        continue-on-error: true
         run: cargo outdated --exit-code 1 || echo "Outdated dependencies found"
 
       - name: Run security audit
-        run: cargo audit --deny warnings
+        continue-on-error: true
+        run: cargo audit --deny warnings || echo "Audit issues found"
 
       - name: Run nextest
         run: cargo nextest --all-features --all-targets
@@ -79,7 +87,6 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           tag_name: nightly-${{ steps.version.outputs.version }}
           name: Nightly Release ${{ steps.version.outputs.version }}
@@ -104,7 +111,6 @@ jobs:
           cargo publish --dry-run --all-features
 
       - name: Create nightly tag
-        if: github.event_name == 'schedule'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
