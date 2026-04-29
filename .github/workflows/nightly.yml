@@ -1,7 +1,10 @@
 name: Nightly Release
 
 on:
-  # Only run when code changes occur on main branch, not daily
+  # Daily at 00:00 UTC, but only publish release if there are code changes
+  schedule:
+    - cron: '0 0 * * *'
+  # Also build on code push
   push:
     branches: [main, master]
     paths:
@@ -27,11 +30,33 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      has_changes: ${{ steps.check_changes.outputs.has_changes }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for changes since last nightly
+        id: check_changes
+        run: |
+          # Get the most recent nightly tag
+          last_tag=$(git tag --list 'nightly-*' --sort=-v:refname | head -n1)
+          if [ -z "$last_tag" ]; then
+            # No previous tag, treat as first build
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "First nightly build"
+          else
+            # Count commits since last tag
+            commits=$(git log $last_tag..HEAD --oneline | wc -l)
+            echo "Commits since $last_tag: $commits"
+            if [ "$commits" -gt 0 ]; then
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Install Rust ${{ env.RUST_NIGHTLY }}
         uses: dtolnay/rust-toolchain@master
@@ -85,7 +110,8 @@ jobs:
           fi
           echo "version=${{ steps.version.outputs.version }}"
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (only if there are changes)
+        if: steps.check_changes.outputs.has_changes == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly-${{ steps.version.outputs.version }}
@@ -104,23 +130,24 @@ jobs:
           files: artifacts/**
           prerelease: true
 
-      - name: Push to crates.io (Dry Run)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "Dry run - would publish to crates.io"
-          cargo publish --dry-run --all-features
-
-      - name: Create nightly tag
+      - name: Push nightly tag (only if there are changes)
+        if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a nightly-${{ steps.version.outputs.version }} -m "Nightly release ${{ steps.version.outputs.version }}"
           git push origin nightly-${{ steps.version.outputs.version }}
 
+      - name: No changes since last release
+        if: steps.check_changes.outputs.has_changes == 'false'
+        run: echo "No code changes since last nightly release, skipping release creation"
+
   benchmark:
     name: Benchmark
     runs-on: ubuntu-latest
     needs: nightly
+    # Only run benchmarks if there were changes
+    if: needs.nightly.outputs.has_changes == 'true'
     steps:
       - uses: actions/checkout@v4
       
