@@ -6,7 +6,7 @@ on:
     - cron: '0 0 * * *'
   # Also build on code push
   push:
-    branches: [main, master]
+    branches: [master, develop]
     paths:
       - '**.rs'
       - '**/Cargo.toml'
