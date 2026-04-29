@@ -53,13 +53,9 @@ impl AudioMetadata {
         use lofty::probe::Probe;
 
         let tagged_file = Probe::open(path)
-            .map_err(|e| {
-                StorageError::IoError(std::io::Error::other(e.to_string()))
-            })?
+            .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))?
             .read()
-            .map_err(|e| {
-                StorageError::IoError(std::io::Error::other(e.to_string()))
-            })?;
+            .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))?;
 
         Self::extract_metadata(&tagged_file)
     }
@@ -79,9 +75,9 @@ impl AudioMetadata {
             }
         }
 
-        let tagged_file = probe.read().map_err(|e| {
-            StorageError::IoError(std::io::Error::other(e.to_string()))
-        })?;
+        let tagged_file = probe
+            .read()
+            .map_err(|e| StorageError::IoError(std::io::Error::other(e.to_string())))?;
 
         Self::extract_metadata(&tagged_file)
     }

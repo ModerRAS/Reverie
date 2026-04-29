@@ -207,16 +207,12 @@ pub(crate) fn create_router<S: SubsonicStorage + FileStorage + TrackStorage + Cl
 // ===== 系统处理器 =====
 
 /// GET /rest/ping - 测试连接
-async fn ping_handler(
-    Query(params): Query<HashMap<String, String>>,
-) -> Response {
+async fn ping_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     ok_response(&params)
 }
 
 /// GET /rest/getLicense - 获取服务器许可证信息
-async fn get_license_handler(
-    Query(params): Query<HashMap<String, String>>,
-) -> Response {
+async fn get_license_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let response = SubsonicResponse::ok_with(ResponseData::License(LicenseData {
         license: License { valid: true },
     }));
