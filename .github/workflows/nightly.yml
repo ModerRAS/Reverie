@@ -110,6 +110,20 @@ jobs:
           fi
           echo "version=${{ steps.version.outputs.version }}"
 
+      - name: Generate changelog
+        if: steps.check_changes.outputs.has_changes == 'true'
+        id: changelog
+        run: |
+          # Get the most recent nightly tag
+          last_tag=$(git tag --list 'nightly-*' --sort=-v:refname | head -n1)
+          if [ -z "$last_tag" ]; then
+            # First build - show all commits
+            echo "changelog=$(git log --oneline -20 | head -20 | sed 's/"/\\"/g' | awk '{gsub(/"/,"\\\""); print "- " $0}')" >> $GITHUB_OUTPUT
+          else
+            # Show commits since last tag
+            echo "changelog=$(git log $last_tag..HEAD --oneline | head -20 | awk '{gsub(/"/,"\\\""); print "- " $0}')" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create GitHub Release (only if there are changes)
         if: steps.check_changes.outputs.has_changes == 'true'
         uses: softprops/action-gh-release@v2
@@ -122,8 +136,8 @@ jobs:
             - Rust Version: ${{ env.RUST_NIGHTLY }}
             - Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
             
-            ### Changes
-            Automatic nightly build from main branch.
+            ### Changes (since last release)
+            ${{ steps.changelog.outputs.changelog }}
             
             ### Binaries
             - reverie-server binary included
